@@ -1,0 +1,536 @@
+<title>Delegación de eventos y event.target</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+
+:root{
+  --bg:#0b0e12;
+  --panel:#11161d;
+  --panel-2:#161d26;
+  --line:#232b34;
+  --ink:#e5e9ed;
+  --muted:#e7ebef;
+  --accent:#4dd9c0;
+  --accent-2:#f2a154;
+  --violet:#a78bfa;
+  --good:#7cd992;
+  --danger:#e2725b;
+  --accent-dim:rgba(77,217,192,.12);
+  --accent2-dim:rgba(242,161,84,.12);
+  --fs:1.35;
+}
+*{box-sizing:border-box;}
+html,body{background:var(--bg);}
+body{
+  margin:0;
+  color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,sans-serif;
+  padding:10px 20px 140px;
+}
+.wrap{max-width:1400px;margin:0 auto;}
+.eyebrow{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11.5px);
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--muted);
+  text-align:center;
+  margin:0 0 12px;
+}
+h1{
+  text-align:center;
+  font-family:"IBM Plex Mono",monospace;
+  font-size:36px;
+  font-weight:600;
+  margin:0 0 10px;
+  text-wrap:balance;
+}
+.sub{
+  text-align:center;
+  color:var(--muted);
+  font-size:calc(var(--fs,1) * 14px);
+  max-width:1400px;
+  margin:0 auto 34px;
+  line-height:1.55;
+}
+.panel{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:10px;
+}
+.term-bar{display:flex;gap:5px;margin-bottom:10px;}
+.term-bar span{width:8px;height:8px;border-radius:50%;background:#2a323c;}
+.code{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:17px;
+  line-height:1.95;
+  color:#e2e7eb;
+  overflow-x:auto;
+}
+.code .ln{
+  display:block;
+  padding:1px 8px;
+  border-radius:5px;
+  border-left:2px solid transparent;
+  transition:background .25s, border-color .25s, color .25s;
+  white-space:pre;
+}
+.code .ln .k{color:#c99a5b;}
+.code .ln.active{color:var(--ink);background:var(--accent-dim);border-left-color:var(--accent);}
+.lbl{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 9.5px);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--muted);
+  display:block;
+  margin-bottom:7px;
+}
+@keyframes pop{from{opacity:0;transform:scale(.9);}to{opacity:1;transform:scale(1);}}
+.note{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:20px;
+  color:var(--muted);
+  text-align:center;
+  min-height:64px;
+  line-height:1.5;
+  padding:0 10px;
+  margin:22px auto 0;
+  max-width:1100px;
+}
+.timeline{max-width:920px;margin:22px auto 0;height:3px;background:var(--line);border-radius:2px;overflow:hidden;}
+.timeline-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent-2),var(--accent));transition:width .05s linear;}
+.verdict{
+  text-align:center;
+  margin:22px auto 0;
+  max-width:760px;
+  font-size:calc(var(--fs,1) * 14px);
+  color:var(--muted);
+  line-height:1.6;
+  min-height:30px;
+  opacity:0;
+  transition:opacity .4s;
+}
+.verdict.show{opacity:1;}
+.verdict b{color:var(--ink);font-weight:600;}
+.verdict code{font-family:"IBM Plex Mono",monospace;color:var(--accent);}
+.controls{
+  position:fixed;
+  left:50%;
+  bottom:16px;
+  transform:translateX(-50%);
+  width:calc(100% - 32px);
+  max-width:1200px;
+  margin:0;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:14px 18px;
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px 20px;
+  z-index:100;
+  box-shadow:0 12px 36px rgba(0,0,0,.5);
+}
+.ctrl-group{display:flex;align-items:center;gap:8px;}
+.ctrl-btn{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 12px);
+  letter-spacing:.03em;
+  color:var(--ink);
+  background:var(--panel-2);
+  border:1px solid var(--line);
+  border-radius:7px;
+  padding:8px 14px;
+  cursor:pointer;
+  transition:border-color .2s, color .2s;
+}
+.ctrl-btn:hover:not(:disabled){border-color:var(--ink);}
+.ctrl-btn:disabled{opacity:.35;cursor:default;}
+.ctrl-btn.play{min-width:132px;border-color:var(--accent);color:var(--accent);}
+.ctrl-btn.step{font-size:calc(var(--fs,1) * 14px);padding:8px 12px;}
+.ctrl-label{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 10px);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin-right:2px;
+}
+.speed-group{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;}
+.speed-btn{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11.5px);
+  color:var(--muted);
+  background:var(--panel-2);
+  border:none;
+  padding:7px 11px;
+  cursor:pointer;
+  border-right:1px solid var(--line);
+  transition:background .2s, color .2s;
+}
+.speed-btn:last-child{border-right:none;}
+.speed-btn.active{background:var(--accent-dim);color:var(--accent);}
+.step-counter{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11px);
+  color:var(--muted);
+  margin-left:auto;
+}
+@media (prefers-reduced-motion: reduce){
+  *{transition-duration:.001ms !important; animation-duration:.001ms !important;}
+}
+.stage-lr{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;}
+@media (max-width:900px){.stage-lr{grid-template-columns:1fr;}}
+.stage-lr .col-code{display:flex;flex-direction:column;gap:14px;}
+.stage-lr .col-out{display:flex;flex-direction:column;gap:14px;}
+
+.term{padding:16px 18px;transition:opacity .3s;}
+.term.dim{opacity:.35;}
+.term .lbl{margin-bottom:4px;}
+
+/* Fase */
+.phase-row{display:flex;justify-content:center;}
+.phase-tag{
+  font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 11px);letter-spacing:.08em;text-transform:uppercase;
+  padding:4px 12px;border-radius:20px;border:1px solid var(--line);color:var(--muted);
+  transition:border-color .3s, color .3s;
+}
+.phase-tag.warn{border-color:var(--accent-2);color:var(--accent-2);}
+.phase-tag.bad{border-color:var(--danger);color:var(--danger);}
+.phase-tag.target{border-color:var(--violet);color:var(--violet);}
+.phase-tag.good{border-color:var(--accent);color:var(--accent);}
+
+/* Catálogo */
+.catalogo{
+  position:relative;
+  border:2px dashed var(--line);
+  border-radius:10px;
+  padding:38px 14px 14px;
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(130px,1fr));
+  gap:10px;
+  transition:border-color .3s, background .3s, box-shadow .3s;
+}
+.catalogo.has-listener{border-style:solid;border-color:var(--accent);}
+.catalogo.hit{background:var(--accent-dim);box-shadow:0 0 0 4px rgba(77,217,192,.22);}
+.cat-label{
+  position:absolute;top:9px;left:12px;
+  font-family:"IBM Plex Mono",monospace;font-size:14px;color:var(--muted);
+}
+.catalogo > .lis{position:absolute;top:8px;right:10px;}
+.lis{
+  font-family:"IBM Plex Mono",monospace;font-size:12px;
+  padding:2px 9px;border-radius:20px;
+  border:1px solid var(--accent-2);color:var(--accent-2);background:var(--accent2-dim);
+  animation:pop .25s ease;
+  white-space:nowrap;
+}
+.catalogo > .lis{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);}
+.lis.bad{border-color:var(--danger);color:var(--danger);background:rgba(226,114,91,.12);}
+.prod{
+  background:var(--panel-2);
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:10px 8px;
+  display:flex;flex-direction:column;gap:6px;align-items:center;
+  transition:border-color .3s, background .3s;
+}
+.prod.bubble{border-color:var(--accent);background:var(--accent-dim);}
+.prod.nuevo{animation:pop .45s ease;}
+.thumb{font-size:30px;line-height:1;}
+.prod h4{margin:0;font-size:16px;font-weight:600;padding:2px 6px;border-radius:4px;transition:all .25s;}
+.precio{font-size:13px;color:var(--muted);opacity:.7;}
+.btn-add{
+  font-family:"IBM Plex Mono",monospace;font-size:13px;
+  background:transparent;border:1px solid var(--line);color:var(--ink);
+  border-radius:6px;padding:5px 10px;transition:all .25s;
+}
+.target{outline:2px solid var(--violet);outline-offset:2px;background:rgba(167,139,250,.18) !important;color:var(--violet) !important;}
+.data{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--muted);opacity:.65;}
+.slot{min-height:20px;}
+
+/* Variables */
+.vars-panel{padding:14px 16px;}
+.vars{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-family:"IBM Plex Mono",monospace;font-size:15px;align-items:center;}
+.vars .k{color:var(--muted);opacity:.75;}
+.vars .v{color:var(--ink);min-height:22px;}
+.vars .v.set{color:var(--violet);animation:pop .25s ease;}
+.vars .v.yes{color:var(--good);}
+.vars .v.no{color:var(--danger);}
+.cart{display:flex;gap:6px;flex-wrap:wrap;}
+.cart span{padding:1px 8px;border-radius:5px;border:1px solid var(--accent);color:var(--accent);background:var(--panel-2);animation:pop .25s ease;}
+
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">JavaScript · Eventos</p>
+  <h1>Delegación de eventos y event.target</h1>
+  <p class="sub">En vez de poner un listener en cada botón (que además se crean y destruyen continuamente), se pone uno solo en el contenedor padre. Gracias al bubbling, el clic llega hasta él y <code>event.target</code> le dice qué elemento concreto se pulsó.</p>
+
+  <div class="stage-lr">
+    <div class="col-code">
+      <div class="panel term" id="codeA">
+        <div class="term-bar"><span></span><span></span><span></span></div>
+        <span class="lbl">✗ Sin delegación — un listener por botón</span>
+        <div class="code">
+          <span class="ln">document.querySelectorAll('.btn-add').forEach(btn =&gt; {</span>
+          <span class="ln">  btn.addEventListener('click', () =&gt; { <span class="k">/* … */</span> });</span>
+          <span class="ln">});</span>
+        </div>
+      </div>
+      <div class="panel term" id="codeB">
+        <div class="term-bar"><span></span><span></span><span></span></div>
+        <span class="lbl">✓ Con delegación — un listener en el padre</span>
+        <div class="code">
+          <span class="ln">catalogo.addEventListener('click', event =&gt; {</span>
+          <span class="ln">  if (event.target.classList.contains('btn-add')) {</span>
+          <span class="ln">    const id = Number(event.target.getAttribute('data-id'));</span>
+          <span class="ln">    anadirAlCarrito(id);</span>
+          <span class="ln">  }</span>
+          <span class="ln">});</span>
+        </div>
+      </div>
+    </div>
+    <div class="col-out">
+      <div class="phase-row"><span class="phase-tag" id="phaseTag">esperando</span></div>
+      <div class="catalogo" id="catalogo"></div>
+      <div class="panel vars-panel">
+        <span class="lbl">Dentro del manejador</span>
+        <div class="vars" id="vars"></div>
+      </div>
+    </div>
+  </div>
+  <p class="note" id="noteBox"></p>
+
+  <div class="timeline"><div class="timeline-fill" id="fill"></div></div>
+  <p class="verdict" id="verdict"></p>
+  <div class="controls">
+    <div class="ctrl-group">
+      <button id="rewindBtn" class="ctrl-btn step" title="Rebobinar al principio">&#9198;</button>
+      <button id="prevBtn" class="ctrl-btn step" title="Paso anterior">&#9664;&#9664;</button>
+      <button id="playBtn" class="ctrl-btn play">&#9654; Reproducir</button>
+      <button id="nextBtn" class="ctrl-btn step" title="Paso siguiente">&#9654;&#9654;</button>
+      <button id="delayPlayBtn" class="ctrl-btn" title="Empezar tras una cuenta atrás de 10s">&#9654; +10s</button>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Velocidad</span>
+      <div class="speed-group">
+        <button class="speed-btn active" data-speed="0.25">0.25&times;</button>
+        <button class="speed-btn" data-speed="0.5">0.5&times;</button>
+      </div>
+    </div>
+    <span class="step-counter" id="stepCounter">Paso 1 / N</span>
+  </div>
+
+</div>
+
+<script>
+
+var codeA = document.getElementById('codeA');
+var codeB = document.getElementById('codeB');
+var lines = document.querySelectorAll('.code .ln'); // 0-2: sin delegación · 3-8: con delegación
+var catalogo = document.getElementById('catalogo');
+var phaseTag = document.getElementById('phaseTag');
+var varsBox = document.getElementById('vars');
+var noteBox = document.getElementById('noteBox');
+
+var PRODUCTOS = {
+  1: ['⌨️', 'Teclado', '25 €'],
+  2: ['🖱️', 'Ratón', '12 €'],
+  3: ['🎧', 'Auriculares', '40 €'],
+  4: ['📷', 'Webcam', '35 €']
+};
+
+var BTN = function(id){ return '&lt;button class="btn-add" data-id="' + id + '"&gt;'; };
+
+// mode: null | 'buttons' (listener en cada botón) | 'lost' (botones repintados sin listener) | 'catalogo' (delegación)
+// target: {pid, part:'btn'|'title'} · bubble: 'btn' | 'card' | 'catalogo'
+var STATES = [
+  { prods:[1,2,3], mode:null, lines:[], tag:'el problema', tagCls:'',
+    vars:{},
+    note:'Un catálogo con tarjetas. Cada una tiene un botón «Añadir» con su data-id. Queremos reaccionar al clic en cualquiera de ellos.' },
+
+  { prods:[1,2,3], mode:'buttons', lines:[0,1,2], tag:'opción A: un listener por botón', tagCls:'warn',
+    vars:{},
+    note:'Idea ingenua: recorrer los botones y poner un addEventListener en cada uno. 3 botones → 3 listeners (con 100 productos, 100).' },
+
+  { prods:[1,2,3], mode:'lost', repaint:true, lines:[], tag:'se repinta el catálogo', tagCls:'bad',
+    vars:{},
+    note:'Al filtrar, ordenar o recargar, las tarjetas se destruyen y se crean de nuevo. ¡Los botones nuevos NO tienen listener! El clic ya no hace nada.' },
+
+  { prods:[1,2,3], mode:'catalogo', lines:[3,8], tag:'opción B: delegación', tagCls:'good',
+    vars:{},
+    note:'Solución: UN único listener en el contenedor padre #catalogo. El catálogo no se destruye nunca, así que su listener no se pierde.' },
+
+  { prods:[1,2,3], mode:'catalogo', lines:[], target:{pid:2, part:'btn'}, bubble:'btn', tag:'clic en el botón', tagCls:'target',
+    vars:{},
+    note:'El usuario pulsa «Añadir» en el Ratón. El botón no tiene listener propio… pero el evento empieza a burbujear hacia arriba.' },
+
+  { prods:[1,2,3], mode:'catalogo', lines:[], target:{pid:2, part:'btn'}, bubble:'card', tag:'burbuja ↑', tagCls:'good',
+    vars:{},
+    note:'Sube a la tarjeta (el padre del botón). Tampoco tiene listener: sigue subiendo…' },
+
+  { prods:[1,2,3], mode:'catalogo', lines:[3], target:{pid:2, part:'btn'}, bubble:'catalogo', tag:'burbuja ↑ llega a #catalogo', tagCls:'good',
+    vars:{target:BTN(2), current:'#catalogo'},
+    note:'…llega a #catalogo y se ejecuta SU listener. event.target sigue apuntando al botón que se pulsó; event.currentTarget es el catálogo.' },
+
+  { prods:[1,2,3], mode:'catalogo', lines:[4], target:{pid:2, part:'btn'}, bubble:'catalogo', tag:'¿es un botón «Añadir»?', tagCls:'good',
+    vars:{target:BTN(2), current:'#catalogo', contains:true},
+    note:'¿El elemento pulsado tiene la clase btn-add? Sí → entramos en el if.' },
+
+  { prods:[1,2,3], mode:'catalogo', lines:[5], target:{pid:2, part:'btn'}, bubble:'catalogo', tag:'leer data-id', tagCls:'good',
+    vars:{target:BTN(2), current:'#catalogo', contains:true, id:'"2" → 2'},
+    note:'getAttribute(\'data-id\') devuelve el texto "2". Number() lo convierte en el número 2.' },
+
+  { prods:[1,2,3], mode:'catalogo', lines:[6], target:{pid:2, part:'btn'}, bubble:'catalogo', tag:'añadir al carrito', tagCls:'good',
+    vars:{target:BTN(2), current:'#catalogo', contains:true, id:'2', carrito:[2]},
+    note:'anadirAlCarrito(2). El catálogo sabe QUÉ producto se pidió sin tener un listener en cada botón.' },
+
+  { prods:[1,2,3], mode:'catalogo', lines:[3], target:{pid:1, part:'title'}, bubble:'catalogo', tag:'clic en otra parte', tagCls:'target',
+    vars:{target:'&lt;h4&gt;Teclado&lt;/h4&gt;', current:'#catalogo', carrito:[2]},
+    note:'Ahora el usuario pulsa el TÍTULO del Teclado. También burbujea hasta #catalogo y su listener se ejecuta.' },
+
+  { prods:[1,2,3], mode:'catalogo', lines:[4], target:{pid:1, part:'title'}, bubble:'catalogo', tag:'filtro: no es un botón', tagCls:'bad',
+    vars:{target:'&lt;h4&gt;Teclado&lt;/h4&gt;', current:'#catalogo', contains:false, carrito:[2]},
+    note:'event.target es el <h4>, que no tiene la clase btn-add → el if no se cumple y no pasa nada. Por eso hay que comprobar el target.' },
+
+  { prods:[1,2,3,4], nuevo:4, mode:'catalogo', lines:[], tag:'llega un producto nuevo', tagCls:'good',
+    vars:{carrito:[2]},
+    note:'Se añade la Webcam al catálogo. No hay que registrar ningún listener nuevo: el del padre ya la cubre.' },
+
+  { prods:[1,2,3,4], mode:'catalogo', lines:[3], target:{pid:4, part:'btn'}, bubble:'catalogo', tag:'clic en el nuevo botón', tagCls:'target',
+    vars:{target:BTN(4), current:'#catalogo', carrito:[2]},
+    note:'Clic en «Añadir» de la Webcam → burbujea hasta #catalogo → se ejecuta el mismo listener de siempre.' },
+
+  { prods:[1,2,3,4], mode:'catalogo', lines:[4,5,6], target:{pid:4, part:'btn'}, bubble:'catalogo', tag:'funciona sin tocar nada', tagCls:'good',
+    vars:{target:BTN(4), current:'#catalogo', contains:true, id:'"4" → 4', carrito:[2,4]},
+    note:'contains → true, id = 4, anadirAlCarrito(4). Un solo listener sirve para todos los botones, presentes y futuros.' },
+
+  { prods:[1,2,3,4], mode:'catalogo', lines:[], tag:'resumen', tagCls:'good',
+    vars:{carrito:[2,4]}, note:'',
+    verdict:'<b>Delegación de eventos:</b> un único listener en el contenedor padre atiende los clics de todos sus hijos, gracias al <b>bubbling</b>. <code>event.target</code> es el elemento exacto que se pulsó (y <code>event.currentTarget</code>, el que tiene el listener). Comprueba siempre el target antes de actuar. Truco: si el botón tuviera un icono dentro, el target sería el icono; usa <code>event.target.closest(\'.btn-add\')</code>.' }
+];
+var DURATIONS = STATES.map(function(){ return 900; });
+
+function renderProducto(s, p){
+  var d = PRODUCTOS[p];
+  var isT = s.target && s.target.pid === p;
+  var cardCls = 'prod'
+    + (isT && s.bubble === 'card' ? ' bubble' : '')
+    + ((s.nuevo === p || s.repaint) ? ' nuevo' : '');
+  var lis = s.mode === 'buttons' ? '<span class="lis">⚡ listener</span>'
+          : s.mode === 'lost'    ? '<span class="lis bad">✗ sin listener</span>' : '';
+  return '<div class="' + cardCls + '">'
+    + '<div class="thumb">' + d[0] + '</div>'
+    + '<h4 class="' + (isT && s.target.part === 'title' ? 'target' : '') + '">' + d[1] + '</h4>'
+    + '<div class="precio">' + d[2] + '</div>'
+    + '<button class="btn-add' + (isT && s.target.part === 'btn' ? ' target' : '') + '" tabindex="-1">Añadir</button>'
+    + '<code class="data">data-id="' + p + '"</code>'
+    + '<div class="slot">' + lis + '</div>'
+    + '</div>';
+}
+
+function renderVars(v){
+  function row(k, val, cls){ return '<span class="k">' + k + '</span><span class="v ' + (cls || '') + '">' + val + '</span>'; }
+  var contains = v.contains === true ? row(".contains('btn-add')", 'true', 'yes')
+               : v.contains === false ? row(".contains('btn-add')", 'false', 'no')
+               : row(".contains('btn-add')", '—');
+  var cart = v.carrito && v.carrito.length
+    ? '<span class="cart">' + v.carrito.map(function(id){ return '<span>' + PRODUCTOS[id][1] + ' (' + id + ')</span>'; }).join('') + '</span>'
+    : '[ ]';
+  return row('event.target', v.target || '—', v.target ? 'set' : '')
+    + row('event.currentTarget', v.current || '—')
+    + contains
+    + row('id', v.id || '—', v.id ? 'set' : '')
+    + row('carrito', cart);
+}
+
+function renderState(s){
+  lines.forEach(function(ln, i){ ln.classList.toggle('active', s.lines.indexOf(i) !== -1); });
+  codeA.classList.toggle('dim', s.mode === 'catalogo');
+  codeB.classList.toggle('dim', s.mode === 'buttons' || s.mode === 'lost');
+
+  catalogo.className = 'catalogo'
+    + (s.mode === 'catalogo' ? ' has-listener' : '')
+    + (s.bubble === 'catalogo' ? ' hit' : '');
+  catalogo.innerHTML = '<span class="cat-label">#catalogo</span>'
+    + (s.mode === 'catalogo' ? '<span class="lis">⚡ listener</span>' : '')
+    + s.prods.map(function(p){ return renderProducto(s, p); }).join('');
+
+  phaseTag.textContent = s.tag || 'esperando';
+  phaseTag.className = 'phase-tag' + (s.tagCls ? ' ' + s.tagCls : '');
+  varsBox.innerHTML = renderVars(s.vars || {});
+  noteBox.textContent = s.note || '';
+}
+
+</script>
+<script>
+
+(function(){
+  var playBtn = document.getElementById('playBtn');
+  var prevBtn = document.getElementById('prevBtn');
+  var nextBtn = document.getElementById('nextBtn');
+  var rewindBtn = document.getElementById('rewindBtn');
+  var delayPlayBtn = document.getElementById('delayPlayBtn');
+  var stepCounter = document.getElementById('stepCounter');
+  var fill = document.getElementById('fill');
+  var verdict = document.getElementById('verdict');
+  var speedBtns = document.querySelectorAll('.speed-btn');
+
+  var curIndex = 0, playing = false, speed = 0.25, playTimer = null, countdownTimer = null;
+
+  function stopCountdown(){
+    if(countdownTimer){ clearInterval(countdownTimer); countdownTimer = null; }
+    delayPlayBtn.textContent = '▶ +10s';
+    playBtn.disabled = false;
+  }
+  function show(i){
+    var s = STATES[i];
+    renderState(s, i);
+    if(verdict){
+      verdict.innerHTML = s.verdict || '';
+      verdict.classList.toggle('show', !!s.verdict);
+    }
+    if(fill) fill.style.width = (i/(STATES.length-1)*100) + '%';
+    stepCounter.textContent = 'Paso ' + (i+1) + ' / ' + STATES.length;
+    prevBtn.disabled = (i===0);
+    nextBtn.disabled = (i===STATES.length-1);
+  }
+  function stopPlay(){ playing=false; playBtn.textContent='▶ Reproducir'; clearTimeout(playTimer); }
+  function scheduleNext(){
+    if(curIndex >= STATES.length-1){ stopPlay(); return; }
+    var dur = DURATIONS[curIndex] / speed;
+    playTimer = setTimeout(function(){ curIndex++; show(curIndex); scheduleNext(); }, dur);
+  }
+  function startPlay(){
+    if(curIndex >= STATES.length-1){ curIndex=0; show(0); }
+    playing = true; playBtn.textContent='❘❘ Pausar'; scheduleNext();
+  }
+  playBtn.addEventListener('click', function(){ stopCountdown(); playing?stopPlay():startPlay(); });
+  prevBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex=Math.max(0,curIndex-1); show(curIndex); });
+  nextBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex=Math.min(STATES.length-1,curIndex+1); show(curIndex); });
+  rewindBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex=0; show(0); });
+  speedBtns.forEach(function(b){ b.addEventListener('click', function(){ speedBtns.forEach(function(x){x.classList.remove('active');}); b.classList.add('active'); speed=parseFloat(b.getAttribute('data-speed')); }); });
+  delayPlayBtn.addEventListener('click', function(){
+    if(countdownTimer){ stopCountdown(); return; }
+    stopPlay();
+    var remaining=10; playBtn.disabled=true; delayPlayBtn.textContent='Empieza en '+remaining+'s…';
+    countdownTimer=setInterval(function(){
+      remaining--;
+      if(remaining<=0){ clearInterval(countdownTimer); countdownTimer=null; delayPlayBtn.textContent='▶ +10s'; playBtn.disabled=false; startPlay(); }
+      else{ delayPlayBtn.textContent='Empieza en '+remaining+'s…'; }
+    },1000);
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.target && (e.target.tagName==='INPUT' || e.target.tagName==='TEXTAREA' || e.target.isContentEditable)) return;
+    var advance = ['ArrowRight','ArrowDown','PageDown',' ','Spacebar'];
+    var back = ['ArrowLeft','ArrowUp','PageUp','Backspace'];
+    if(advance.indexOf(e.key)!==-1){ e.preventDefault(); nextBtn.click(); }
+    else if(back.indexOf(e.key)!==-1){ e.preventDefault(); prevBtn.click(); }
+  });
+  show(0);
+})();
+
+</script>

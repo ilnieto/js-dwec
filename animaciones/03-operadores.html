@@ -1,0 +1,392 @@
+<title>Operadores en JS</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+
+:root{
+  --bg:#0b0e12;
+  --panel:#11161d;
+  --panel-2:#161d26;
+  --line:#232b34;
+  --ink:#e5e9ed;
+  --muted:#e7ebef;
+  --accent:#4dd9c0;
+  --accent-2:#f2a154;
+  --violet:#a78bfa;
+  --good:#7cd992;
+  --danger:#e2725b;
+  --accent-dim:rgba(77,217,192,.12);
+  --accent2-dim:rgba(242,161,84,.12);
+  --fs:1.35;
+}
+*{box-sizing:border-box;}
+html,body{background:var(--bg);}
+body{
+  margin:0;
+  color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,sans-serif;
+  padding:10px 20px 140px;
+}
+.wrap{max-width:1400px;margin:0 auto;}
+.eyebrow{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11.5px);
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--muted);
+  text-align:center;
+  margin:0 0 12px;
+}
+h1{
+  text-align:center;
+  font-family:"IBM Plex Mono",monospace;
+  font-size:36px;
+  font-weight:600;
+  margin:0 0 10px;
+  text-wrap:balance;
+}
+.sub{
+  text-align:center;
+  color:var(--muted);
+  font-size:calc(var(--fs,1) * 14px);
+  max-width:1400px;
+  margin:0 auto 34px;
+  line-height:1.55;
+}
+.panel{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:10px;
+}
+.term-bar{display:flex;gap:5px;margin-bottom:10px;}
+.term-bar span{width:8px;height:8px;border-radius:50%;background:#2a323c;}
+.code{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:18px;
+  line-height:1.95;
+  color:#e2e7eb;
+  overflow-x:auto;
+}
+.code .ln{
+  display:block;
+  padding:1px 8px;
+  border-radius:5px;
+  border-left:2px solid transparent;
+  transition:background .25s, border-color .25s, color .25s;
+  white-space:pre;
+}
+.code .ln .k{color:#c99a5b;}
+.code .ln.active{color:var(--ink);background:var(--accent-dim);border-left-color:var(--accent);}
+.lbl{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 9.5px);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--muted);
+  display:block;
+  margin-bottom:7px;
+}
+.chip{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11.5px);
+  padding:5px 9px;
+  border-radius:6px;
+  background:var(--panel-2);
+  border:1px solid var(--accent);
+  color:var(--accent);
+  opacity:0;
+  transform:scale(.9);
+  animation:pop .22s ease forwards;
+  display:inline-block;
+}
+.chip.warn{border-color:var(--accent-2);color:var(--accent-2);}
+.chip.bad{border-color:var(--danger);color:var(--danger);}
+.chip.muted{border-color:var(--line);color:var(--muted);}
+@keyframes pop{from{opacity:0;transform:scale(.9);}to{opacity:1;transform:scale(1);}}
+.note{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:20px;
+  color:var(--muted);
+  text-align:center;
+  min-height:34px;
+  line-height:1.5;
+  padding:0 10px;
+}
+.timeline{max-width:920px;margin:22px auto 0;height:3px;background:var(--line);border-radius:2px;overflow:hidden;}
+.timeline-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent-2),var(--accent));transition:width .05s linear;}
+.verdict{
+  text-align:center;
+  margin:22px auto 0;
+  max-width:600px;
+  font-size:calc(var(--fs,1) * 14px);
+  color:var(--muted);
+  line-height:1.6;
+  min-height:30px;
+  opacity:0;
+  transition:opacity .4s;
+}
+.verdict.show{opacity:1;}
+.verdict b{color:var(--ink);font-weight:600;}
+.controls{
+  position:fixed;
+  left:50%;
+  bottom:16px;
+  transform:translateX(-50%);
+  width:calc(100% - 32px);
+  max-width:1200px;
+  margin:0;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:14px 18px;
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px 20px;
+  z-index:100;
+  box-shadow:0 12px 36px rgba(0,0,0,.5);
+}
+.ctrl-group{display:flex;align-items:center;gap:8px;}
+.ctrl-btn{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 12px);
+  letter-spacing:.03em;
+  color:var(--ink);
+  background:var(--panel-2);
+  border:1px solid var(--line);
+  border-radius:7px;
+  padding:8px 14px;
+  cursor:pointer;
+  transition:border-color .2s, color .2s;
+}
+.ctrl-btn:hover:not(:disabled){border-color:var(--ink);}
+.ctrl-btn:disabled{opacity:.35;cursor:default;}
+.ctrl-btn.play{min-width:132px;border-color:var(--accent);color:var(--accent);}
+.ctrl-btn.step{font-size:calc(var(--fs,1) * 14px);padding:8px 12px;}
+.ctrl-label{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 10px);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin-right:2px;
+}
+.speed-group{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;}
+.speed-btn{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11.5px);
+  color:var(--muted);
+  background:var(--panel-2);
+  border:none;
+  padding:7px 11px;
+  cursor:pointer;
+  border-right:1px solid var(--line);
+  transition:background .2s, color .2s;
+}
+.speed-btn:last-child{border-right:none;}
+.speed-btn.active{background:var(--accent-dim);color:var(--accent);}
+.step-counter{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11px);
+  color:var(--muted);
+  margin-left:auto;
+}
+@media (prefers-reduced-motion: reduce){
+  *{transition-duration:.001ms !important; animation-duration:.001ms !important;}
+}
+.stage-lr{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;}
+@media (max-width:760px){.stage-lr{grid-template-columns:1fr;}}
+.stage-lr .col-code{display:flex;flex-direction:column;}
+.stage-lr .col-code .panel.term{height:100%;}
+.stage-lr .col-out{display:flex;flex-direction:column;gap:14px;}
+
+
+.stage{display:flex;flex-direction:column;gap:14px;}
+.expr-panel{padding:26px 18px;text-align:center;}
+.expr{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:clamp(18px,4vw,26px);
+  color:var(--ink);
+}
+.expr .hl{
+  background:var(--accent-dim);
+  border:1px solid var(--accent);
+  border-radius:6px;
+  padding:1px 6px;
+  color:var(--accent);
+}
+.cmp-panel{padding:18px;display:flex;flex-direction:column;gap:10px;align-items:center;}
+.cmp-row{
+  display:flex;align-items:center;gap:14px;
+  font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 15px);
+  opacity:.25; transition:opacity .3s;
+}
+.cmp-row.active{opacity:1;}
+.cmp-expr{color:var(--ink);}
+.cmp-arrow{color:var(--muted);font-size:calc(var(--fs,1) * 13px);}
+.pill{
+  font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 12px);font-weight:600;
+  padding:3px 11px;border-radius:20px;border:1px solid;
+}
+.pill.true{color:var(--good);border-color:var(--good);}
+.pill.false{color:var(--danger);border-color:var(--danger);}
+
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">JavaScript · Fundamentos</p>
+  <h1>Operadores y expresiones</h1>
+  <p class="sub">Una expresión se resuelve paso a paso según la precedencia de sus operadores. Y no todas las comparaciones son iguales: == convierte tipos, === no.</p>
+
+
+  <div class="stage">
+    <div class="panel expr-panel">
+      <span class="lbl" style="text-align:center;display:block;">Precedencia de operadores</span>
+      <div class="expr" id="expr"></div>
+    </div>
+    <div class="panel cmp-panel">
+      <span class="lbl">== vs === (coacción de tipos)</span>
+      <div class="cmp-row" id="cmp0"><span class="cmp-expr">5 == '5'</span><span class="cmp-arrow">&rarr;</span><span class="pill" id="pill0">?</span></div>
+      <div class="cmp-row" id="cmp1"><span class="cmp-expr">5 === '5'</span><span class="cmp-arrow">&rarr;</span><span class="pill" id="pill1">?</span></div>
+      <div class="cmp-row" id="cmp2"><span class="cmp-expr">0 == false</span><span class="cmp-arrow">&rarr;</span><span class="pill" id="pill2">?</span></div>
+      <div class="cmp-row" id="cmp3"><span class="cmp-expr">0 === false</span><span class="cmp-arrow">&rarr;</span><span class="pill" id="pill3">?</span></div>
+    </div>
+    <p class="note" id="noteBox"></p>
+  </div>
+
+
+  <div class="timeline"><div class="timeline-fill" id="fill"></div></div>
+  <p class="verdict" id="verdict"></p>
+  <div class="controls">
+    <div class="ctrl-group">
+      <button id="rewindBtn" class="ctrl-btn step" title="Rebobinar al principio">&#9198;</button>
+      <button id="prevBtn" class="ctrl-btn step" title="Paso anterior">&#9664;&#9664;</button>
+      <button id="playBtn" class="ctrl-btn play">&#9654; Reproducir</button>
+      <button id="nextBtn" class="ctrl-btn step" title="Paso siguiente">&#9654;&#9654;</button>
+      <button id="delayPlayBtn" class="ctrl-btn" title="Empezar tras una cuenta atrás de 10s">&#9654; +10s</button>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Velocidad</span>
+      <div class="speed-group">
+        <button class="speed-btn active" data-speed="0.25">0.25&times;</button>
+        <button class="speed-btn" data-speed="0.5">0.5&times;</button>
+      </div>
+    </div>
+    <span class="step-counter" id="stepCounter">Paso 1 / N</span>
+  </div>
+
+</div>
+
+<script>
+
+var exprEl = document.getElementById('expr');
+var noteBox = document.getElementById('noteBox');
+var rows = [0,1,2,3].map(function(i){ return document.getElementById('cmp'+i); });
+var pills = [0,1,2,3].map(function(i){ return document.getElementById('pill'+i); });
+
+var VERDICT = '<b>==</b> convierte los tipos antes de comparar (coacción) — resultados a veces sorprendentes. <b>===</b> compara tipo y valor a la vez: úsalo casi siempre.';
+
+var results = [true, false, true, false];
+
+function setExpr(html){ exprEl.innerHTML = html; }
+function setCmp(activeUpTo, revealed){
+  rows.forEach(function(r, i){ r.classList.toggle('active', i <= activeUpTo); });
+  pills.forEach(function(p, i){
+    if(revealed.indexOf(i) === -1){ p.textContent = '?'; p.className = 'pill'; }
+    else{ p.textContent = results[i] ? 'true' : 'false'; p.className = 'pill ' + (results[i] ? 'true' : 'false'); }
+  });
+}
+
+var STATES = [
+  {expr:'(3 + 4) * 2 - 1', cmpActive:-1, cmpRevealed:[], note:'primero se resuelven los paréntesis', verdict:null},
+  {expr:'<span class="hl">7</span> * 2 - 1', cmpActive:-1, cmpRevealed:[], note:'3 + 4 = 7', verdict:null},
+  {expr:'<span class="hl">7 * 2</span> - 1', cmpActive:-1, cmpRevealed:[], note:'la multiplicación va antes que la resta (precedencia)', verdict:null},
+  {expr:'<span class="hl">14</span> - 1', cmpActive:-1, cmpRevealed:[], note:'7 * 2 = 14', verdict:null},
+  {expr:'<span class="hl">13</span>', cmpActive:-1, cmpRevealed:[], note:'14 - 1 = 13 → ese es el resultado final', verdict:null},
+  {expr:'13', cmpActive:0, cmpRevealed:[], note:'ahora comparemos == y === …', verdict:null},
+  {expr:'13', cmpActive:0, cmpRevealed:[0], note:"5 == '5' → convierte '5' a número → true", verdict:null},
+  {expr:'13', cmpActive:1, cmpRevealed:[0], note:'5 === '+String.fromCharCode(39)+'5'+String.fromCharCode(39), verdict:null},
+  {expr:'13', cmpActive:1, cmpRevealed:[0,1], note:'tipos distintos (number vs string), sin conversión → false', verdict:null},
+  {expr:'13', cmpActive:2, cmpRevealed:[0,1], note:'0 == false → false se convierte a 0 → true', verdict:null},
+  {expr:'13', cmpActive:2, cmpRevealed:[0,1,2], note:'0 == false → true (coacciona)', verdict:null},
+  {expr:'13', cmpActive:3, cmpRevealed:[0,1,2], note:'0 === false → tipos distintos → false', verdict:null},
+  {expr:'13', cmpActive:3, cmpRevealed:[0,1,2,3], note:'', verdict:VERDICT}
+];
+
+var DURATIONS = [700,700,700,700,900,600,900,600,900,600,900,900];
+
+function renderState(s){
+  setExpr(s.expr);
+  setCmp(s.cmpActive, s.cmpRevealed);
+  noteBox.textContent = s.note || '';
+}
+
+</script>
+<script>
+
+(function(){
+  var playBtn = document.getElementById('playBtn');
+  var prevBtn = document.getElementById('prevBtn');
+  var nextBtn = document.getElementById('nextBtn');
+  var rewindBtn = document.getElementById('rewindBtn');
+  var delayPlayBtn = document.getElementById('delayPlayBtn');
+  var stepCounter = document.getElementById('stepCounter');
+  var fill = document.getElementById('fill');
+  var verdict = document.getElementById('verdict');
+  var speedBtns = document.querySelectorAll('.speed-btn');
+
+  var curIndex = 0, playing = false, speed = 0.25, playTimer = null, countdownTimer = null;
+
+  function stopCountdown(){
+    if(countdownTimer){ clearInterval(countdownTimer); countdownTimer = null; }
+    delayPlayBtn.textContent = '▶ +10s';
+    playBtn.disabled = false;
+  }
+  function show(i){
+    var s = STATES[i];
+    renderState(s, i);
+    if(verdict){
+      verdict.innerHTML = s.verdict || '';
+      verdict.classList.toggle('show', !!s.verdict);
+    }
+    if(fill) fill.style.width = (i/(STATES.length-1)*100) + '%';
+    stepCounter.textContent = 'Paso ' + (i+1) + ' / ' + STATES.length;
+    prevBtn.disabled = (i===0);
+    nextBtn.disabled = (i===STATES.length-1);
+  }
+  function stopPlay(){ playing=false; playBtn.textContent='▶ Reproducir'; clearTimeout(playTimer); }
+  function scheduleNext(){
+    if(curIndex >= STATES.length-1){ stopPlay(); return; }
+    var dur = DURATIONS[curIndex] / speed;
+    playTimer = setTimeout(function(){ curIndex++; show(curIndex); scheduleNext(); }, dur);
+  }
+  function startPlay(){
+    if(curIndex >= STATES.length-1){ curIndex=0; show(0); }
+    playing = true; playBtn.textContent='❘❘ Pausar'; scheduleNext();
+  }
+  playBtn.addEventListener('click', function(){ stopCountdown(); playing?stopPlay():startPlay(); });
+  prevBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex=Math.max(0,curIndex-1); show(curIndex); });
+  nextBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex=Math.min(STATES.length-1,curIndex+1); show(curIndex); });
+  rewindBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex=0; show(0); });
+  speedBtns.forEach(function(b){ b.addEventListener('click', function(){ speedBtns.forEach(function(x){x.classList.remove('active');}); b.classList.add('active'); speed=parseFloat(b.getAttribute('data-speed')); }); });
+  delayPlayBtn.addEventListener('click', function(){
+    if(countdownTimer){ stopCountdown(); return; }
+    stopPlay();
+    var remaining=10; playBtn.disabled=true; delayPlayBtn.textContent='Empieza en '+remaining+'s…';
+    countdownTimer=setInterval(function(){
+      remaining--;
+      if(remaining<=0){ clearInterval(countdownTimer); countdownTimer=null; delayPlayBtn.textContent='▶ +10s'; playBtn.disabled=false; startPlay(); }
+      else{ delayPlayBtn.textContent='Empieza en '+remaining+'s…'; }
+    },1000);
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.target && (e.target.tagName==='INPUT' || e.target.tagName==='TEXTAREA' || e.target.isContentEditable)) return;
+    var advance = ['ArrowRight','ArrowDown','PageDown',' ','Spacebar'];
+    var back = ['ArrowLeft','ArrowUp','PageUp','Backspace'];
+    if(advance.indexOf(e.key)!==-1){ e.preventDefault(); nextBtn.click(); }
+    else if(back.indexOf(e.key)!==-1){ e.preventDefault(); prevBtn.click(); }
+  });
+  show(0);
+})();
+
+</script>

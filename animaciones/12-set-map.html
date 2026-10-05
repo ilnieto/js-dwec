@@ -1,0 +1,437 @@
+<title>Set y Map</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+
+:root{
+  --bg:#0b0e12;
+  --panel:#11161d;
+  --panel-2:#161d26;
+  --line:#232b34;
+  --ink:#e5e9ed;
+  --muted:#e7ebef;
+  --accent:#4dd9c0;
+  --accent-2:#f2a154;
+  --violet:#a78bfa;
+  --good:#7cd992;
+  --danger:#e2725b;
+  --accent-dim:rgba(77,217,192,.12);
+  --accent2-dim:rgba(242,161,84,.12);
+  --fs:1.35;
+}
+*{box-sizing:border-box;}
+html,body{background:var(--bg);}
+body{
+  margin:0;
+  color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,sans-serif;
+  padding:10px 20px 140px;
+}
+.wrap{max-width:1400px;margin:0 auto;}
+.eyebrow{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11.5px);
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--muted);
+  text-align:center;
+  margin:0 0 12px;
+}
+h1{
+  text-align:center;
+  font-family:"IBM Plex Mono",monospace;
+  font-size:36px;
+  font-weight:600;
+  margin:0 0 10px;
+  text-wrap:balance;
+}
+.sub{
+  text-align:center;
+  color:var(--muted);
+  font-size:calc(var(--fs,1) * 14px);
+  max-width:1400px;
+  margin:0 auto 34px;
+  line-height:1.55;
+}
+.panel{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:10px;
+}
+.term-bar{display:flex;gap:5px;margin-bottom:10px;}
+.term-bar span{width:8px;height:8px;border-radius:50%;background:#2a323c;}
+.code{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:18px;
+  line-height:1.95;
+  color:#e2e7eb;
+  overflow-x:auto;
+}
+.code .ln{
+  display:block;
+  padding:1px 8px;
+  border-radius:5px;
+  border-left:2px solid transparent;
+  transition:background .25s, border-color .25s, color .25s;
+  white-space:pre;
+}
+.code .ln .k{color:#c99a5b;}
+.code .ln.active{color:var(--ink);background:var(--accent-dim);border-left-color:var(--accent);}
+.lbl{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 9.5px);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--muted);
+  display:block;
+  margin-bottom:7px;
+}
+.chip{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11.5px);
+  padding:5px 9px;
+  border-radius:6px;
+  background:var(--panel-2);
+  border:1px solid var(--accent);
+  color:var(--accent);
+  opacity:0;
+  transform:scale(.9);
+  animation:pop .22s ease forwards;
+  display:inline-block;
+}
+.chip.warn{border-color:var(--accent-2);color:var(--accent-2);}
+.chip.bad{border-color:var(--danger);color:var(--danger);}
+.chip.muted{border-color:var(--line);color:var(--muted);}
+@keyframes pop{from{opacity:0;transform:scale(.9);}to{opacity:1;transform:scale(1);}}
+.note{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:20px;
+  color:var(--muted);
+  text-align:center;
+  min-height:34px;
+  line-height:1.5;
+  padding:0 10px;
+}
+.timeline{max-width:920px;margin:22px auto 0;height:3px;background:var(--line);border-radius:2px;overflow:hidden;}
+.timeline-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent-2),var(--accent));transition:width .05s linear;}
+.verdict{
+  text-align:center;
+  margin:22px auto 0;
+  max-width:600px;
+  font-size:calc(var(--fs,1) * 14px);
+  color:var(--muted);
+  line-height:1.6;
+  min-height:30px;
+  opacity:0;
+  transition:opacity .4s;
+}
+.verdict.show{opacity:1;}
+.verdict b{color:var(--ink);font-weight:600;}
+.controls{
+  position:fixed;
+  left:50%;
+  bottom:16px;
+  transform:translateX(-50%);
+  width:calc(100% - 32px);
+  max-width:1200px;
+  margin:0;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:14px 18px;
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px 20px;
+  z-index:100;
+  box-shadow:0 12px 36px rgba(0,0,0,.5);
+}
+.ctrl-group{display:flex;align-items:center;gap:8px;}
+.ctrl-btn{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 12px);
+  letter-spacing:.03em;
+  color:var(--ink);
+  background:var(--panel-2);
+  border:1px solid var(--line);
+  border-radius:7px;
+  padding:8px 14px;
+  cursor:pointer;
+  transition:border-color .2s, color .2s;
+}
+.ctrl-btn:hover:not(:disabled){border-color:var(--ink);}
+.ctrl-btn:disabled{opacity:.35;cursor:default;}
+.ctrl-btn.play{min-width:132px;border-color:var(--accent);color:var(--accent);}
+.ctrl-btn.step{font-size:calc(var(--fs,1) * 14px);padding:8px 12px;}
+.ctrl-label{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 10px);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin-right:2px;
+}
+.speed-group{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;}
+.speed-btn{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11.5px);
+  color:var(--muted);
+  background:var(--panel-2);
+  border:none;
+  padding:7px 11px;
+  cursor:pointer;
+  border-right:1px solid var(--line);
+  transition:background .2s, color .2s;
+}
+.speed-btn:last-child{border-right:none;}
+.speed-btn.active{background:var(--accent-dim);color:var(--accent);}
+.step-counter{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11px);
+  color:var(--muted);
+  margin-left:auto;
+}
+@media (prefers-reduced-motion: reduce){
+  *{transition-duration:.001ms !important; animation-duration:.001ms !important;}
+}
+.stage-lr{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;}
+@media (max-width:760px){.stage-lr{grid-template-columns:1fr;}}
+.stage-lr .col-code{display:flex;flex-direction:column;}
+.stage-lr .col-code .panel.term{height:100%;}
+.stage-lr .col-out{display:flex;flex-direction:column;gap:14px;}
+
+
+.tabbar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:16px;}
+.tab-btn{
+  font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 12px);color:var(--muted);
+  background:var(--panel-2);border:1px solid var(--line);border-radius:20px;
+  padding:7px 15px;cursor:pointer;transition:border-color .2s,color .2s,background .2s;
+}
+.tab-btn:hover{color:var(--ink);}
+.tab-btn.active{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+.term{padding:16px 18px;}
+.coll-panel{padding:20px 18px;min-height:110px;}
+.set-items{display:flex;gap:10px;flex-wrap:wrap;}
+.set-chip{
+  min-width:44px;height:44px;border-radius:50%;
+  border:1px solid var(--accent);background:var(--accent-dim);color:var(--accent);
+  display:flex;align-items:center;justify-content:center;
+  font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 15px);
+  opacity:0;transform:scale(.85);animation:pop .2s ease forwards;
+  transition:border-color .2s, background .2s, transform .15s;
+}
+.set-chip.reject{border-color:var(--danger);background:rgba(226,114,91,.12);color:var(--danger);animation:shake .35s ease;}
+@keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-5px);}75%{transform:translateX(5px);}}
+.map-rows{display:flex;flex-direction:column;gap:8px;}
+.map-row{
+  display:flex;align-items:center;gap:10px;
+  font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 13px);
+  border:1px solid var(--line);border-radius:7px;padding:8px 12px;
+  background:var(--panel-2);color:var(--ink);
+  opacity:0;transform:translateY(4px);animation:pop .2s ease forwards;
+  transition:border-color .3s, background .3s;
+}
+.map-row .k{color:var(--accent);min-width:70px;}
+.map-row .arrow{color:var(--muted);}
+.map-row.flash{border-color:var(--accent-2);background:var(--accent2-dim);}
+.size-note{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 11px);color:var(--muted);margin-top:12px;}
+
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">JavaScript · Estructuras de datos</p>
+  <h1>Set y Map en acción</h1>
+  <p class="sub">Un Set solo admite valores únicos. Un Map guarda pares clave-valor en orden de inserción. Compáralos añadiendo y repitiendo entradas.</p>
+
+
+  <div class="tabbar" id="tabbar">
+    <button class="tab-btn active" data-tab="set">Set</button>
+    <button class="tab-btn" data-tab="map">Map</button>
+  </div>
+  <div class="stage">
+  <div class="tab-panel active" data-tab="set">
+    <div class="stage-lr">
+      <div class="col-code">
+        <div class="panel term">
+          <div class="term-bar"><span></span><span></span><span></span></div>
+          <div class="code">
+            <span class="ln" data-i="0"><span class="k">const</span> numeros = <span class="k">new</span> Set();</span>
+        <span class="ln" data-i="1">numeros.add(1);</span>
+        <span class="ln" data-i="2">numeros.add(2);</span>
+        <span class="ln" data-i="3">numeros.add(2); <span class="k">// duplicado</span></span>
+        <span class="ln" data-i="4">numeros.add(3);</span>
+          </div>
+        </div>
+      </div>
+      <div class="col-out">
+        <div class="panel coll-panel">
+          <div class="set-items" data-role="items"></div>
+          <div class="size-note" data-role="size"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="tab-panel" data-tab="map">
+    <div class="stage-lr">
+      <div class="col-code">
+        <div class="panel term">
+          <div class="term-bar"><span></span><span></span><span></span></div>
+          <div class="code">
+            <span class="ln" data-i="0"><span class="k">const</span> persona = <span class="k">new</span> Map();</span>
+        <span class="ln" data-i="1">persona.set('nombre', 'Ana');</span>
+        <span class="ln" data-i="2">persona.set('edad', 32);</span>
+        <span class="ln" data-i="3">persona.set('nombre', 'Ana María'); <span class="k">// ya existe</span></span>
+          </div>
+        </div>
+      </div>
+      <div class="col-out">
+        <div class="panel coll-panel">
+          <div class="map-rows" data-role="items"></div>
+          <div class="size-note" data-role="size"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+  <p class="note" id="noteBox"></p>
+
+
+  <div class="timeline"><div class="timeline-fill" id="fill"></div></div>
+  <p class="verdict" id="verdict"></p>
+  <div class="controls">
+    <div class="ctrl-group">
+      <button id="rewindBtn" class="ctrl-btn step" title="Rebobinar al principio">&#9198;</button>
+      <button id="prevBtn" class="ctrl-btn step" title="Paso anterior">&#9664;&#9664;</button>
+      <button id="playBtn" class="ctrl-btn play">&#9654; Reproducir</button>
+      <button id="nextBtn" class="ctrl-btn step" title="Paso siguiente">&#9654;&#9654;</button>
+      <button id="delayPlayBtn" class="ctrl-btn" title="Empezar tras una cuenta atrás de 10s">&#9654; +10s</button>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Velocidad</span>
+      <div class="speed-group">
+        <button class="speed-btn active" data-speed="0.25">0.25&times;</button>
+        <button class="speed-btn" data-speed="0.5">0.5&times;</button>
+      </div>
+    </div>
+    <span class="step-counter" id="stepCounter">Paso 1 / N</span>
+  </div>
+
+</div>
+
+<script>
+
+var TABS = {
+  set: { states: [{"active": 0, "items": [], "reject": null, "size": "", "note": "creamos un Set vacío", "verdict": null}, {"active": 1, "items": [], "reject": null, "size": "", "note": "numeros.add(1)", "verdict": null}, {"active": 1, "items": ["1"], "reject": null, "size": "tamaño: 1", "note": "1 se añade", "verdict": null}, {"active": 2, "items": ["1"], "reject": null, "size": "tamaño: 1", "note": "numeros.add(2)", "verdict": null}, {"active": 2, "items": ["1", "2"], "reject": null, "size": "tamaño: 2", "note": "2 se añade", "verdict": null}, {"active": 3, "items": ["1", "2"], "reject": null, "size": "tamaño: 2", "note": "numeros.add(2) otra vez…", "verdict": null}, {"active": 3, "items": ["1", "2"], "reject": "2", "size": "tamaño: 2 (sin cambios)", "note": "2 ya existe → se ignora, el tamaño no cambia", "verdict": null}, {"active": 4, "items": ["1", "2"], "reject": null, "size": "tamaño: 2", "note": "numeros.add(3)", "verdict": null}, {"active": 4, "items": ["1", "2", "3"], "reject": null, "size": "tamaño: 3", "note": "3 se añade", "verdict": null}, {"active": null, "items": ["1", "2", "3"], "reject": null, "size": "tamaño: 3", "note": "", "verdict": "Un Set solo guarda valores ÚNICOS. Intentar añadir un valor que ya existe no hace nada — ni error, ni duplicado: se ignora silenciosamente."}], durations: [650, 650, 650, 650, 650, 650, 650, 650, 650] },
+  map: { states: [{"active": 0, "rows": [], "flash": null, "size": "", "note": "creamos un Map vacío", "verdict": null}, {"active": 1, "rows": [], "flash": null, "size": "", "note": "persona.set('nombre', 'Ana')", "verdict": null}, {"active": 1, "rows": [["nombre", "Ana"]], "flash": null, "size": "tamaño: 1", "note": "se añade el par nombre → 'Ana'", "verdict": null}, {"active": 2, "rows": [["nombre", "Ana"]], "flash": null, "size": "tamaño: 1", "note": "persona.set('edad', 32)", "verdict": null}, {"active": 2, "rows": [["nombre", "Ana"], ["edad", "32"]], "flash": null, "size": "tamaño: 2", "note": "se añade el par edad → 32, al final (orden de inserción)", "verdict": null}, {"active": 3, "rows": [["nombre", "Ana"], ["edad", "32"]], "flash": null, "size": "tamaño: 2", "note": "persona.set('nombre', 'Ana María')…", "verdict": null}, {"active": 3, "rows": [["nombre", "Ana María"], ["edad", "32"]], "flash": "nombre", "size": "tamaño: 2 (sin cambios)", "note": "'nombre' ya existía → se actualiza el valor, en la MISMA posición", "verdict": null}, {"active": null, "rows": [["nombre", "Ana María"], ["edad", "32"]], "flash": null, "size": "tamaño: 2", "note": "", "verdict": "Un Map guarda pares clave→valor en el orden en que los insertas. Si usas set() con una clave que ya existe, solo actualiza su valor — la posición no cambia."}], durations: [650, 650, 650, 650, 650, 650, 650] }
+};
+var currentTab = 'set';
+
+var playBtn = document.getElementById('playBtn');
+var prevBtn = document.getElementById('prevBtn');
+var nextBtn = document.getElementById('nextBtn');
+var rewindBtn = document.getElementById('rewindBtn');
+var delayPlayBtn = document.getElementById('delayPlayBtn');
+var stepCounter = document.getElementById('stepCounter');
+var fill = document.getElementById('fill');
+var verdict = document.getElementById('verdict');
+var noteBox = document.getElementById('noteBox');
+var speedBtns = document.querySelectorAll('.speed-btn');
+var tabBtns = document.querySelectorAll('.tab-btn');
+
+var curIndex = 0, playing = false, speed = 0.25, playTimer = null, countdownTimer = null;
+
+function renderVisual(tabKey, s){
+  var root = document.querySelector('.tab-panel[data-tab="'+tabKey+'"]');
+  var codeLines = root.querySelectorAll('.code .ln');
+  codeLines.forEach(function(el){ el.classList.remove('active'); });
+  if(s.active !== null && s.active !== undefined){
+    codeLines.forEach(function(el){ if(parseInt(el.getAttribute('data-i'),10) === s.active) el.classList.add('active'); });
+  }
+  var itemsEl = root.querySelector('[data-role="items"]');
+  var sizeEl = root.querySelector('[data-role="size"]');
+  sizeEl.textContent = s.size || '';
+  if(tabKey === 'set'){
+    itemsEl.innerHTML = s.items.map(function(v){
+      var isRejectTarget = (s.reject === v);
+      return '<div class="set-chip'+(isRejectTarget?' reject':'')+'">'+v+'</div>';
+    }).join('');
+  } else {
+    itemsEl.innerHTML = s.rows.map(function(r){
+      var flashCls = (s.flash === r[0]) ? ' flash' : '';
+      return '<div class="map-row'+flashCls+'"><span class="k">'+r[0]+'</span><span class="arrow">&rarr;</span><span>'+r[1]+'</span></div>';
+    }).join('');
+  }
+}
+
+function show(i){
+  var data = TABS[currentTab];
+  var s = data.states[i];
+  renderVisual(currentTab, s);
+  verdict.innerHTML = s.verdict || '';
+  verdict.classList.toggle('show', !!s.verdict);
+  noteBox.textContent = s.note || '';
+  fill.style.width = (i / (data.states.length - 1) * 100) + '%';
+  stepCounter.textContent = 'Paso ' + (i+1) + ' / ' + data.states.length;
+  prevBtn.disabled = (i === 0);
+  nextBtn.disabled = (i === data.states.length - 1);
+}
+
+function stopCountdown(){
+  if(countdownTimer){ clearInterval(countdownTimer); countdownTimer = null; }
+  delayPlayBtn.textContent = '▶ +10s';
+  playBtn.disabled = false;
+}
+function stopPlay(){ playing = false; playBtn.textContent = '▶ Reproducir'; clearTimeout(playTimer); }
+function scheduleNext(){
+  var data = TABS[currentTab];
+  if(curIndex >= data.states.length - 1){ stopPlay(); return; }
+  var dur = data.durations[curIndex] / speed;
+  playTimer = setTimeout(function(){ curIndex++; show(curIndex); scheduleNext(); }, dur);
+}
+function startPlay(){
+  var data = TABS[currentTab];
+  if(curIndex >= data.states.length - 1){ curIndex = 0; show(0); }
+  playing = true; playBtn.textContent = '❘❘ Pausar'; scheduleNext();
+}
+
+playBtn.addEventListener('click', function(){ stopCountdown(); playing ? stopPlay() : startPlay(); });
+prevBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex = Math.max(0, curIndex - 1); show(curIndex); });
+nextBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); var data=TABS[currentTab]; curIndex = Math.min(data.states.length - 1, curIndex + 1); show(curIndex); });
+rewindBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex = 0; show(0); });
+speedBtns.forEach(function(b){ b.addEventListener('click', function(){ speedBtns.forEach(function(x){x.classList.remove('active');}); b.classList.add('active'); speed = parseFloat(b.getAttribute('data-speed')); }); });
+delayPlayBtn.addEventListener('click', function(){
+  if(countdownTimer){ stopCountdown(); return; }
+  stopPlay();
+  var remaining = 10; playBtn.disabled = true; delayPlayBtn.textContent = 'Empieza en ' + remaining + 's…';
+  countdownTimer = setInterval(function(){
+    remaining--;
+    if(remaining <= 0){ clearInterval(countdownTimer); countdownTimer = null; delayPlayBtn.textContent = '▶ +10s'; playBtn.disabled = false; startPlay(); }
+    else{ delayPlayBtn.textContent = 'Empieza en ' + remaining + 's…'; }
+  }, 1000);
+});
+
+tabBtns.forEach(function(b){
+  b.addEventListener('click', function(){
+    stopCountdown(); stopPlay();
+    currentTab = b.getAttribute('data-tab');
+    tabBtns.forEach(function(x){ x.classList.remove('active'); });
+    b.classList.add('active');
+    document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.toggle('active', p.getAttribute('data-tab') === currentTab); });
+    curIndex = 0;
+    show(0);
+  });
+});
+
+document.addEventListener('keydown', function(e){
+  if(e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable)) return;
+  var advance = ['ArrowRight','ArrowDown','PageDown',' ','Spacebar'];
+  var back = ['ArrowLeft','ArrowUp','PageUp','Backspace'];
+  if(advance.indexOf(e.key) !== -1){ e.preventDefault(); nextBtn.click(); }
+  else if(back.indexOf(e.key) !== -1){ e.preventDefault(); prevBtn.click(); }
+});
+
+show(0);
+
+</script>

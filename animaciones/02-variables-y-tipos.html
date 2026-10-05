@@ -1,0 +1,419 @@
+<title>Variables y tipos</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+
+:root{
+  --bg:#0b0e12;
+  --panel:#11161d;
+  --panel-2:#161d26;
+  --line:#232b34;
+  --ink:#e5e9ed;
+  --muted:#e7ebef;
+  --accent:#4dd9c0;
+  --accent-2:#f2a154;
+  --violet:#a78bfa;
+  --good:#7cd992;
+  --danger:#e2725b;
+  --accent-dim:rgba(77,217,192,.12);
+  --accent2-dim:rgba(242,161,84,.12);
+  --fs:1.35;
+}
+*{box-sizing:border-box;}
+html,body{background:var(--bg);}
+body{
+  margin:0;
+  color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,sans-serif;
+  padding:10px 20px 140px;
+}
+.wrap{max-width:1400px;margin:0 auto;}
+.eyebrow{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11.5px);
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--muted);
+  text-align:center;
+  margin:0 0 12px;
+}
+h1{
+  text-align:center;
+  font-family:"IBM Plex Mono",monospace;
+  font-size:36px;
+  font-weight:600;
+  margin:0 0 10px;
+  text-wrap:balance;
+}
+.sub{
+  text-align:center;
+  color:var(--muted);
+  font-size:calc(var(--fs,1) * 14px);
+  max-width:1400px;
+  margin:0 auto 34px;
+  line-height:1.55;
+}
+.panel{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:10px;
+}
+.term-bar{display:flex;gap:5px;margin-bottom:10px;}
+.term-bar span{width:8px;height:8px;border-radius:50%;background:#2a323c;}
+.code{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:18px;
+  line-height:1.95;
+  color:#e2e7eb;
+  overflow-x:auto;
+}
+.code .ln{
+  display:block;
+  padding:1px 8px;
+  border-radius:5px;
+  border-left:2px solid transparent;
+  transition:background .25s, border-color .25s, color .25s;
+  white-space:pre;
+}
+.code .ln .k{color:#c99a5b;}
+.code .ln.active{color:var(--ink);background:var(--accent-dim);border-left-color:var(--accent);}
+.lbl{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 9.5px);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--muted);
+  display:block;
+  margin-bottom:7px;
+}
+.chip{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11.5px);
+  padding:5px 9px;
+  border-radius:6px;
+  background:var(--panel-2);
+  border:1px solid var(--accent);
+  color:var(--accent);
+  opacity:0;
+  transform:scale(.9);
+  animation:pop .22s ease forwards;
+  display:inline-block;
+}
+.chip.warn{border-color:var(--accent-2);color:var(--accent-2);}
+.chip.bad{border-color:var(--danger);color:var(--danger);}
+.chip.muted{border-color:var(--line);color:var(--muted);}
+@keyframes pop{from{opacity:0;transform:scale(.9);}to{opacity:1;transform:scale(1);}}
+.note{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:20px;
+  color:var(--muted);
+  text-align:center;
+  min-height:34px;
+  line-height:1.5;
+  padding:0 10px;
+}
+.timeline{max-width:920px;margin:22px auto 0;height:3px;background:var(--line);border-radius:2px;overflow:hidden;}
+.timeline-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent-2),var(--accent));transition:width .05s linear;}
+.verdict{
+  text-align:center;
+  margin:22px auto 0;
+  max-width:600px;
+  font-size:calc(var(--fs,1) * 14px);
+  color:var(--muted);
+  line-height:1.6;
+  min-height:30px;
+  opacity:0;
+  transition:opacity .4s;
+}
+.verdict.show{opacity:1;}
+.verdict b{color:var(--ink);font-weight:600;}
+.controls{
+  position:fixed;
+  left:50%;
+  bottom:16px;
+  transform:translateX(-50%);
+  width:calc(100% - 32px);
+  max-width:1200px;
+  margin:0;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:14px 18px;
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px 20px;
+  z-index:100;
+  box-shadow:0 12px 36px rgba(0,0,0,.5);
+}
+.ctrl-group{display:flex;align-items:center;gap:8px;}
+.ctrl-btn{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 12px);
+  letter-spacing:.03em;
+  color:var(--ink);
+  background:var(--panel-2);
+  border:1px solid var(--line);
+  border-radius:7px;
+  padding:8px 14px;
+  cursor:pointer;
+  transition:border-color .2s, color .2s;
+}
+.ctrl-btn:hover:not(:disabled){border-color:var(--ink);}
+.ctrl-btn:disabled{opacity:.35;cursor:default;}
+.ctrl-btn.play{min-width:132px;border-color:var(--accent);color:var(--accent);}
+.ctrl-btn.step{font-size:calc(var(--fs,1) * 14px);padding:8px 12px;}
+.ctrl-label{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 10px);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin-right:2px;
+}
+.speed-group{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;}
+.speed-btn{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11.5px);
+  color:var(--muted);
+  background:var(--panel-2);
+  border:none;
+  padding:7px 11px;
+  cursor:pointer;
+  border-right:1px solid var(--line);
+  transition:background .2s, color .2s;
+}
+.speed-btn:last-child{border-right:none;}
+.speed-btn.active{background:var(--accent-dim);color:var(--accent);}
+.step-counter{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11px);
+  color:var(--muted);
+  margin-left:auto;
+}
+@media (prefers-reduced-motion: reduce){
+  *{transition-duration:.001ms !important; animation-duration:.001ms !important;}
+}
+.stage-lr{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;}
+@media (max-width:760px){.stage-lr{grid-template-columns:1fr;}}
+.stage-lr .col-code{display:flex;flex-direction:column;}
+.stage-lr .col-code .panel.term{height:100%;}
+.stage-lr .col-out{display:flex;flex-direction:column;gap:14px;}
+
+
+.term{padding:16px 18px;}
+.cards{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
+  gap:10px;
+  padding:16px 18px;
+}
+.vcard{
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:10px 12px;
+  background:var(--panel-2);
+  opacity:0;transform:translateY(6px);animation:pop .22s ease forwards;
+  transition:border-color .25s, box-shadow .25s;
+}
+.vcard.flash{border-color:var(--danger);box-shadow:0 0 0 1px var(--danger);}
+.vcard .name{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 12px);color:var(--ink);display:flex;align-items:center;gap:5px;}
+.vcard .val{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 13px);margin-top:5px;}
+.vcard .type{
+  display:inline-block;margin-top:7px;
+  font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 9.5px);letter-spacing:.06em;text-transform:uppercase;
+  padding:2px 7px;border-radius:20px;border:1px solid;
+}
+.t-string{color:var(--violet);border-color:var(--violet);}
+.t-number{color:var(--accent);border-color:var(--accent);}
+.t-boolean{color:var(--accent-2);border-color:var(--accent-2);}
+.t-empty{color:var(--muted);border-color:var(--line);}
+.lock{font-size:calc(var(--fs,1) * 10px);color:var(--accent-2);}
+.err-line{
+  font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 12px);color:var(--danger);
+  text-align:center;min-height:18px;
+}
+
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">JavaScript · Fundamentos</p>
+  <h1>Variables y tipos de datos</h1>
+  <p class="sub">let y const crean cajas con nombre que guardan un valor. El tipo del valor decide cómo se comporta esa caja — y const, además, no se puede reasignar.</p>
+
+
+  <div class="stage-lr">
+    <div class="col-code">
+      <div class="panel term">
+        <div class="term-bar"><span></span><span></span><span></span></div>
+        <div class="code" id="code">
+          <span class="ln" data-i="0"><span class="k">let</span> nombre = "Ana";</span>
+          <span class="ln" data-i="1"><span class="k">let</span> edad = 32;</span>
+          <span class="ln" data-i="2"><span class="k">let</span> activo = true;</span>
+          <span class="ln" data-i="3"><span class="k">let</span> nada = null;</span>
+          <span class="ln" data-i="4"><span class="k">let</span> indefinida;</span>
+          <span class="ln" data-i="5"><span class="k">const</span> PI = 3.1416;</span>
+          <span class="ln" data-i="6">PI = 3; <span class="k">// intento de reasignar</span></span>
+        </div>
+      </div>
+    </div>
+    <div class="col-out">
+      <div class="panel cards" id="cards"></div>
+      <p class="err-line" id="err"></p>
+    </div>
+  </div>
+  <p class="note" id="noteBox"></p>
+
+
+  <div class="timeline"><div class="timeline-fill" id="fill"></div></div>
+  <p class="verdict" id="verdict"></p>
+  <div class="controls">
+    <div class="ctrl-group">
+      <button id="rewindBtn" class="ctrl-btn step" title="Rebobinar al principio">&#9198;</button>
+      <button id="prevBtn" class="ctrl-btn step" title="Paso anterior">&#9664;&#9664;</button>
+      <button id="playBtn" class="ctrl-btn play">&#9654; Reproducir</button>
+      <button id="nextBtn" class="ctrl-btn step" title="Paso siguiente">&#9654;&#9654;</button>
+      <button id="delayPlayBtn" class="ctrl-btn" title="Empezar tras una cuenta atrás de 10s">&#9654; +10s</button>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Velocidad</span>
+      <div class="speed-group">
+        <button class="speed-btn active" data-speed="0.25">0.25&times;</button>
+        <button class="speed-btn" data-speed="0.5">0.5&times;</button>
+      </div>
+    </div>
+    <span class="step-counter" id="stepCounter">Paso 1 / N</span>
+  </div>
+
+</div>
+
+<script>
+
+var codeLines = document.querySelectorAll('#code .ln');
+var cards = document.getElementById('cards');
+var err = document.getElementById('err');
+var noteBox = document.getElementById('noteBox');
+
+var VERDICT = '<b>let</b> y <b>const</b> guardan cualquier tipo de valor — el tipo lo decide el valor, no la declaración. <b>const</b> impide reasignar la variable (aunque no bloquea modificar el interior de un objeto).';
+
+function card(name, val, type, locked, flash){
+  var typeClass = {string:'t-string', number:'t-number', boolean:'t-boolean', empty:'t-empty'}[type];
+  var typeLabel = {string:'string', number:'number', boolean:'boolean', empty: (val === 'null' ? 'null (object)' : 'undefined')}[type];
+  return '<div class="vcard'+(flash?' flash':'')+'"><div class="name">'+name+(locked?' <span class="lock">&#128274;</span>':'')+'</div><div class="val">'+val+'</div><div class="type '+typeClass+'">'+typeLabel+'</div></div>';
+}
+
+var base = [
+  {n:'nombre', v:'"Ana"', t:'string'},
+  {n:'edad', v:'32', t:'number'},
+  {n:'activo', v:'true', t:'boolean'},
+  {n:'nada', v:'null', t:'empty'},
+  {n:'indefinida', v:'undefined', t:'empty'},
+  {n:'PI', v:'3.1416', t:'number', locked:true}
+];
+
+function cardsUpTo(n, flashLast){
+  return base.slice(0, n).map(function(c, i){
+    return card(c.n, c.v, c.t, !!c.locked, !!(flashLast && i === n-1));
+  }).join('');
+}
+
+var STATES = [
+  {active:0, n:0, flash:false, err:'', note:'declaramos nombre como texto', verdict:null},
+  {active:0, n:1, flash:false, err:'', note:'nombre es de tipo string', verdict:null},
+  {active:1, n:1, flash:false, err:'', note:'ahora un número…', verdict:null},
+  {active:1, n:2, flash:false, err:'', note:'edad es de tipo number', verdict:null},
+  {active:2, n:2, flash:false, err:'', note:'ahora un booleano…', verdict:null},
+  {active:2, n:3, flash:false, err:'', note:'activo es true o false: boolean', verdict:null},
+  {active:3, n:3, flash:false, err:'', note:'null se usa para decir "vacío, a propósito"', verdict:null},
+  {active:3, n:4, flash:false, err:'', note:'nada es de tipo null', verdict:null},
+  {active:4, n:4, flash:false, err:'', note:'declarada pero sin valor todavía…', verdict:null},
+  {active:4, n:5, flash:false, err:'', note:'indefinida es undefined: nadie le puso valor', verdict:null},
+  {active:5, n:5, flash:false, err:'', note:'const también guarda un valor…', verdict:null},
+  {active:5, n:6, flash:false, err:'', note:'…pero queda protegida contra reasignación', verdict:null},
+  {active:6, n:6, flash:true, err:'', note:'intentamos hacer PI = 3…', verdict:null},
+  {active:6, n:6, flash:true, err:'TypeError: Assignment to constant variable.', note:'JS lo bloquea en tiempo de ejecución', verdict:null},
+  {active:-1, n:6, flash:false, err:'', note:'', verdict:VERDICT}
+];
+STATES.forEach(function(s){ s.mem = null; });
+
+var DURATIONS = [500,650,500,650,500,650,500,650,500,650,500,650,700,900];
+
+function renderState(s){
+  codeLines.forEach(function(el){ el.classList.remove('active'); });
+  if(s.active >= 0){
+    codeLines.forEach(function(el){ if(parseInt(el.getAttribute('data-i'),10) === s.active) el.classList.add('active'); });
+  }
+  cards.innerHTML = cardsUpTo(s.n, s.flash);
+  err.textContent = s.err;
+  noteBox.textContent = s.note || '';
+}
+
+</script>
+<script>
+
+(function(){
+  var playBtn = document.getElementById('playBtn');
+  var prevBtn = document.getElementById('prevBtn');
+  var nextBtn = document.getElementById('nextBtn');
+  var rewindBtn = document.getElementById('rewindBtn');
+  var delayPlayBtn = document.getElementById('delayPlayBtn');
+  var stepCounter = document.getElementById('stepCounter');
+  var fill = document.getElementById('fill');
+  var verdict = document.getElementById('verdict');
+  var speedBtns = document.querySelectorAll('.speed-btn');
+
+  var curIndex = 0, playing = false, speed = 0.25, playTimer = null, countdownTimer = null;
+
+  function stopCountdown(){
+    if(countdownTimer){ clearInterval(countdownTimer); countdownTimer = null; }
+    delayPlayBtn.textContent = '▶ +10s';
+    playBtn.disabled = false;
+  }
+  function show(i){
+    var s = STATES[i];
+    renderState(s, i);
+    if(verdict){
+      verdict.innerHTML = s.verdict || '';
+      verdict.classList.toggle('show', !!s.verdict);
+    }
+    if(fill) fill.style.width = (i/(STATES.length-1)*100) + '%';
+    stepCounter.textContent = 'Paso ' + (i+1) + ' / ' + STATES.length;
+    prevBtn.disabled = (i===0);
+    nextBtn.disabled = (i===STATES.length-1);
+  }
+  function stopPlay(){ playing=false; playBtn.textContent='▶ Reproducir'; clearTimeout(playTimer); }
+  function scheduleNext(){
+    if(curIndex >= STATES.length-1){ stopPlay(); return; }
+    var dur = DURATIONS[curIndex] / speed;
+    playTimer = setTimeout(function(){ curIndex++; show(curIndex); scheduleNext(); }, dur);
+  }
+  function startPlay(){
+    if(curIndex >= STATES.length-1){ curIndex=0; show(0); }
+    playing = true; playBtn.textContent='❘❘ Pausar'; scheduleNext();
+  }
+  playBtn.addEventListener('click', function(){ stopCountdown(); playing?stopPlay():startPlay(); });
+  prevBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex=Math.max(0,curIndex-1); show(curIndex); });
+  nextBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex=Math.min(STATES.length-1,curIndex+1); show(curIndex); });
+  rewindBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex=0; show(0); });
+  speedBtns.forEach(function(b){ b.addEventListener('click', function(){ speedBtns.forEach(function(x){x.classList.remove('active');}); b.classList.add('active'); speed=parseFloat(b.getAttribute('data-speed')); }); });
+  delayPlayBtn.addEventListener('click', function(){
+    if(countdownTimer){ stopCountdown(); return; }
+    stopPlay();
+    var remaining=10; playBtn.disabled=true; delayPlayBtn.textContent='Empieza en '+remaining+'s…';
+    countdownTimer=setInterval(function(){
+      remaining--;
+      if(remaining<=0){ clearInterval(countdownTimer); countdownTimer=null; delayPlayBtn.textContent='▶ +10s'; playBtn.disabled=false; startPlay(); }
+      else{ delayPlayBtn.textContent='Empieza en '+remaining+'s…'; }
+    },1000);
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.target && (e.target.tagName==='INPUT' || e.target.tagName==='TEXTAREA' || e.target.isContentEditable)) return;
+    var advance = ['ArrowRight','ArrowDown','PageDown',' ','Spacebar'];
+    var back = ['ArrowLeft','ArrowUp','PageUp','Backspace'];
+    if(advance.indexOf(e.key)!==-1){ e.preventDefault(); nextBtn.click(); }
+    else if(back.indexOf(e.key)!==-1){ e.preventDefault(); prevBtn.click(); }
+  });
+  show(0);
+})();
+
+</script>

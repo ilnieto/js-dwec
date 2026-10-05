@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Animaciones JavaScript</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --bg:#0b0e12;
+  --panel:#11161d;
+  --panel-2:#161d26;
+  --line:#232b34;
+  --ink:#e5e9ed;
+  --muted:#8b96a3;
+  --accent:#4dd9c0;
+  --accent-2:#f2a154;
+  --violet:#a78bfa;
+  --good:#7cd992;
+  --danger:#e2725b;
+}
+*{box-sizing:border-box;}
+html,body{background:var(--bg);}
+body{
+  margin:0;
+  color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,sans-serif;
+  padding:40px 20px 80px;
+}
+.wrap{max-width:1100px;margin:0 auto;}
+.eyebrow{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:12px;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--muted);
+  text-align:center;
+  margin:0 0 10px;
+}
+h1{text-align:center;font-size:clamp(28px,5vw,42px);margin:0 0 28px;}
+h1 span{color:var(--accent);}
+h1{margin-bottom:10px;}
+.autor{text-align:center;color:var(--muted);font-size:15px;margin:0 0 28px;}
+.autor a{color:var(--accent);text-decoration:none;}
+.autor a:hover{text-decoration:underline;}
+
+.search{
+  display:block;width:100%;max-width:480px;margin:0 auto 40px;
+  padding:12px 16px;border-radius:10px;
+  background:var(--panel);border:1px solid var(--line);color:var(--ink);
+  font:inherit;font-size:15px;
+}
+.search:focus{outline:none;border-color:var(--accent);}
+
+.unidad{margin:0 0 44px;}
+.unidad-head{
+  display:flex;align-items:baseline;gap:14px;
+  border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:18px;
+}
+.up{
+  font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:14px;
+  color:var(--bg);background:var(--c);padding:4px 10px;border-radius:6px;
+}
+.unidad-head h2{margin:0;font-size:22px;}
+
+.bloque{margin:0 0 20px;}
+.bloque h3{
+  margin:0 0 10px;font-size:13px;font-weight:600;
+  font-family:"IBM Plex Mono",monospace;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--c);
+}
+.grid{
+  display:grid;gap:10px;
+  grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
+}
+.card{
+  display:flex;gap:12px;align-items:center;
+  padding:14px 16px;border-radius:10px;
+  background:var(--panel);border:1px solid var(--line);
+  color:var(--ink);text-decoration:none;
+  transition:border-color .15s, background .15s, transform .15s;
+}
+.card:hover{border-color:var(--c);background:var(--panel-2);transform:translateY(-1px);}
+.num{
+  font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--muted);
+  min-width:24px;
+}
+.vacio{
+  padding:14px 16px;border-radius:10px;border:1px dashed var(--line);
+  color:var(--muted);font-size:14px;
+}
+.oculto{display:none;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">Desarrollo Web en Entorno Cliente</p>
+  <h1>Animaciones <span>JavaScript</span></h1>
+  <p class="autor">Iván Nieto · <a href="mailto:ilnr@edu.gva.es">ilnr@edu.gva.es</a></p>
+  <input class="search" id="buscar" type="search" placeholder="Buscar animación…" autocomplete="off">
+  <main id="indice"></main>
+</div>
+
+<script>
+// Para añadir una animación: ponla en la carpeta "animaciones/" y añade su fichero al bloque correspondiente.
+const UNIDADES = [
+  { up: "UP1", titulo: "Introducción", color: "#4dd9c0", bloques: [
+    { titulo: "Introducción", items: [
+      ["up1-32-compilado-vs-js-vs-ts.html", "Compilado vs JavaScript vs TypeScript"],
+      ["up1-33-sincrono-vs-asincrono-concepto.html", "Síncrono vs Asíncrono (concepto)"],
+      ["01-ejecucion-linea-a-linea.html", "Ejecución línea a línea"],
+      ["28-motor-memoria-js.html", "Motor interno y memoria de JS"],
+    ]},
+  ]},
+  { up: "UP2", titulo: "Fundamentos del lenguaje", color: "#a78bfa", bloques: [
+    { titulo: "Sintaxis y estructuras", items: [
+      ["02-variables-y-tipos.html", "Variables y tipos"],
+      ["03-operadores.html", "Operadores en JS"],
+      ["04-condicionales.html", "Condicionales en acción"],
+      ["05-bucles.html", "Bucles en acción"],
+      ["06-llamada-funcion.html", "Llamada de función"],
+      ["07-call-stack.html", "La pila de llamadas"],
+      ["17-recursion.html", "Recursión y pila de llamadas"],
+      ["11-hoisting-tdz.html", "Hoisting y TDZ"],
+      ["09-closures.html", "Closures"],
+      ["31-scope-closures.html", "Visualizando Scope y Closures"],
+      ["29-valor-vs-referencia.html", "Valor vs. Referencia"],
+      ["10-map-filter-reduce.html", "map, filter y reduce"],
+      ["12-set-map.html", "Set y Map"],
+      ["13-destructuring-spread-rest.html", "Desestructuración y spread/rest"],
+    ]},
+    { titulo: "Clases y objetos", items: [
+      ["14-clases-prototype-chain.html", "Clases y prototype chain"],
+    ]},
+  ]},
+  { up: "UP3", titulo: "Modelo de objetos del navegador", color: "#f2a154", bloques: [
+    { titulo: "DOM", items: [
+      ["DOM - 26-navegar-dom.html", "Navegar el DOM: parentNode, siblings, children"],
+    ]},
+    { titulo: "BOM", items: [] },
+  ]},
+  { up: "UP4", titulo: "Interacción con el usuario", color: "#7cd992", bloques: [
+    { titulo: "Eventos", items: [
+      ["DOM - 16-eventos-bubbling.html", "Eventos y bubbling"],
+      ["34-delegacion-eventos.html", "Delegación de eventos y event.target"],
+    ]},
+//    { titulo: "Formularios", items: [
+//      ["24-validacion-formularios.html", "Validación de formularios: submit, blur, input"],
+//    ]},
+//    { titulo: "Almacenamiento local", items: [
+//      ["15-json-webstorage.html", "JSON y Web Storage"],
+//      ["22-local-vs-session-storage.html", "localStorage vs sessionStorage"],
+//      ["25-login-localstorage.html", "Login real: qué guardar en localStorage"],
+//    ]},
+  ]},
+  { up: "UP5", titulo: "Asincronía y servicios", color: "#e2725b", bloques: [
+    { titulo: "Comunicación asíncrona", items: [
+//      ["sync-vs-async.html", "Sync vs Async"],
+      ["35-settimeout-setinterval.html", "setTimeout y setInterval"],
+//      ["27-asincronia-event-loop.html", "Asincronía y el Event Loop"],
+//      ["30-event-loop-cuatro-piezas.html", "Event Loop: las cuatro piezas"],
+//      ["08-promesas-event-loop.html", "Promesas y el Event Loop"],
+//      ["18-estados-promesa.html", "Estados de una Promesa"],
+//      ["19-async-await-vs-then.html", "async/await vs .then"],
+//      ["23-promesas-juego-secuencial-paralelo.html", "Promesas en juego: secuencial vs paralelo"],
+    ]},
+//    { titulo: "Uso de APIs", items: [
+//      ["21-api-cliente-servidor.html", "Cómo funciona una API"],
+//      ["20-fetch-api.html", "fetch() y la Fetch API"],
+//    ]},
+  ]},
+];
+
+const indice = document.getElementById("indice");
+const esc = s => s.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+indice.innerHTML = UNIDADES.map(u => `
+  <section class="unidad" style="--c:${u.color}">
+    <div class="unidad-head"><span class="up">${u.up}</span><h2>${esc(u.titulo)}</h2></div>
+    ${u.bloques.map(b => `
+      <div class="bloque">
+        <h3>${esc(b.titulo)}</h3>
+        ${b.items.length ? `<div class="grid">${b.items.map(([f, t], i) => `
+          <a class="card" href="animaciones/${encodeURIComponent(f)}" data-q="${esc((t + " " + b.titulo).toLowerCase())}">
+            <span class="num">${String(i + 1).padStart(2, "0")}</span><span>${esc(t)}</span>
+          </a>`).join("")}</div>`
+        : `<div class="vacio">Próximamente</div>`}
+      </div>`).join("")}
+  </section>`).join("");
+
+// Filtro de búsqueda
+document.getElementById("buscar").addEventListener("input", e => {
+  const q = e.target.value.trim().toLowerCase();
+  document.querySelectorAll(".card").forEach(c => c.classList.toggle("oculto", !c.dataset.q.includes(q)));
+  document.querySelectorAll(".bloque").forEach(b => {
+    const visibles = b.querySelectorAll(".card:not(.oculto)").length;
+    b.classList.toggle("oculto", q !== "" && visibles === 0);
+  });
+  document.querySelectorAll(".unidad").forEach(u => {
+    u.classList.toggle("oculto", q !== "" && !u.querySelector(".bloque:not(.oculto)"));
+  });
+});
+</script>
+</body>
+</html>

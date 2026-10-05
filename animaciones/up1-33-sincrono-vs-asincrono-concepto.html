@@ -1,0 +1,414 @@
+<title>Síncrono vs Asíncrono (concepto)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+
+:root{
+  --bg:#0b0e12;
+  --panel:#11161d;
+  --panel-2:#161d26;
+  --line:#232b34;
+  --ink:#e5e9ed;
+  --muted:#e7ebef;
+  --accent:#4dd9c0;
+  --accent-2:#f2a154;
+  --violet:#a78bfa;
+  --good:#7cd992;
+  --danger:#e2725b;
+  --accent-dim:rgba(77,217,192,.12);
+  --accent2-dim:rgba(242,161,84,.12);
+  --fs:1.35;
+}
+*{box-sizing:border-box;}
+html,body{background:var(--bg);}
+body{
+  margin:0;
+  color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,sans-serif;
+  padding:10px 20px 140px;
+}
+.wrap{max-width:1400px;margin:0 auto;}
+.eyebrow{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11.5px);
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--muted);
+  text-align:center;
+  margin:0 0 12px;
+}
+h1{
+  text-align:center;
+  font-family:"IBM Plex Mono",monospace;
+  font-size:36px;
+  font-weight:600;
+  margin:0 0 10px;
+  text-wrap:balance;
+}
+.sub{
+  text-align:center;
+  color:var(--muted);
+  font-size:calc(var(--fs,1) * 14px);
+  max-width:1400px;
+  margin:0 auto 34px;
+  line-height:1.55;
+}
+.panel{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:10px;
+}
+.term-bar{display:flex;gap:5px;margin-bottom:10px;}
+.term-bar span{width:8px;height:8px;border-radius:50%;background:#2a323c;}
+.code{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:18px;
+  line-height:1.95;
+  color:#e2e7eb;
+  overflow-x:auto;
+}
+.code .ln{
+  display:block;
+  padding:1px 8px;
+  border-radius:5px;
+  border-left:2px solid transparent;
+  transition:background .25s, border-color .25s, color .25s;
+  white-space:pre;
+}
+.code .ln .k{color:#c99a5b;}
+.code .ln.active{color:var(--ink);background:var(--accent-dim);border-left-color:var(--accent);}
+.lbl{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 9.5px);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--muted);
+  display:block;
+  margin-bottom:7px;
+}
+.chip{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11.5px);
+  padding:5px 9px;
+  border-radius:6px;
+  background:var(--panel-2);
+  border:1px solid var(--accent);
+  color:var(--accent);
+  opacity:0;
+  transform:scale(.9);
+  animation:pop .22s ease forwards;
+  display:inline-block;
+}
+.chip.warn{border-color:var(--accent-2);color:var(--accent-2);}
+.chip.bad{border-color:var(--danger);color:var(--danger);}
+.chip.muted{border-color:var(--line);color:var(--muted);}
+@keyframes pop{from{opacity:0;transform:scale(.9);}to{opacity:1;transform:scale(1);}}
+.note{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:20px;
+  color:var(--muted);
+  text-align:center;
+  min-height:34px;
+  line-height:1.5;
+  padding:0 10px;
+}
+.timeline{max-width:920px;margin:22px auto 0;height:3px;background:var(--line);border-radius:2px;overflow:hidden;}
+.timeline-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent-2),var(--accent));transition:width .05s linear;}
+.verdict{
+  text-align:center;
+  margin:22px auto 0;
+  max-width:600px;
+  font-size:calc(var(--fs,1) * 14px);
+  color:var(--muted);
+  line-height:1.6;
+  min-height:30px;
+  opacity:0;
+  transition:opacity .4s;
+}
+.verdict.show{opacity:1;}
+.verdict b{color:var(--ink);font-weight:600;}
+.controls{
+  position:fixed;
+  left:50%;
+  bottom:16px;
+  transform:translateX(-50%);
+  width:calc(100% - 32px);
+  max-width:1200px;
+  margin:0;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:14px 18px;
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px 20px;
+  z-index:100;
+  box-shadow:0 12px 36px rgba(0,0,0,.5);
+}
+.ctrl-group{display:flex;align-items:center;gap:8px;}
+.ctrl-btn{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 12px);
+  letter-spacing:.03em;
+  color:var(--ink);
+  background:var(--panel-2);
+  border:1px solid var(--line);
+  border-radius:7px;
+  padding:8px 14px;
+  cursor:pointer;
+  transition:border-color .2s, color .2s;
+}
+.ctrl-btn:hover:not(:disabled){border-color:var(--ink);}
+.ctrl-btn:disabled{opacity:.35;cursor:default;}
+.ctrl-btn.play{min-width:132px;border-color:var(--accent);color:var(--accent);}
+.ctrl-btn.step{font-size:calc(var(--fs,1) * 14px);padding:8px 12px;}
+.ctrl-label{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 10px);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin-right:2px;
+}
+.speed-group{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;}
+.speed-btn{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11.5px);
+  color:var(--muted);
+  background:var(--panel-2);
+  border:none;
+  padding:7px 11px;
+  cursor:pointer;
+  border-right:1px solid var(--line);
+  transition:background .2s, color .2s;
+}
+.speed-btn:last-child{border-right:none;}
+.speed-btn.active{background:var(--accent-dim);color:var(--accent);}
+.step-counter{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11px);
+  color:var(--muted);
+  margin-left:auto;
+}
+@media (prefers-reduced-motion: reduce){
+  *{transition-duration:.001ms !important; animation-duration:.001ms !important;}
+}
+.stage-lr{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;}
+@media (max-width:760px){.stage-lr{grid-template-columns:1fr;}}
+.stage-lr .col-code{display:flex;flex-direction:column;}
+.stage-lr .col-code .panel.term{height:100%;}
+.stage-lr .col-out{display:flex;flex-direction:column;gap:14px;}
+
+
+.mode-badge{
+  display:table;margin:0 auto 20px;text-align:center;
+  font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 13px);
+  letter-spacing:.12em;text-transform:uppercase;
+  padding:8px 20px;border-radius:20px;border:1px solid var(--line);color:var(--muted);
+  background:var(--panel-2);transition:border-color .3s,color .3s,background .3s;
+}
+.mode-badge.sync{border-color:var(--accent-2);color:var(--accent-2);background:var(--accent2-dim);}
+.mode-badge.async{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);}
+.scene-panel{padding:22px 24px;display:flex;flex-direction:column;gap:18px;max-width:900px;margin:0 auto 16px;}
+.counter-row{
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  padding:12px 16px;border:1px solid var(--line);border-radius:8px;background:var(--panel-2);
+}
+.counter-icon{font-size:calc(var(--fs,1) * 22px);}
+.counter-label{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 13px);color:var(--ink);}
+.customers{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;}
+.customer{
+  flex:1;min-width:220px;max-width:340px;display:flex;flex-direction:column;align-items:center;gap:8px;
+  padding:18px 16px;border:1.5px solid var(--line);border-radius:10px;background:var(--panel-2);
+  transition:border-color .3s,background .3s;
+}
+.customer.block{border-color:var(--danger);background:rgba(226,114,91,.08);animation:pulse 1s ease-in-out infinite;}
+.customer.free{border-color:var(--good);background:rgba(124,217,146,.08);}
+.customer.served{border-color:var(--accent);background:var(--accent-dim);}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.55;}}
+.cust-avatar{font-size:calc(var(--fs,1) * 32px);}
+.cust-name{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 13.5px);color:var(--ink);font-weight:600;}
+.cust-status{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 11.5px);color:var(--muted);text-align:center;min-height:34px;line-height:1.4;}
+.customer.block .cust-status{color:var(--danger);}
+.customer.free .cust-status{color:var(--good);}
+.customer.served .cust-status{color:var(--accent);}
+.out-panel{padding:14px 16px;min-height:70px;max-width:900px;margin:0 auto;}
+.out{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 12.5px);display:flex;flex-direction:column;gap:5px;}
+.out span{
+  padding:3px 10px;border-radius:5px;background:var(--panel-2);border-left:2px solid var(--line);color:var(--muted);
+  opacity:0;transform:translateX(-4px);animation:pop .22s ease forwards;
+}
+
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Programación · Conceptos básicos</p>
+  <h1>Síncrono vs. Asíncrono</h1>
+  <p class="sub">Ana y Luis piden un café dos veces: una bloqueando la fila, y otra sin bloquear a nadie. El mismo concepto de fondo que hay detrás de cualquier tarea que "tarda" en programación.</p>
+
+
+  <div class="mode-badge" id="modeBadge">MODO: SÍNCRONO</div>
+  <div class="panel scene-panel">
+    <div class="counter-row">
+      <span class="counter-icon">☕</span>
+      <span class="counter-label" id="counterLabel">Mostrador libre</span>
+    </div>
+    <div class="customers">
+      <div class="customer" id="anaCard">
+        <span class="cust-avatar">🧍‍♀️</span>
+        <span class="cust-name">Ana</span>
+        <span class="cust-status" id="anaStatus">Esperando su turno en la cola</span>
+      </div>
+      <div class="customer" id="luisCard">
+        <span class="cust-avatar">🧍</span>
+        <span class="cust-name">Luis</span>
+        <span class="cust-status" id="luisStatus">Esperando su turno en la cola</span>
+      </div>
+    </div>
+  </div>
+  <div class="panel out-panel">
+    <span class="lbl">Qué está pasando</span>
+    <div class="out" id="out"></div>
+  </div>
+
+
+  <div class="timeline"><div class="timeline-fill" id="fill"></div></div>
+  <p class="verdict" id="verdict"></p>
+  <div class="controls">
+    <div class="ctrl-group">
+      <button id="rewindBtn" class="ctrl-btn step" title="Rebobinar al principio">&#9198;</button>
+      <button id="prevBtn" class="ctrl-btn step" title="Paso anterior">&#9664;&#9664;</button>
+      <button id="playBtn" class="ctrl-btn play">&#9654; Reproducir</button>
+      <button id="nextBtn" class="ctrl-btn step" title="Paso siguiente">&#9654;&#9654;</button>
+      <button id="delayPlayBtn" class="ctrl-btn" title="Empezar tras una cuenta atrás de 10s">&#9654; +10s</button>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Velocidad</span>
+      <div class="speed-group">
+        <button class="speed-btn active" data-speed="0.25">0.25&times;</button>
+        <button class="speed-btn" data-speed="0.5">0.5&times;</button>
+      </div>
+    </div>
+    <span class="step-counter" id="stepCounter">Paso 1 / N</span>
+  </div>
+
+</div>
+
+<script>
+
+var modeBadge = document.getElementById('modeBadge');
+var counterLabel = document.getElementById('counterLabel');
+var anaCard = document.getElementById('anaCard');
+var luisCard = document.getElementById('luisCard');
+var anaStatus = document.getElementById('anaStatus');
+var luisStatus = document.getElementById('luisStatus');
+var out = document.getElementById('out');
+
+function mk(mode, counter, ana, luis, log, note, verdict){
+  return {mode:mode, counter:counter, ana:ana, luis:luis, log:log, note:note, verdict:verdict || null};
+}
+
+var VERDICT_SYNC = 'S&Iacute;NCRONO: cada tarea bloquea a la que viene detr&aacute;s hasta que termina del todo. El tiempo total es la SUMA de cada espera, una detr&aacute;s de otra.';
+var VERDICT_ASYNC = 'AS&Iacute;NCRONO: pedir algo no bloquea &mdash; mientras una tarea "est&aacute; en el horno", ya se puede iniciar otra. Cada una avisa cuando termina, en el orden que sea. Por eso varias cosas pueden estar "esperando" a la vez sin que nadie se quede parado.';
+
+var STATES = [
+  mk('sync', 'Mostrador libre', {cls:'', s:'Esperando su turno en la cola'}, {cls:'', s:'Detrás de Ana, esperando su turno'}, [], 'Ana y Luis hacen cola para pedir un café. Empieza Ana.'),
+  mk('sync', 'Preparando el café de Ana…', {cls:'block', s:'Pide su café'}, {cls:'', s:'Sigue detrás, no puede pedir todavía'}, ['Ana pide un café'], 'Ana hace su pedido en el mostrador.'),
+  mk('sync', 'Preparando el café de Ana… (Ana espera aquí, quieta)', {cls:'block', s:'⛔ Esperando… BLOQUEADA, no puede hacer nada más'}, {cls:'', s:'Sigue sin poder pedir: el mostrador está ocupado'}, ['Ana pide un café'], 'En síncrono, Ana se queda plantada delante del mostrador: no puede hacer nada más hasta que termine.'),
+  mk('sync', '☕ Café de Ana listo', {cls:'served', s:'✅ Recibe su café'}, {cls:'', s:'Sigue esperando su turno'}, ['Ana pide un café', '☕ Café de Ana listo'], 'Por fin le dan el café a Ana.'),
+  mk('sync', 'Mostrador libre', {cls:'served', s:'✅ Café en mano'}, {cls:'', s:'Ahora SÍ puede pedir el suyo'}, ['Ana pide un café', '☕ Café de Ana listo', 'Ana se aparta'], 'Solo AHORA que Ana ha terminado del todo, puede Luis pedir el suyo.'),
+  mk('sync', 'Preparando el café de Luis…', {cls:'served', s:'✅ Café en mano'}, {cls:'block', s:'⛔ Esperando… BLOQUEADO, igual que Ana antes'}, ['Ana pide un café', '☕ Café de Ana listo', 'Ana se aparta', 'Luis pide un café'], 'Luis pide y se queda esperando exactamente igual que Ana.'),
+  mk('sync', '☕ Café de Luis listo', {cls:'served', s:'✅ Café en mano'}, {cls:'served', s:'✅ Recibe su café'}, ['Ana pide un café', '☕ Café de Ana listo', 'Ana se aparta', 'Luis pide un café', '☕ Café de Luis listo'], '', VERDICT_SYNC),
+
+  mk('async', 'Mostrador libre', {cls:'', s:'Esperando su turno en la cola'}, {cls:'', s:'Esperando su turno en la cola'}, [], 'Misma situación, misma cola… pero ahora en modo ASÍNCRONO.'),
+  mk('async', 'Preparando el café de Ana…', {cls:'free', s:'📱 Pide su café, le dan un ticket y se aparta'}, {cls:'', s:'Espera su turno para pedir'}, ['Ana pide un café'], 'Ana pide, le dan un ticket… y se aparta a hacer otra cosa. No se queda bloqueando el mostrador.'),
+  mk('async', 'Preparando el café de Ana y el de Luis…', {cls:'free', s:'📱 Esperando (mientras mira el móvil)'}, {cls:'free', s:'📱 Pide su café y también se aparta'}, ['Ana pide un café', 'Luis pide un café (¡sin esperar a que acabe el de Ana!)'], 'Como Ana no bloquea el mostrador, Luis puede pedir YA, sin esperar a que termine el de Ana.'),
+  mk('async', '☕ Café de Luis listo primero', {cls:'free', s:'📱 Sigue esperando, tranquila'}, {cls:'served', s:'🔔 Le avisan y recoge su café'}, ['Ana pide un café', 'Luis pide un café (¡sin esperar a que acabe el de Ana!)', '🔔 Aviso: café de Luis listo (¡antes que el de Ana!)'], 'A veces el que pidió después termina antes: en asíncrono no importa el orden, solo cuándo está listo cada uno.'),
+  mk('async', '☕ Café de Ana listo', {cls:'served', s:'🔔 Le avisan y recoge su café'}, {cls:'served', s:'✅ Café en mano'}, ['Ana pide un café', 'Luis pide un café (¡sin esperar a que acabe el de Ana!)', '🔔 Aviso: café de Luis listo (¡antes que el de Ana!)', '🔔 Aviso: café de Ana listo'], 'Cuando el de Ana también termina, la avisan a ella.'),
+  mk('async', 'Mostrador libre', {cls:'served', s:'✅ Café en mano'}, {cls:'served', s:'✅ Café en mano'}, ['Ana pide un café', 'Luis pide un café (¡sin esperar a que acabe el de Ana!)', '🔔 Aviso: café de Luis listo (¡antes que el de Ana!)', '🔔 Aviso: café de Ana listo'], '', VERDICT_ASYNC)
+];
+
+var DURATIONS = [1000, 1100, 1500, 1000, 900, 1500, 1600, 1000, 1300, 1500, 1600, 1600];
+
+function renderState(s){
+  modeBadge.textContent = 'MODO: ' + (s.mode === 'sync' ? 'SÍNCRONO' : 'ASÍNCRONO');
+  modeBadge.classList.toggle('sync', s.mode === 'sync');
+  modeBadge.classList.toggle('async', s.mode === 'async');
+  counterLabel.textContent = s.counter;
+  anaCard.className = 'customer' + (s.ana.cls ? ' ' + s.ana.cls : '');
+  anaStatus.textContent = s.ana.s;
+  luisCard.className = 'customer' + (s.luis.cls ? ' ' + s.luis.cls : '');
+  luisStatus.textContent = s.luis.s;
+  out.innerHTML = s.log.map(function(v){ return '<span>' + v + '</span>'; }).join('');
+}
+
+</script>
+<script>
+
+(function(){
+  var playBtn = document.getElementById('playBtn');
+  var prevBtn = document.getElementById('prevBtn');
+  var nextBtn = document.getElementById('nextBtn');
+  var rewindBtn = document.getElementById('rewindBtn');
+  var delayPlayBtn = document.getElementById('delayPlayBtn');
+  var stepCounter = document.getElementById('stepCounter');
+  var fill = document.getElementById('fill');
+  var verdict = document.getElementById('verdict');
+  var speedBtns = document.querySelectorAll('.speed-btn');
+
+  var curIndex = 0, playing = false, speed = 0.25, playTimer = null, countdownTimer = null;
+
+  function stopCountdown(){
+    if(countdownTimer){ clearInterval(countdownTimer); countdownTimer = null; }
+    delayPlayBtn.textContent = '▶ +10s';
+    playBtn.disabled = false;
+  }
+  function show(i){
+    var s = STATES[i];
+    renderState(s, i);
+    if(verdict){
+      verdict.innerHTML = s.verdict || '';
+      verdict.classList.toggle('show', !!s.verdict);
+    }
+    if(fill) fill.style.width = (i/(STATES.length-1)*100) + '%';
+    stepCounter.textContent = 'Paso ' + (i+1) + ' / ' + STATES.length;
+    prevBtn.disabled = (i===0);
+    nextBtn.disabled = (i===STATES.length-1);
+  }
+  function stopPlay(){ playing=false; playBtn.textContent='▶ Reproducir'; clearTimeout(playTimer); }
+  function scheduleNext(){
+    if(curIndex >= STATES.length-1){ stopPlay(); return; }
+    var dur = DURATIONS[curIndex] / speed;
+    playTimer = setTimeout(function(){ curIndex++; show(curIndex); scheduleNext(); }, dur);
+  }
+  function startPlay(){
+    if(curIndex >= STATES.length-1){ curIndex=0; show(0); }
+    playing = true; playBtn.textContent='❘❘ Pausar'; scheduleNext();
+  }
+  playBtn.addEventListener('click', function(){ stopCountdown(); playing?stopPlay():startPlay(); });
+  prevBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex=Math.max(0,curIndex-1); show(curIndex); });
+  nextBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex=Math.min(STATES.length-1,curIndex+1); show(curIndex); });
+  rewindBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex=0; show(0); });
+  speedBtns.forEach(function(b){ b.addEventListener('click', function(){ speedBtns.forEach(function(x){x.classList.remove('active');}); b.classList.add('active'); speed=parseFloat(b.getAttribute('data-speed')); }); });
+  delayPlayBtn.addEventListener('click', function(){
+    if(countdownTimer){ stopCountdown(); return; }
+    stopPlay();
+    var remaining=10; playBtn.disabled=true; delayPlayBtn.textContent='Empieza en '+remaining+'s…';
+    countdownTimer=setInterval(function(){
+      remaining--;
+      if(remaining<=0){ clearInterval(countdownTimer); countdownTimer=null; delayPlayBtn.textContent='▶ +10s'; playBtn.disabled=false; startPlay(); }
+      else{ delayPlayBtn.textContent='Empieza en '+remaining+'s…'; }
+    },1000);
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.target && (e.target.tagName==='INPUT' || e.target.tagName==='TEXTAREA' || e.target.isContentEditable)) return;
+    var advance = ['ArrowRight','ArrowDown','PageDown',' ','Spacebar'];
+    var back = ['ArrowLeft','ArrowUp','PageUp','Backspace'];
+    if(advance.indexOf(e.key)!==-1){ e.preventDefault(); nextBtn.click(); }
+    else if(back.indexOf(e.key)!==-1){ e.preventDefault(); prevBtn.click(); }
+  });
+  show(0);
+})();
+
+</script>

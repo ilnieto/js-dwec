@@ -1,0 +1,533 @@
+<title>setTimeout y setInterval</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+
+:root{
+  --bg:#0b0e12;
+  --panel:#11161d;
+  --panel-2:#161d26;
+  --line:#232b34;
+  --ink:#e5e9ed;
+  --muted:#e7ebef;
+  --accent:#4dd9c0;
+  --accent-2:#f2a154;
+  --violet:#a78bfa;
+  --good:#7cd992;
+  --danger:#e2725b;
+  --accent-dim:rgba(77,217,192,.12);
+  --accent2-dim:rgba(242,161,84,.12);
+  --fs:1.35;
+}
+*{box-sizing:border-box;}
+html,body{background:var(--bg);}
+body{
+  margin:0;
+  color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,sans-serif;
+  padding:10px 20px 140px;
+}
+.wrap{max-width:1400px;margin:0 auto;}
+.eyebrow{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11.5px);
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--muted);
+  text-align:center;
+  margin:0 0 12px;
+}
+h1{
+  text-align:center;
+  font-family:"IBM Plex Mono",monospace;
+  font-size:36px;
+  font-weight:600;
+  margin:0 0 10px;
+  text-wrap:balance;
+}
+.sub{
+  text-align:center;
+  color:var(--muted);
+  font-size:calc(var(--fs,1) * 14px);
+  max-width:1100px;
+  margin:0 auto 24px;
+  line-height:1.55;
+  min-height:3.1em;
+}
+.sub code{font-family:"IBM Plex Mono",monospace;color:var(--accent);}
+.panel{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:10px;
+}
+.term-bar{display:flex;gap:5px;margin-bottom:10px;}
+.term-bar span{width:8px;height:8px;border-radius:50%;background:#2a323c;}
+.code{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:18px;
+  line-height:1.95;
+  color:#e2e7eb;
+  overflow-x:auto;
+}
+.code .ln{
+  display:block;
+  padding:1px 8px;
+  border-radius:5px;
+  border-left:2px solid transparent;
+  transition:background .25s, border-color .25s, color .25s;
+  white-space:pre;
+}
+.code .ln .k{color:#c99a5b;}
+.code .ln.active{color:var(--ink);background:var(--accent-dim);border-left-color:var(--accent);}
+.lbl{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 9.5px);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--muted);
+  display:block;
+  margin-bottom:7px;
+}
+@keyframes pop{from{opacity:0;transform:scale(.9);}to{opacity:1;transform:scale(1);}}
+.note{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:20px;
+  color:var(--muted);
+  text-align:center;
+  min-height:64px;
+  line-height:1.5;
+  padding:0 10px;
+  margin:22px auto 0;
+  max-width:1100px;
+}
+.timeline{max-width:920px;margin:22px auto 0;height:3px;background:var(--line);border-radius:2px;overflow:hidden;}
+.timeline-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent-2),var(--accent));transition:width .05s linear;}
+.verdict{
+  text-align:center;
+  margin:22px auto 0;
+  max-width:760px;
+  font-size:calc(var(--fs,1) * 14px);
+  color:var(--muted);
+  line-height:1.6;
+  min-height:30px;
+  opacity:0;
+  transition:opacity .4s;
+}
+.verdict.show{opacity:1;}
+.verdict b{color:var(--ink);font-weight:600;}
+.verdict code{font-family:"IBM Plex Mono",monospace;color:var(--accent);}
+.controls{
+  position:fixed;
+  left:50%;
+  bottom:16px;
+  transform:translateX(-50%);
+  width:calc(100% - 32px);
+  max-width:1200px;
+  margin:0;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:14px 18px;
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px 20px;
+  z-index:100;
+  box-shadow:0 12px 36px rgba(0,0,0,.5);
+}
+.ctrl-group{display:flex;align-items:center;gap:8px;}
+.ctrl-btn{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 12px);
+  letter-spacing:.03em;
+  color:var(--ink);
+  background:var(--panel-2);
+  border:1px solid var(--line);
+  border-radius:7px;
+  padding:8px 14px;
+  cursor:pointer;
+  transition:border-color .2s, color .2s;
+}
+.ctrl-btn:hover:not(:disabled){border-color:var(--ink);}
+.ctrl-btn:disabled{opacity:.35;cursor:default;}
+.ctrl-btn.play{min-width:132px;border-color:var(--accent);color:var(--accent);}
+.ctrl-btn.step{font-size:calc(var(--fs,1) * 14px);padding:8px 12px;}
+.ctrl-label{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 10px);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin-right:2px;
+}
+.speed-group{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;}
+.speed-btn{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11.5px);
+  color:var(--muted);
+  background:var(--panel-2);
+  border:none;
+  padding:7px 11px;
+  cursor:pointer;
+  border-right:1px solid var(--line);
+  transition:background .2s, color .2s;
+}
+.speed-btn:last-child{border-right:none;}
+.speed-btn.active{background:var(--accent-dim);color:var(--accent);}
+.step-counter{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11px);
+  color:var(--muted);
+  margin-left:auto;
+}
+@media (prefers-reduced-motion: reduce){
+  *{transition-duration:.001ms !important; animation-duration:.001ms !important;}
+}
+.stage-lr{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;}
+@media (max-width:900px){.stage-lr{grid-template-columns:1fr;}}
+.stage-lr .col-code{display:flex;flex-direction:column;gap:14px;}
+.stage-lr .col-out{display:flex;flex-direction:column;gap:14px;}
+.term{padding:16px 18px;}
+
+/* Pestañas */
+.tabs{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:0 0 18px;}
+.tab{
+  font-family:"IBM Plex Mono",monospace;font-size:15px;
+  background:var(--panel);color:var(--muted);
+  border:1px solid var(--line);border-radius:10px;
+  padding:12px 18px;cursor:pointer;text-align:left;
+  transition:border-color .2s, color .2s, background .2s;
+}
+.tab small{display:block;font-family:"IBM Plex Sans",sans-serif;font-size:13px;opacity:.7;margin-top:2px;}
+.tab:hover{border-color:var(--ink);}
+.tab.active{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);}
+.tab[data-tab="interval"].active{border-color:var(--accent-2);color:var(--accent-2);background:var(--accent2-dim);}
+
+/* Reloj */
+.clock-panel{padding:16px 22px 30px;}
+.clock-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:22px;}
+.clock-t{font-family:"IBM Plex Mono",monospace;font-size:26px;font-weight:600;color:var(--ink);}
+.ruler{position:relative;height:6px;background:var(--line);border-radius:3px;margin:0 6px;}
+.ruler-fill{position:absolute;left:0;top:0;bottom:0;background:var(--accent);border-radius:3px;transition:width .5s ease;}
+.ruler-tick{position:absolute;top:12px;transform:translateX(-50%);font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--muted);opacity:.6;}
+.flag{
+  position:absolute;top:-30px;transform:translateX(-50%);
+  font-size:18px;opacity:.3;filter:grayscale(1);transition:opacity .3s, filter .3s, transform .3s;
+}
+.flag.fired{opacity:1;filter:none;transform:translateX(-50%) scale(1.2);}
+
+.marker{
+  position:absolute;top:-6px;width:4px;height:18px;margin-left:-2px;
+  background:var(--ink);border-radius:2px;transition:left .5s ease;
+}
+
+/* Cajas */
+.boxes{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.box{padding:14px 16px;min-height:110px;}
+.empty{font-family:"IBM Plex Mono",monospace;font-size:14px;color:var(--muted);opacity:.45;}
+.timer{
+  font-family:"IBM Plex Mono",monospace;font-size:15px;
+  border:1px solid var(--accent);border-radius:8px;padding:10px 12px;
+  background:var(--accent-dim);animation:pop .25s ease;
+}
+.timer.interval{border-color:var(--accent-2);background:var(--accent2-dim);}
+.timer.fired{border-color:var(--good);background:rgba(124,217,146,.12);}
+.timer.cancel{border-color:var(--danger);background:rgba(226,114,91,.12);text-decoration:line-through;opacity:.7;}
+.timer .bar{height:5px;background:var(--line);border-radius:3px;margin:8px 0 6px;overflow:hidden;}
+.timer .bar i{display:block;height:100%;background:var(--accent);transition:width .5s ease;}
+.timer.interval .bar i{background:var(--accent-2);}
+.timer .meta{font-size:13px;opacity:.8;}
+.task{
+  display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:15px;
+  padding:8px 12px;border-radius:8px;border:1px solid var(--violet);color:var(--violet);
+  background:rgba(167,139,250,.12);animation:pop .25s ease;
+}
+
+.vars{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-family:"IBM Plex Mono",monospace;font-size:15px;}
+.vars .k{color:var(--muted);opacity:.75;}
+.console{font-family:"IBM Plex Mono",monospace;font-size:16px;min-height:60px;}
+.console div{padding:2px 0;border-bottom:1px solid var(--line);animation:pop .25s ease;}
+.console div::before{content:"› ";color:var(--muted);opacity:.5;}
+
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">JavaScript · Asincronía</p>
+  <h1>Temporizadores: setTimeout y setInterval</h1>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="timeout">⏲️ 1 · setTimeout<small>El temporizador: «hacer algo más tarde»</small></button>
+    <button class="tab" data-tab="interval">🔁 2 · setInterval<small>El repetidor: «hacer algo cada cierto tiempo»</small></button>
+  </div>
+  <p class="sub" id="sub"></p>
+
+  <div class="stage-lr">
+    <div class="col-code">
+      <div class="panel term">
+        <div class="term-bar"><span></span><span></span><span></span></div>
+        <div class="code" id="code"></div>
+      </div>
+      <div class="panel term">
+        <span class="lbl">Consola</span>
+        <div class="console" id="console"></div>
+      </div>
+    </div>
+    <div class="col-out">
+      <div class="panel clock-panel">
+        <div class="clock-head"><span class="lbl">Reloj</span><span class="clock-t" id="clockT">0 ms</span></div>
+        <div class="ruler" id="ruler"></div>
+      </div>
+      <div class="boxes">
+        <div class="panel box">
+          <span class="lbl">Temporizadores del navegador</span>
+          <div id="timerBox"></div>
+        </div>
+        <div class="panel box">
+          <span class="lbl">Cola de tareas</span>
+          <div id="queueBox"></div>
+        </div>
+      </div>
+      <div class="panel box" style="min-height:0">
+        <span class="lbl">Variables</span>
+        <div class="vars" id="vars"></div>
+      </div>
+    </div>
+  </div>
+  <p class="note" id="noteBox"></p>
+
+  <div class="timeline"><div class="timeline-fill" id="fill"></div></div>
+  <p class="verdict" id="verdict"></p>
+  <div class="controls">
+    <div class="ctrl-group">
+      <button id="rewindBtn" class="ctrl-btn step" title="Rebobinar al principio">&#9198;</button>
+      <button id="prevBtn" class="ctrl-btn step" title="Paso anterior">&#9664;&#9664;</button>
+      <button id="playBtn" class="ctrl-btn play">&#9654; Reproducir</button>
+      <button id="nextBtn" class="ctrl-btn step" title="Paso siguiente">&#9654;&#9654;</button>
+      <button id="delayPlayBtn" class="ctrl-btn" title="Empezar tras una cuenta atrás de 10s">&#9654; +10s</button>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Velocidad</span>
+      <div class="speed-group">
+        <button class="speed-btn active" data-speed="0.25">0.25&times;</button>
+        <button class="speed-btn" data-speed="0.5">0.5&times;</button>
+      </div>
+    </div>
+    <span class="step-counter" id="stepCounter">Paso 1 / N</span>
+  </div>
+
+</div>
+
+<script>
+
+var codeBox = document.getElementById('code');
+var consoleBox = document.getElementById('console');
+var clockT = document.getElementById('clockT');
+var ruler = document.getElementById('ruler');
+var timerBox = document.getElementById('timerBox');
+var queueBox = document.getElementById('queueBox');
+var varsBox = document.getElementById('vars');
+var noteBox = document.getElementById('noteBox');
+var subBox = document.getElementById('sub');
+
+// timer: {total, left, status:'run'|'fired'|'cancel'}
+var TABS = {
+  timeout: {
+    kind: 'timeout',
+    sub: '<code>setTimeout(función, ms)</code> es como el temporizador del horno: lo programas, te vas a hacer otras cosas y, cuando pasa el tiempo, suena <b>una sola vez</b>.',
+    max: 3000,
+    flags: [{ms:2000, icon:'⏰'}],
+    code: [
+      "console.log('Meto la pizza en el horno 🍕');",
+      "const id = setTimeout(() => {",
+      "  console.log('¡Ding! La pizza está lista');",
+      "}, 2000);",
+      "console.log('Mientras, pongo la mesa');"
+    ],
+    states: [
+      { t:0, lines:[], log:[], vars:{},
+        note:'setTimeout(función, ms): ejecuta la función UNA vez, cuando hayan pasado ms milisegundos.' },
+      { t:0, lines:[0], log:['Meto la pizza en el horno 🍕'], vars:{},
+        note:'Primera línea: se ejecuta al momento.' },
+      { t:0, lines:[1,2,3], log:['Meto la pizza en el horno 🍕'], timer:{total:2000, left:2000, status:'run'}, vars:{id:'1'},
+        note:'setTimeout NO espera: entrega la función al navegador con un temporizador de 2000 ms y devuelve un id. JavaScript sigue adelante.' },
+      { t:0, lines:[4], log:['Meto la pizza en el horno 🍕', 'Mientras, pongo la mesa'], timer:{total:2000, left:2000, status:'run'}, vars:{id:'1'},
+        note:'Por eso «pongo la mesa» sale ANTES que el «¡Ding!», aunque esté escrito después en el código.' },
+      { t:1000, lines:[], log:['Meto la pizza en el horno 🍕', 'Mientras, pongo la mesa'], timer:{total:2000, left:1000, status:'run'}, vars:{id:'1'},
+        note:'El reloj corre. El script ya terminó; el navegador lleva la cuenta atrás por su cuenta.' },
+      { t:2000, lines:[], log:['Meto la pizza en el horno 🍕', 'Mientras, pongo la mesa'], timer:{total:2000, left:0, status:'fired'}, queue:'() => console.log(…)', vars:{id:'1'},
+        note:'A los 2000 ms el temporizador vence: la función pasa a la cola de tareas, esperando su turno.' },
+      { t:2000, lines:[2], log:['Meto la pizza en el horno 🍕', 'Mientras, pongo la mesa', '¡Ding! La pizza está lista'], vars:{id:'1'},
+        note:'Como la pila está libre, el event loop la ejecuta. Y se acabó: setTimeout no se repite.' },
+      { t:3000, lines:[], log:['Meto la pizza en el horno 🍕', 'Mientras, pongo la mesa', '¡Ding! La pizza está lista'], vars:{id:'1'}, note:'',
+        verdict:'<b>setTimeout</b> = hacer algo <b>una vez</b>, más tarde. No bloquea: el código siguiente se ejecuta primero. Los ms son un <b>mínimo</b> (si JS está ocupado, esperará más). Para cancelarlo antes de que suene: <code>clearTimeout(id)</code>.' }
+    ]
+  },
+
+  interval: {
+    kind: 'interval',
+    sub: '<code>setInterval(función, ms)</code> es como un despertador que vuelve a sonar <b>cada</b> cierto tiempo… hasta que lo apagas con <code>clearInterval(id)</code>.',
+    max: 4000,
+    flags: [{ms:1000, icon:'🔔'}, {ms:2000, icon:'🔔'}, {ms:3000, icon:'🔔'}, {ms:4000, icon:'🔕'}],
+    code: [
+      "let vueltas = 0;",
+      "const id = setInterval(() => {",
+      "  vueltas++;",
+      "  console.log('Vuelta ' + vueltas);",
+      "  if (vueltas === 3) clearInterval(id);",
+      "}, 1000);"
+    ],
+    states: [
+      { t:0, lines:[], log:[], vars:{},
+        note:'setInterval(función, ms): ejecuta la función CADA ms milisegundos, una y otra vez, hasta que la pares.' },
+      { t:0, lines:[0], log:[], vars:{vueltas:'0'},
+        note:'Un contador para saber cuántas veces se ha ejecutado.' },
+      { t:0, lines:[1,5], log:[], timer:{total:1000, left:1000, status:'run'}, vars:{vueltas:'0', id:'1'},
+        note:'Se registra un temporizador repetitivo de 1000 ms. Igual que setTimeout, no espera y devuelve un id.' },
+      { t:1000, lines:[2,3], log:['Vuelta 1'], timer:{total:1000, left:1000, status:'run'}, vars:{vueltas:'1', id:'1'},
+        note:'1000 ms → se ejecuta la función: vueltas pasa a 1. El temporizador se rearma solo para otros 1000 ms.' },
+      { t:1000, lines:[4], log:['Vuelta 1'], timer:{total:1000, left:1000, status:'run'}, vars:{vueltas:'1', id:'1'},
+        note:'¿vueltas === 3? No → no se cancela. Sigue sonando.' },
+      { t:2000, lines:[2,3,4], log:['Vuelta 1', 'Vuelta 2'], timer:{total:1000, left:1000, status:'run'}, vars:{vueltas:'2', id:'1'},
+        note:'2000 ms → otra vez la MISMA función. vueltas = 2, todavía no es 3.' },
+      { t:3000, lines:[2,3], log:['Vuelta 1', 'Vuelta 2', 'Vuelta 3'], timer:{total:1000, left:1000, status:'run'}, vars:{vueltas:'3', id:'1'},
+        note:'3000 ms → tercera ejecución. vueltas = 3.' },
+      { t:3000, lines:[4], log:['Vuelta 1', 'Vuelta 2', 'Vuelta 3'], timer:{total:1000, left:1000, status:'cancel'}, vars:{vueltas:'3', id:'1'},
+        note:'¡Ahora sí! clearInterval(id) apaga el repetidor usando el id que guardamos.' },
+      { t:4000, lines:[], log:['Vuelta 1', 'Vuelta 2', 'Vuelta 3'], vars:{vueltas:'3', id:'1'}, cancelled:true,
+        note:'A los 4000 ms ya no pasa nada: el temporizador no existe.' },
+      { t:4000, lines:[], log:['Vuelta 1', 'Vuelta 2', 'Vuelta 3'], vars:{vueltas:'3', id:'1'}, cancelled:true, note:'',
+        verdict:'<b>setInterval</b> = hacer algo <b>cada</b> cierto tiempo. Se repite para siempre hasta que llamas a <code>clearInterval(id)</code>, por eso hay que <b>guardar el id</b>. Úsalo para relojes, contadores o refrescar datos; y si solo necesitas una vez, usa <b>setTimeout</b>.' }
+    ]
+  }
+};
+
+var TAB = TABS.timeout;
+var STATES = TAB.states;
+var DURATIONS = STATES.map(function(){ return 900; });
+
+function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function hiCode(s){ return esc(s).replace(/(\/\/.*)$/, '<span class="k">$1</span>'); }
+
+function buildTab(){
+  subBox.innerHTML = TAB.sub;
+  codeBox.innerHTML = TAB.code.map(function(l){ return '<span class="ln">' + hiCode(l) + '</span>'; }).join('');
+}
+
+function renderState(s){
+  codeBox.querySelectorAll('.ln').forEach(function(ln, i){ ln.classList.toggle('active', s.lines.indexOf(i) !== -1); });
+
+  // Reloj
+  var pct = function(ms){ return (ms / TAB.max * 100) + '%'; };
+  var ticks = '';
+  for (var ms = 0; ms <= TAB.max; ms += 1000) ticks += '<span class="ruler-tick" style="left:' + pct(ms) + '">' + ms + '</span>';
+  var flags = TAB.flags.map(function(f){
+    // 🔕 marca el momento en que ya no suena nada (solo se ilumina tras clearInterval)
+    var fired = f.icon === '🔕' ? !!s.cancelled : s.t >= f.ms;
+    return '<span class="flag' + (fired ? ' fired' : '') + '" style="left:' + pct(f.ms) + '">' + f.icon + '</span>';
+  }).join('');
+  ruler.innerHTML = '<div class="ruler-fill" style="width:' + pct(s.t) + '"></div>' + ticks + flags + '<div class="marker" style="left:' + pct(s.t) + '"></div>';
+  clockT.textContent = s.t + ' ms';
+
+  // Temporizador
+  if (s.timer) {
+    var tm = s.timer;
+    var name = TAB.kind === 'timeout' ? 'setTimeout · 2000 ms' : 'setInterval · cada 1000 ms';
+    var meta = tm.status === 'fired' ? '✓ vencido' : tm.status === 'cancel' ? '✗ cancelado (clearInterval)'
+             : TAB.kind === 'interval' ? '🔁 se repite · id ' + (s.vars.id || '')
+             : 'quedan ' + tm.left + ' ms · id ' + (s.vars.id || '');
+    var done = TAB.kind === 'timeout' ? (tm.total - tm.left) / tm.total * 100 : 100;
+    timerBox.innerHTML = '<div class="timer' + (TAB.kind === 'interval' ? ' interval' : '') + (tm.status !== 'run' ? ' ' + tm.status : '') + '">'
+      + name + '<div class="bar"><i style="width:' + done + '%"></i></div><div class="meta">' + meta + '</div></div>';
+  } else {
+    timerBox.innerHTML = '<span class="empty">ninguno</span>';
+  }
+
+  queueBox.innerHTML = s.queue ? '<span class="task">' + esc(s.queue) + '</span>' : '<span class="empty">vacía</span>';
+
+  var keys = Object.keys(s.vars);
+  varsBox.innerHTML = keys.length
+    ? keys.map(function(k){ return '<span class="k">' + k + '</span><span>' + s.vars[k] + '</span>'; }).join('')
+    : '<span class="empty">—</span>';
+
+  consoleBox.innerHTML = s.log.map(function(l){ return '<div>' + esc(l) + '</div>'; }).join('');
+  noteBox.textContent = s.note || '';
+}
+
+</script>
+<script>
+
+(function(){
+  var playBtn = document.getElementById('playBtn');
+  var prevBtn = document.getElementById('prevBtn');
+  var nextBtn = document.getElementById('nextBtn');
+  var rewindBtn = document.getElementById('rewindBtn');
+  var delayPlayBtn = document.getElementById('delayPlayBtn');
+  var stepCounter = document.getElementById('stepCounter');
+  var fill = document.getElementById('fill');
+  var verdict = document.getElementById('verdict');
+  var speedBtns = document.querySelectorAll('.speed-btn');
+  var tabBtns = document.querySelectorAll('.tab');
+
+  var curIndex = 0, playing = false, speed = 0.25, playTimer = null, countdownTimer = null;
+
+  function stopCountdown(){
+    if(countdownTimer){ clearInterval(countdownTimer); countdownTimer = null; }
+    delayPlayBtn.textContent = '▶ +10s';
+    playBtn.disabled = false;
+  }
+  function show(i){
+    var s = STATES[i];
+    renderState(s, i);
+    if(verdict){
+      verdict.innerHTML = s.verdict || '';
+      verdict.classList.toggle('show', !!s.verdict);
+    }
+    if(fill) fill.style.width = (i/(STATES.length-1)*100) + '%';
+    stepCounter.textContent = 'Paso ' + (i+1) + ' / ' + STATES.length;
+    prevBtn.disabled = (i===0);
+    nextBtn.disabled = (i===STATES.length-1);
+  }
+  function stopPlay(){ playing=false; playBtn.textContent='▶ Reproducir'; clearTimeout(playTimer); }
+  function scheduleNext(){
+    if(curIndex >= STATES.length-1){ stopPlay(); return; }
+    var dur = DURATIONS[curIndex] / speed;
+    playTimer = setTimeout(function(){ curIndex++; show(curIndex); scheduleNext(); }, dur);
+  }
+  function startPlay(){
+    if(curIndex >= STATES.length-1){ curIndex=0; show(0); }
+    playing = true; playBtn.textContent='❘❘ Pausar'; scheduleNext();
+  }
+  function setTab(name){
+    stopCountdown(); stopPlay();
+    TAB = TABS[name]; STATES = TAB.states; DURATIONS = STATES.map(function(){ return 900; });
+    tabBtns.forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-tab') === name); });
+    try { history.replaceState(null, '', '#' + name); } catch(e) {}
+    buildTab(); curIndex = 0; show(0);
+  }
+  tabBtns.forEach(function(b){ b.addEventListener('click', function(){ setTab(b.getAttribute('data-tab')); b.blur(); }); });
+  playBtn.addEventListener('click', function(){ stopCountdown(); playing?stopPlay():startPlay(); });
+  prevBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex=Math.max(0,curIndex-1); show(curIndex); });
+  nextBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex=Math.min(STATES.length-1,curIndex+1); show(curIndex); });
+  rewindBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex=0; show(0); });
+  speedBtns.forEach(function(b){ b.addEventListener('click', function(){ speedBtns.forEach(function(x){x.classList.remove('active');}); b.classList.add('active'); speed=parseFloat(b.getAttribute('data-speed')); }); });
+  delayPlayBtn.addEventListener('click', function(){
+    if(countdownTimer){ stopCountdown(); return; }
+    stopPlay();
+    var remaining=10; playBtn.disabled=true; delayPlayBtn.textContent='Empieza en '+remaining+'s…';
+    countdownTimer=setInterval(function(){
+      remaining--;
+      if(remaining<=0){ clearInterval(countdownTimer); countdownTimer=null; delayPlayBtn.textContent='▶ +10s'; playBtn.disabled=false; startPlay(); }
+      else{ delayPlayBtn.textContent='Empieza en '+remaining+'s…'; }
+    },1000);
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.target && (e.target.tagName==='INPUT' || e.target.tagName==='TEXTAREA' || e.target.isContentEditable)) return;
+    var advance = ['ArrowRight','ArrowDown','PageDown',' ','Spacebar'];
+    var back = ['ArrowLeft','ArrowUp','PageUp','Backspace'];
+    if(advance.indexOf(e.key)!==-1){ e.preventDefault(); nextBtn.click(); }
+    else if(back.indexOf(e.key)!==-1){ e.preventDefault(); prevBtn.click(); }
+  });
+  setTab(location.hash === '#interval' ? 'interval' : 'timeout');
+})();
+
+</script>

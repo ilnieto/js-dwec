@@ -1,0 +1,591 @@
+<title>Sync vs Async</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+  :root{
+    --bg:#0b0e12;
+    --panel:#11161d;
+    --panel-2:#161d26;
+    --line:#232b34;
+    --ink:#e5e9ed;
+    --muted:#e7ebef;
+    --sync:#f2a154;
+    --async:#4dd9c0;
+    --sync-dim:rgba(242,161,84,.12);
+    --async-dim:rgba(77,217,192,.12);
+    --danger:#e2725b;
+    --fs:1.35;
+  }
+  *{box-sizing:border-box;}
+  html,body{background:var(--bg);}
+  body{
+    margin:0;
+    color:var(--ink);
+    font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,sans-serif;
+    padding:10px 20px 140px;
+  }
+  .wrap{max-width:1400px;margin:0 auto;}
+
+  .eyebrow{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:calc(var(--fs,1) * 11.5px);
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    color:var(--muted);
+    text-align:center;
+    margin:0 0 12px;
+  }
+  h1{
+    text-align:center;
+    font-family:"IBM Plex Mono",monospace;
+    font-size:36px;
+    font-weight:600;
+    margin:0 0 10px;
+    text-wrap:balance;
+  }
+  .sub{
+    text-align:center;
+    color:var(--muted);
+    font-size:calc(var(--fs,1) * 14px);
+    max-width:1400px;
+    margin:0 auto 34px;
+    line-height:1.55;
+  }
+
+  .stage{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:18px;
+  }
+  @media (max-width:700px){ .stage{grid-template-columns:1fr;} }
+
+  .col{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+  }
+  .col-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:12px 16px;
+    border-bottom:1px solid var(--line);
+  }
+  .col-head .tag{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:calc(var(--fs,1) * 11px);
+    font-weight:600;
+    letter-spacing:.08em;
+    padding:3px 9px;
+    border-radius:20px;
+    border:1px solid;
+  }
+  .sync-col .col-head .tag{color:var(--sync);border-color:var(--sync);background:var(--sync-dim);}
+  .async-col .col-head .tag{color:var(--async);border-color:var(--async);background:var(--async-dim);}
+  .col-head .status{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:calc(var(--fs,1) * 11px);
+    color:var(--muted);
+  }
+
+  .term{
+    padding:14px 16px 16px;
+    border-bottom:1px solid var(--line);
+  }
+  .term-bar{display:flex;gap:5px;margin-bottom:10px;}
+  .term-bar span{width:8px;height:8px;border-radius:50%;background:#2a323c;}
+  .code{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:18px;
+    line-height:1.95;
+    color:#e2e7eb;
+  }
+  .code .ln{
+    display:block;
+    padding:1px 8px;
+    border-radius:5px;
+    border-left:2px solid transparent;
+    transition:background .25s, border-color .25s, color .25s;
+    white-space:pre;
+  }
+  .code .ln .k{color:#c99a5b;}
+  .code .ln.active{color:var(--ink);}
+  .sync-col .code .ln.active{background:var(--sync-dim);border-left-color:var(--sync);}
+  .async-col .code .ln.active{background:var(--async-dim);border-left-color:var(--async);}
+
+  .mid{
+    display:flex;
+    gap:10px;
+    padding:14px 16px;
+    border-bottom:1px solid var(--line);
+    min-height:96px;
+  }
+  .stackbox{
+    flex:1;
+    display:flex;
+    flex-direction:column-reverse;
+    gap:5px;
+    min-height:80px;
+  }
+  .stackbox .lbl, .sidebox .lbl{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:calc(var(--fs,1) * 9.5px);
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--muted);
+  }
+  .chip{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:calc(var(--fs,1) * 11.5px);
+    padding:5px 9px;
+    border-radius:6px;
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    opacity:0;
+    transform:translateY(6px);
+    transition:opacity .18s, transform .18s;
+  }
+  .chip.show{opacity:1;transform:translateY(0);}
+  .sync-col .chip.show{border-color:var(--sync);color:var(--sync);}
+  .async-col .chip.show{border-color:var(--async);color:var(--async);}
+
+  .sidebox{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+  }
+  .sidebox .box{
+    flex:1;
+    border:1px dashed var(--line);
+    border-radius:7px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:"IBM Plex Mono",monospace;
+    font-size:calc(var(--fs,1) * 10.5px);
+    color:var(--muted);
+    text-align:center;
+    padding:4px 6px;
+    transition:border-color .25s, color .25s, background .25s;
+  }
+  .sidebox .box.active{
+    border:1px solid var(--async);
+    color:var(--async);
+    background:var(--async-dim);
+  }
+
+  .consolebox{
+    padding:12px 16px 14px;
+    min-height:46px;
+  }
+  .consolebox .lbl{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:calc(var(--fs,1) * 9.5px);
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--muted);
+    display:block;
+    margin-bottom:7px;
+  }
+  .out{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:calc(var(--fs,1) * 13px);
+  }
+  .out span{
+    display:inline-block;
+    margin-right:8px;
+    padding:2px 8px;
+    border-radius:5px;
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    opacity:0;
+    transform:scale(.85);
+    animation:pop .22s ease forwards;
+  }
+  .out span.late{border-color:var(--danger);color:var(--danger);}
+  @keyframes pop{to{opacity:1;transform:scale(1);}}
+
+  .timeline{
+    max-width:920px;
+    margin:22px auto 0;
+    height:3px;
+    background:var(--line);
+    border-radius:2px;
+    overflow:hidden;
+  }
+  .timeline-fill{
+    height:100%;
+    width:0%;
+    background:linear-gradient(90deg,var(--sync),var(--async));
+    transition:width .05s linear;
+  }
+
+  .verdict{
+    text-align:center;
+    margin:26px auto 0;
+    max-width:560px;
+    font-size:calc(var(--fs,1) * 14px);
+    color:var(--muted);
+    line-height:1.6;
+    min-height:44px;
+    opacity:0;
+    transition:opacity .4s;
+  }
+  .verdict.show{opacity:1;}
+  .verdict b{color:var(--ink);font-weight:600;}
+  .verdict .sy{color:var(--sync);}
+  .verdict .as{color:var(--async);}
+
+  .controls{
+    position:fixed;
+    left:50%;
+    bottom:16px;
+    transform:translateX(-50%);
+    width:calc(100% - 32px);
+    max-width:1200px;
+    margin:0;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:14px 18px;
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:space-between;
+    gap:14px 20px;
+    z-index:100;
+    box-shadow:0 12px 36px rgba(0,0,0,.5);
+  }
+  .ctrl-group{display:flex;align-items:center;gap:8px;}
+  .ctrl-btn{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:calc(var(--fs,1) * 12px);
+    letter-spacing:.03em;
+    color:var(--ink);
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    border-radius:7px;
+    padding:8px 14px;
+    cursor:pointer;
+    transition:border-color .2s, color .2s;
+  }
+  .ctrl-btn:hover:not(:disabled){border-color:var(--ink);}
+  .ctrl-btn:disabled{opacity:.35;cursor:default;}
+  .ctrl-btn.play{min-width:132px;border-color:var(--async);color:var(--async);}
+  .ctrl-btn.step{font-size:calc(var(--fs,1) * 14px);padding:8px 12px;}
+  .ctrl-label{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:calc(var(--fs,1) * 10px);
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin-right:2px;
+  }
+  .speed-group{
+    display:flex;
+    border:1px solid var(--line);
+    border-radius:7px;
+    overflow:hidden;
+  }
+  .speed-btn{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:calc(var(--fs,1) * 11.5px);
+    color:var(--muted);
+    background:var(--panel-2);
+    border:none;
+    padding:7px 11px;
+    cursor:pointer;
+    border-right:1px solid var(--line);
+    transition:background .2s, color .2s;
+  }
+  .speed-btn:last-child{border-right:none;}
+  .speed-btn.active{background:var(--async-dim);color:var(--async);}
+  .step-counter{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:calc(var(--fs,1) * 11px);
+    color:var(--muted);
+    margin-left:auto;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{transition-duration:.001ms !important; animation-duration:.001ms !important;}
+  }
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">JavaScript · Event Loop</p>
+  <h1>Síncrono vs Asíncrono</h1>
+  <p class="sub">El mismo call stack, dos comportamientos distintos. Observa qué pasa cuando una línea puede "esperar" y cuándo no.</p>
+
+  <div class="stage">
+    <div class="col sync-col">
+      <div class="col-head">
+        <span class="tag">SYNC</span>
+        <span class="status" id="syncStatus">esperando…</span>
+      </div>
+      <div class="term">
+        <div class="term-bar"><span></span><span></span><span></span></div>
+        <div class="code" id="syncCode">
+          <span class="ln" data-i="0"><span class="k">console.log</span>('A')</span>
+          <span class="ln" data-i="1"><span class="k">console.log</span>('B')</span>
+          <span class="ln" data-i="2"><span class="k">console.log</span>('C')</span>
+        </div>
+      </div>
+      <div class="mid">
+        <div class="stackbox" id="syncStack">
+          <span class="lbl">Call stack</span>
+        </div>
+      </div>
+      <div class="consolebox">
+        <span class="lbl">Consola</span>
+        <div class="out" id="syncOut"></div>
+      </div>
+    </div>
+
+    <div class="col async-col">
+      <div class="col-head">
+        <span class="tag">ASYNC</span>
+        <span class="status" id="asyncStatus">esperando…</span>
+      </div>
+      <div class="term">
+        <div class="term-bar"><span></span><span></span><span></span></div>
+        <div class="code" id="asyncCode">
+          <span class="ln" data-i="0"><span class="k">console.log</span>('A')</span>
+          <span class="ln" data-i="1"><span class="k">setTimeout</span>(() => log('B'), 0)</span>
+          <span class="ln" data-i="2"><span class="k">console.log</span>('C')</span>
+        </div>
+      </div>
+      <div class="mid">
+        <div class="stackbox" id="asyncStack">
+          <span class="lbl">Call stack</span>
+        </div>
+        <div class="sidebox">
+          <span class="lbl">Web API / Cola</span>
+          <div class="box" id="webapiBox">Web API: inactiva</div>
+          <div class="box" id="queueBox">Callback queue: vacía</div>
+        </div>
+      </div>
+      <div class="consolebox">
+        <span class="lbl">Consola</span>
+        <div class="out" id="asyncOut"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="timeline"><div class="timeline-fill" id="fill"></div></div>
+  <p class="verdict" id="verdict"></p>
+
+  <div class="controls">
+    <div class="ctrl-group">
+      <button id="rewindBtn" class="ctrl-btn step" title="Rebobinar al principio">⏮</button>
+      <button id="prevBtn" class="ctrl-btn step" title="Paso anterior">◀◀</button>
+      <button id="playBtn" class="ctrl-btn play">▶ Reproducir</button>
+      <button id="nextBtn" class="ctrl-btn step" title="Paso siguiente">▶▶</button>
+      <button id="delayPlayBtn" class="ctrl-btn" title="Empezar tras una cuenta atrás de 10s">▶ +10s</button>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Velocidad</span>
+      <div class="speed-group">
+        <button class="speed-btn active" data-speed="0.25">0.25×</button>
+        <button class="speed-btn" data-speed="0.5">0.5×</button>
+      </div>
+    </div>
+    <span class="step-counter" id="stepCounter">Paso 1 / 16</span>
+  </div>
+</div>
+
+<script>
+(function(){
+  var syncCode = document.querySelectorAll('#syncCode .ln');
+  var asyncCode = document.querySelectorAll('#asyncCode .ln');
+  var syncStack = document.getElementById('syncStack');
+  var asyncStack = document.getElementById('asyncStack');
+  var syncOut = document.getElementById('syncOut');
+  var asyncOut = document.getElementById('asyncOut');
+  var syncStatus = document.getElementById('syncStatus');
+  var asyncStatus = document.getElementById('asyncStatus');
+  var webapiBox = document.getElementById('webapiBox');
+  var queueBox = document.getElementById('queueBox');
+  var fill = document.getElementById('fill');
+  var verdict = document.getElementById('verdict');
+  var playBtn = document.getElementById('playBtn');
+  var prevBtn = document.getElementById('prevBtn');
+  var nextBtn = document.getElementById('nextBtn');
+  var rewindBtn = document.getElementById('rewindBtn');
+  var delayPlayBtn = document.getElementById('delayPlayBtn');
+  var stepCounter = document.getElementById('stepCounter');
+  var speedBtns = document.querySelectorAll('.speed-btn');
+
+  var VERDICT_HTML = 'En <b class="sy">SYNC</b> las tres líneas ejecutan en orden y bloquean el hilo. En <b class="as">ASYNC</b>, <code>setTimeout</code> delega en el navegador (Web API) y su callback espera en la cola hasta que el call stack queda vacío — por eso sale <b>A, C, B</b>.';
+
+  var W_OFF = {active:false, text:'Web API: inactiva'};
+  var W_ON  = {active:true,  text:'Web API: temporizador 0ms'};
+  var W_RDY = {active:false, text:'Web API: listo ✓'};
+  var Q_OFF = {active:false, text:'Callback queue: vacía'};
+  var Q_ON  = {active:true,  text:"Callback queue: () => log('B')"};
+
+  var STATES = [
+    {syncActive:0, syncStack:["log('A')"], syncOut:[], syncStatus:'ejecutando…', asyncActive:null, asyncStack:[], asyncOut:[], asyncStatus:'esperando…', webapi:W_OFF, queue:Q_OFF, verdict:null},
+    {syncActive:0, syncStack:[], syncOut:['A'], syncStatus:'ejecutando…', asyncActive:null, asyncStack:[], asyncOut:[], asyncStatus:'esperando…', webapi:W_OFF, queue:Q_OFF, verdict:null},
+    {syncActive:1, syncStack:["log('B')"], syncOut:['A'], syncStatus:'ejecutando…', asyncActive:null, asyncStack:[], asyncOut:[], asyncStatus:'esperando…', webapi:W_OFF, queue:Q_OFF, verdict:null},
+    {syncActive:1, syncStack:[], syncOut:['A','B'], syncStatus:'ejecutando…', asyncActive:null, asyncStack:[], asyncOut:[], asyncStatus:'esperando…', webapi:W_OFF, queue:Q_OFF, verdict:null},
+    {syncActive:2, syncStack:["log('C')"], syncOut:['A','B'], syncStatus:'ejecutando…', asyncActive:null, asyncStack:[], asyncOut:[], asyncStatus:'esperando…', webapi:W_OFF, queue:Q_OFF, verdict:null},
+    {syncActive:null, syncStack:[], syncOut:['A','B','C'], syncStatus:'bloquea el hilo ✓', asyncActive:null, asyncStack:[], asyncOut:[], asyncStatus:'esperando…', webapi:W_OFF, queue:Q_OFF, verdict:null},
+    {syncActive:null, syncStack:[], syncOut:['A','B','C'], syncStatus:'bloquea el hilo ✓', asyncActive:0, asyncStack:["log('A')"], asyncOut:[], asyncStatus:'ejecutando…', webapi:W_OFF, queue:Q_OFF, verdict:null},
+    {syncActive:null, syncStack:[], syncOut:['A','B','C'], syncStatus:'bloquea el hilo ✓', asyncActive:0, asyncStack:[], asyncOut:['A'], asyncStatus:'ejecutando…', webapi:W_OFF, queue:Q_OFF, verdict:null},
+    {syncActive:null, syncStack:[], syncOut:['A','B','C'], syncStatus:'bloquea el hilo ✓', asyncActive:1, asyncStack:['setTimeout'], asyncOut:['A'], asyncStatus:'ejecutando…', webapi:W_OFF, queue:Q_OFF, verdict:null},
+    {syncActive:null, syncStack:[], syncOut:['A','B','C'], syncStatus:'bloquea el hilo ✓', asyncActive:1, asyncStack:[], asyncOut:['A'], asyncStatus:'ejecutando…', webapi:W_ON, queue:Q_OFF, verdict:null},
+    {syncActive:null, syncStack:[], syncOut:['A','B','C'], syncStatus:'bloquea el hilo ✓', asyncActive:2, asyncStack:["log('C')"], asyncOut:['A'], asyncStatus:'ejecutando…', webapi:W_ON, queue:Q_OFF, verdict:null},
+    {syncActive:null, syncStack:[], syncOut:['A','B','C'], syncStatus:'bloquea el hilo ✓', asyncActive:null, asyncStack:[], asyncOut:['A','C'], asyncStatus:'stack vacío, sigue el bucle…', webapi:W_ON, queue:Q_OFF, verdict:null},
+    {syncActive:null, syncStack:[], syncOut:['A','B','C'], syncStatus:'bloquea el hilo ✓', asyncActive:null, asyncStack:[], asyncOut:['A','C'], asyncStatus:'stack vacío, sigue el bucle…', webapi:W_RDY, queue:Q_ON, verdict:null},
+    {syncActive:null, syncStack:[], syncOut:['A','B','C'], syncStatus:'bloquea el hilo ✓', asyncActive:null, asyncStack:["log('B')"], asyncOut:['A','C'], asyncStatus:'event loop → stack', webapi:W_RDY, queue:Q_OFF, verdict:null},
+    {syncActive:null, syncStack:[], syncOut:['A','B','C'], syncStatus:'bloquea el hilo ✓', asyncActive:null, asyncStack:[], asyncOut:['A','C',{val:'B',late:true}], asyncStatus:'terminado', webapi:W_RDY, queue:Q_OFF, verdict:null},
+    {syncActive:null, syncStack:[], syncOut:['A','B','C'], syncStatus:'bloquea el hilo ✓', asyncActive:null, asyncStack:[], asyncOut:['A','C',{val:'B',late:true}], asyncStatus:'terminado', webapi:W_RDY, queue:Q_OFF, verdict:VERDICT_HTML}
+  ];
+
+  var DURATIONS = [380,220,380,220,380,1020,380,220,350,250,380,370,650,380,520];
+
+  var curIndex = 0;
+  var playing = false;
+  var speed = 0.25;
+  var playTimer = null;
+  var countdownTimer = null;
+
+  function stopCountdown(){
+    if(countdownTimer){ clearInterval(countdownTimer); countdownTimer = null; }
+    delayPlayBtn.textContent = '▶ +10s';
+    delayPlayBtn.disabled = false;
+    playBtn.disabled = false;
+  }
+
+  function setActiveLine(codeEls, i){
+    codeEls.forEach(function(el){ el.classList.remove('active'); });
+    if(i !== null && i !== undefined) codeEls[i].classList.add('active');
+  }
+
+  function renderStack(el, arr){
+    var chips = el.querySelectorAll('.chip');
+    var current = chips.length, k;
+    if(arr.length > current){
+      for(k = current; k < arr.length; k++){
+        (function(label){
+          var c = document.createElement('span');
+          c.className = 'chip';
+          c.textContent = label;
+          el.appendChild(c);
+          requestAnimationFrame(function(){ c.classList.add('show'); });
+        })(arr[k]);
+      }
+    } else if(arr.length < current){
+      for(k = current - 1; k >= arr.length; k--){ chips[k].remove(); }
+    }
+  }
+
+  function renderOut(el, arr){
+    var current = el.children.length, k;
+    if(arr.length > current){
+      for(k = current; k < arr.length; k++){
+        var item = arr[k];
+        var val = (typeof item === 'object') ? item.val : item;
+        var late = (typeof item === 'object') && item.late;
+        var s = document.createElement('span');
+        if(late) s.classList.add('late');
+        s.textContent = val;
+        el.appendChild(s);
+      }
+    } else if(arr.length < current){
+      while(el.children.length > arr.length){ el.removeChild(el.lastChild); }
+    }
+  }
+
+  function render(i){
+    var s = STATES[i];
+    setActiveLine(syncCode, s.syncActive);
+    setActiveLine(asyncCode, s.asyncActive);
+    renderStack(syncStack, s.syncStack);
+    renderStack(asyncStack, s.asyncStack);
+    renderOut(syncOut, s.syncOut);
+    renderOut(asyncOut, s.asyncOut);
+    syncStatus.textContent = s.syncStatus;
+    asyncStatus.textContent = s.asyncStatus;
+    webapiBox.textContent = s.webapi.text;
+    webapiBox.classList.toggle('active', s.webapi.active);
+    queueBox.textContent = s.queue.text;
+    queueBox.classList.toggle('active', s.queue.active);
+    verdict.innerHTML = s.verdict || '';
+    verdict.classList.toggle('show', !!s.verdict);
+    fill.style.width = (i / (STATES.length - 1) * 100) + '%';
+    stepCounter.textContent = 'Paso ' + (i + 1) + ' / ' + STATES.length;
+    prevBtn.disabled = (i === 0);
+    nextBtn.disabled = (i === STATES.length - 1);
+  }
+
+  function stopPlay(){
+    playing = false;
+    playBtn.textContent = '▶ Reproducir';
+    clearTimeout(playTimer);
+  }
+
+  function scheduleNext(){
+    if(curIndex >= STATES.length - 1){ stopPlay(); return; }
+    var dur = DURATIONS[curIndex] / speed;
+    playTimer = setTimeout(function(){
+      curIndex++;
+      render(curIndex);
+      scheduleNext();
+    }, dur);
+  }
+
+  function startPlay(){
+    if(curIndex >= STATES.length - 1){ curIndex = 0; render(0); }
+    playing = true;
+    playBtn.textContent = '❚❚ Pausar';
+    scheduleNext();
+  }
+
+  playBtn.addEventListener('click', function(){ stopCountdown(); playing ? stopPlay() : startPlay(); });
+  prevBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex = Math.max(0, curIndex - 1); render(curIndex); });
+  nextBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex = Math.min(STATES.length - 1, curIndex + 1); render(curIndex); });
+  rewindBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex = 0; render(0); });
+  speedBtns.forEach(function(b){
+    b.addEventListener('click', function(){
+      speedBtns.forEach(function(x){ x.classList.remove('active'); });
+      b.classList.add('active');
+      speed = parseFloat(b.getAttribute('data-speed'));
+    });
+  });
+
+  delayPlayBtn.addEventListener('click', function(){
+    if(countdownTimer){ stopCountdown(); return; }
+    stopPlay();
+    var remaining = 10;
+    playBtn.disabled = true;
+    delayPlayBtn.textContent = 'Empieza en ' + remaining + 's…';
+    countdownTimer = setInterval(function(){
+      remaining--;
+      if(remaining <= 0){
+        clearInterval(countdownTimer);
+        countdownTimer = null;
+        delayPlayBtn.textContent = '▶ +10s';
+        playBtn.disabled = false;
+        startPlay();
+      } else {
+        delayPlayBtn.textContent = 'Empieza en ' + remaining + 's…';
+      }
+    }, 1000);
+  });
+
+  document.addEventListener('keydown', function(e){
+    if(e.target && (e.target.tagName==='INPUT' || e.target.tagName==='TEXTAREA' || e.target.isContentEditable)) return;
+    var advance = ['ArrowRight','ArrowDown','PageDown',' ','Spacebar'];
+    var back = ['ArrowLeft','ArrowUp','PageUp','Backspace'];
+    if(advance.indexOf(e.key)!==-1){ e.preventDefault(); nextBtn.click(); }
+    else if(back.indexOf(e.key)!==-1){ e.preventDefault(); prevBtn.click(); }
+  });
+
+  render(0);
+})();
+</script>

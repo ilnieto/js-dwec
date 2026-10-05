@@ -1,0 +1,393 @@
+<title>La pila de llamadas</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+
+:root{
+  --bg:#0b0e12;
+  --panel:#11161d;
+  --panel-2:#161d26;
+  --line:#232b34;
+  --ink:#e5e9ed;
+  --muted:#e7ebef;
+  --accent:#4dd9c0;
+  --accent-2:#f2a154;
+  --violet:#a78bfa;
+  --good:#7cd992;
+  --danger:#e2725b;
+  --accent-dim:rgba(77,217,192,.12);
+  --accent2-dim:rgba(242,161,84,.12);
+  --fs:1.35;
+}
+*{box-sizing:border-box;}
+html,body{background:var(--bg);}
+body{
+  margin:0;
+  color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,sans-serif;
+  padding:10px 20px 140px;
+}
+.wrap{max-width:1400px;margin:0 auto;}
+.eyebrow{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11.5px);
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--muted);
+  text-align:center;
+  margin:0 0 12px;
+}
+h1{
+  text-align:center;
+  font-family:"IBM Plex Mono",monospace;
+  font-size:36px;
+  font-weight:600;
+  margin:0 0 10px;
+  text-wrap:balance;
+}
+.sub{
+  text-align:center;
+  color:var(--muted);
+  font-size:calc(var(--fs,1) * 14px);
+  max-width:1400px;
+  margin:0 auto 34px;
+  line-height:1.55;
+}
+.panel{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:10px;
+}
+.term-bar{display:flex;gap:5px;margin-bottom:10px;}
+.term-bar span{width:8px;height:8px;border-radius:50%;background:#2a323c;}
+.code{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:18px;
+  line-height:1.95;
+  color:#e2e7eb;
+  overflow-x:auto;
+}
+.code .ln{
+  display:block;
+  padding:1px 8px;
+  border-radius:5px;
+  border-left:2px solid transparent;
+  transition:background .25s, border-color .25s, color .25s;
+  white-space:pre;
+}
+.code .ln .k{color:#c99a5b;}
+.code .ln.active{color:var(--ink);background:var(--accent-dim);border-left-color:var(--accent);}
+.lbl{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 9.5px);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--muted);
+  display:block;
+  margin-bottom:7px;
+}
+.chip{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11.5px);
+  padding:5px 9px;
+  border-radius:6px;
+  background:var(--panel-2);
+  border:1px solid var(--accent);
+  color:var(--accent);
+  opacity:0;
+  transform:scale(.9);
+  animation:pop .22s ease forwards;
+  display:inline-block;
+}
+.chip.warn{border-color:var(--accent-2);color:var(--accent-2);}
+.chip.bad{border-color:var(--danger);color:var(--danger);}
+.chip.muted{border-color:var(--line);color:var(--muted);}
+@keyframes pop{from{opacity:0;transform:scale(.9);}to{opacity:1;transform:scale(1);}}
+.note{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:20px;
+  color:var(--muted);
+  text-align:center;
+  min-height:34px;
+  line-height:1.5;
+  padding:0 10px;
+}
+.timeline{max-width:920px;margin:22px auto 0;height:3px;background:var(--line);border-radius:2px;overflow:hidden;}
+.timeline-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent-2),var(--accent));transition:width .05s linear;}
+.verdict{
+  text-align:center;
+  margin:22px auto 0;
+  max-width:600px;
+  font-size:calc(var(--fs,1) * 14px);
+  color:var(--muted);
+  line-height:1.6;
+  min-height:30px;
+  opacity:0;
+  transition:opacity .4s;
+}
+.verdict.show{opacity:1;}
+.verdict b{color:var(--ink);font-weight:600;}
+.controls{
+  position:fixed;
+  left:50%;
+  bottom:16px;
+  transform:translateX(-50%);
+  width:calc(100% - 32px);
+  max-width:1200px;
+  margin:0;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:14px 18px;
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px 20px;
+  z-index:100;
+  box-shadow:0 12px 36px rgba(0,0,0,.5);
+}
+.ctrl-group{display:flex;align-items:center;gap:8px;}
+.ctrl-btn{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 12px);
+  letter-spacing:.03em;
+  color:var(--ink);
+  background:var(--panel-2);
+  border:1px solid var(--line);
+  border-radius:7px;
+  padding:8px 14px;
+  cursor:pointer;
+  transition:border-color .2s, color .2s;
+}
+.ctrl-btn:hover:not(:disabled){border-color:var(--ink);}
+.ctrl-btn:disabled{opacity:.35;cursor:default;}
+.ctrl-btn.play{min-width:132px;border-color:var(--accent);color:var(--accent);}
+.ctrl-btn.step{font-size:calc(var(--fs,1) * 14px);padding:8px 12px;}
+.ctrl-label{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 10px);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin-right:2px;
+}
+.speed-group{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;}
+.speed-btn{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11.5px);
+  color:var(--muted);
+  background:var(--panel-2);
+  border:none;
+  padding:7px 11px;
+  cursor:pointer;
+  border-right:1px solid var(--line);
+  transition:background .2s, color .2s;
+}
+.speed-btn:last-child{border-right:none;}
+.speed-btn.active{background:var(--accent-dim);color:var(--accent);}
+.step-counter{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11px);
+  color:var(--muted);
+  margin-left:auto;
+}
+@media (prefers-reduced-motion: reduce){
+  *{transition-duration:.001ms !important; animation-duration:.001ms !important;}
+}
+.stage-lr{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;}
+@media (max-width:760px){.stage-lr{grid-template-columns:1fr;}}
+.stage-lr .col-code{display:flex;flex-direction:column;}
+.stage-lr .col-code .panel.term{height:100%;}
+.stage-lr .col-out{display:flex;flex-direction:column;gap:14px;}
+
+
+.term{padding:16px 18px;}
+.stack-panel{padding:18px;min-height:220px;}
+.stackbox{
+  display:flex;flex-direction:column-reverse;
+  gap:6px;min-height:190px;
+  justify-content:flex-start;
+}
+.frame{
+  font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 12.5px);
+  padding:10px 14px;border-radius:7px;
+  background:var(--panel-2);border:1px solid var(--accent);color:var(--accent);
+  opacity:0;transform:translateY(6px);
+  transition:opacity .2s, transform .2s;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.frame.show{opacity:1;transform:translateY(0);}
+.frame.main{border-color:var(--line);color:var(--muted);}
+.frame .ret{font-size:calc(var(--fs,1) * 11px);color:var(--good);opacity:0;transition:opacity .2s;}
+.frame .ret.show{opacity:1;}
+.mem{padding:14px 16px;min-height:50px;}
+.mem-rows{display:flex;flex-wrap:wrap;gap:8px;}
+.mem-row{
+  font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 11.5px);
+  background:var(--panel-2);border:1px solid var(--line);border-radius:6px;
+  padding:5px 9px;color:var(--ink);
+  opacity:0;transform:scale(.92);animation:pop .2s ease forwards;
+}
+.mem-row .val{color:var(--accent);}
+
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">JavaScript · Fundamentos</p>
+  <h1>La pila de llamadas</h1>
+  <p class="sub">Cada función que llamas se apila encima de la anterior. Cuando termina, se retira y el control vuelve justo a donde estaba — sin async, sin Web APIs, solo llamadas normales.</p>
+
+
+  <div class="stage-lr">
+    <div class="col-code">
+      <div class="panel term">
+        <div class="term-bar"><span></span><span></span><span></span></div>
+        <div class="code">
+          <span class="ln"><span class="k">function</span> triple(x) { <span class="k">return</span> x * 3; }</span>
+          <span class="ln"><span class="k">function</span> calcula(a, b) {</span>
+          <span class="ln">&nbsp;&nbsp;<span class="k">return</span> triple(a) + triple(b);</span>
+          <span class="ln">}</span>
+          <span class="ln"><span class="k">let</span> total = calcula(2, 5);</span>
+        </div>
+      </div>
+    </div>
+    <div class="col-out">
+      <div class="panel stack-panel">
+        <span class="lbl">Call stack</span>
+        <div class="stackbox" id="stack"></div>
+      </div>
+      <div class="panel mem">
+        <span class="lbl">Resultados conocidos</span>
+        <div class="mem-rows" id="mem"></div>
+      </div>
+    </div>
+  </div>
+  <p class="note" id="noteBox"></p>
+
+
+  <div class="timeline"><div class="timeline-fill" id="fill"></div></div>
+  <p class="verdict" id="verdict"></p>
+  <div class="controls">
+    <div class="ctrl-group">
+      <button id="rewindBtn" class="ctrl-btn step" title="Rebobinar al principio">&#9198;</button>
+      <button id="prevBtn" class="ctrl-btn step" title="Paso anterior">&#9664;&#9664;</button>
+      <button id="playBtn" class="ctrl-btn play">&#9654; Reproducir</button>
+      <button id="nextBtn" class="ctrl-btn step" title="Paso siguiente">&#9654;&#9654;</button>
+      <button id="delayPlayBtn" class="ctrl-btn" title="Empezar tras una cuenta atrás de 10s">&#9654; +10s</button>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Velocidad</span>
+      <div class="speed-group">
+        <button class="speed-btn active" data-speed="0.25">0.25&times;</button>
+        <button class="speed-btn" data-speed="0.5">0.5&times;</button>
+      </div>
+    </div>
+    <span class="step-counter" id="stepCounter">Paso 1 / N</span>
+  </div>
+
+</div>
+
+<script>
+
+var stack = document.getElementById('stack');
+var mem = document.getElementById('mem');
+var noteBox = document.getElementById('noteBox');
+
+var VERDICT = 'Cada llamada añade un <b>frame</b> encima de la pila. Cuando una función termina (return), su frame se retira y el control vuelve al frame de justo debajo — así sabe JS "a dónde volver".';
+
+function frameHtml(label, isMain, ret){
+  return '<div class="frame'+(isMain?' main':'')+' show"><span>'+label+'</span><span class="ret'+(ret?' show':'')+'">'+(ret||'')+'</span></div>';
+}
+
+var STATES = [
+  {frames:[['main',true,'']], mem:[], note:'empieza la ejecución en el ámbito global', verdict:null},
+  {frames:[['main',true,''],['calcula(2, 5)',false,'']], mem:[], note:'se llama a calcula(2, 5) → se apila un nuevo frame', verdict:null},
+  {frames:[['main',true,''],['calcula(2, 5)',false,''],['triple(2)',false,'']], mem:[], note:'calcula llama a triple(2) → otro frame encima', verdict:null},
+  {frames:[['main',true,''],['calcula(2, 5)',false,'']], mem:['triple(2) = 6'], note:'triple(2) hace return 6 → su frame se retira', verdict:null},
+  {frames:[['main',true,''],['calcula(2, 5)',false,''],['triple(5)',false,'']], mem:['triple(2) = 6'], note:'calcula llama a triple(5) → nuevo frame', verdict:null},
+  {frames:[['main',true,''],['calcula(2, 5)',false,'']], mem:['triple(2) = 6','triple(5) = 15'], note:'triple(5) hace return 15 → su frame se retira', verdict:null},
+  {frames:[['main',true,'']], mem:['triple(2) = 6','triple(5) = 15','calcula(2,5) = 21'], note:'calcula hace return 6 + 15 = 21 → su frame se retira', verdict:null},
+  {frames:[], mem:['triple(2) = 6','triple(5) = 15','calcula(2,5) = 21','total = 21'], note:'main termina — la pila queda vacía', verdict:null},
+  {frames:[], mem:['triple(2) = 6','triple(5) = 15','calcula(2,5) = 21','total = 21'], note:'', verdict:VERDICT}
+];
+
+var DURATIONS = [700,700,700,700,700,700,700,700];
+
+function renderState(s){
+  stack.innerHTML = s.frames.map(function(f){ return frameHtml(f[0], f[1], f[2]); }).join('');
+  mem.innerHTML = '<div class="mem-rows">' + s.mem.map(function(m){
+    var i = m.indexOf(' = ');
+    return '<div class="mem-row">'+m.slice(0,i)+' = <span class="val">'+m.slice(i+3)+'</span></div>';
+  }).join('') + '</div>';
+  noteBox.textContent = s.note || '';
+}
+
+</script>
+<script>
+
+(function(){
+  var playBtn = document.getElementById('playBtn');
+  var prevBtn = document.getElementById('prevBtn');
+  var nextBtn = document.getElementById('nextBtn');
+  var rewindBtn = document.getElementById('rewindBtn');
+  var delayPlayBtn = document.getElementById('delayPlayBtn');
+  var stepCounter = document.getElementById('stepCounter');
+  var fill = document.getElementById('fill');
+  var verdict = document.getElementById('verdict');
+  var speedBtns = document.querySelectorAll('.speed-btn');
+
+  var curIndex = 0, playing = false, speed = 0.25, playTimer = null, countdownTimer = null;
+
+  function stopCountdown(){
+    if(countdownTimer){ clearInterval(countdownTimer); countdownTimer = null; }
+    delayPlayBtn.textContent = '▶ +10s';
+    playBtn.disabled = false;
+  }
+  function show(i){
+    var s = STATES[i];
+    renderState(s, i);
+    if(verdict){
+      verdict.innerHTML = s.verdict || '';
+      verdict.classList.toggle('show', !!s.verdict);
+    }
+    if(fill) fill.style.width = (i/(STATES.length-1)*100) + '%';
+    stepCounter.textContent = 'Paso ' + (i+1) + ' / ' + STATES.length;
+    prevBtn.disabled = (i===0);
+    nextBtn.disabled = (i===STATES.length-1);
+  }
+  function stopPlay(){ playing=false; playBtn.textContent='▶ Reproducir'; clearTimeout(playTimer); }
+  function scheduleNext(){
+    if(curIndex >= STATES.length-1){ stopPlay(); return; }
+    var dur = DURATIONS[curIndex] / speed;
+    playTimer = setTimeout(function(){ curIndex++; show(curIndex); scheduleNext(); }, dur);
+  }
+  function startPlay(){
+    if(curIndex >= STATES.length-1){ curIndex=0; show(0); }
+    playing = true; playBtn.textContent='❘❘ Pausar'; scheduleNext();
+  }
+  playBtn.addEventListener('click', function(){ stopCountdown(); playing?stopPlay():startPlay(); });
+  prevBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex=Math.max(0,curIndex-1); show(curIndex); });
+  nextBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex=Math.min(STATES.length-1,curIndex+1); show(curIndex); });
+  rewindBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex=0; show(0); });
+  speedBtns.forEach(function(b){ b.addEventListener('click', function(){ speedBtns.forEach(function(x){x.classList.remove('active');}); b.classList.add('active'); speed=parseFloat(b.getAttribute('data-speed')); }); });
+  delayPlayBtn.addEventListener('click', function(){
+    if(countdownTimer){ stopCountdown(); return; }
+    stopPlay();
+    var remaining=10; playBtn.disabled=true; delayPlayBtn.textContent='Empieza en '+remaining+'s…';
+    countdownTimer=setInterval(function(){
+      remaining--;
+      if(remaining<=0){ clearInterval(countdownTimer); countdownTimer=null; delayPlayBtn.textContent='▶ +10s'; playBtn.disabled=false; startPlay(); }
+      else{ delayPlayBtn.textContent='Empieza en '+remaining+'s…'; }
+    },1000);
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.target && (e.target.tagName==='INPUT' || e.target.tagName==='TEXTAREA' || e.target.isContentEditable)) return;
+    var advance = ['ArrowRight','ArrowDown','PageDown',' ','Spacebar'];
+    var back = ['ArrowLeft','ArrowUp','PageUp','Backspace'];
+    if(advance.indexOf(e.key)!==-1){ e.preventDefault(); nextBtn.click(); }
+    else if(back.indexOf(e.key)!==-1){ e.preventDefault(); prevBtn.click(); }
+  });
+  show(0);
+})();
+
+</script>

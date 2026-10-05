@@ -1,0 +1,580 @@
+<title>Validación de formularios: submit, blur, input</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+
+:root{
+  --bg:#0b0e12;
+  --panel:#11161d;
+  --panel-2:#161d26;
+  --line:#232b34;
+  --ink:#e5e9ed;
+  --muted:#e7ebef;
+  --accent:#4dd9c0;
+  --accent-2:#f2a154;
+  --violet:#a78bfa;
+  --good:#7cd992;
+  --danger:#e2725b;
+  --accent-dim:rgba(77,217,192,.12);
+  --accent2-dim:rgba(242,161,84,.12);
+  --fs:1.35;
+}
+*{box-sizing:border-box;}
+html,body{background:var(--bg);}
+body{
+  margin:0;
+  color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,sans-serif;
+  padding:10px 20px 140px;
+}
+.wrap{max-width:1400px;margin:0 auto;}
+.eyebrow{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11.5px);
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--muted);
+  text-align:center;
+  margin:0 0 12px;
+}
+h1{
+  text-align:center;
+  font-family:"IBM Plex Mono",monospace;
+  font-size:36px;
+  font-weight:600;
+  margin:0 0 10px;
+  text-wrap:balance;
+}
+.sub{
+  text-align:center;
+  color:var(--muted);
+  font-size:calc(var(--fs,1) * 14px);
+  max-width:1400px;
+  margin:0 auto 34px;
+  line-height:1.55;
+}
+.panel{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:10px;
+}
+.term-bar{display:flex;gap:5px;margin-bottom:10px;}
+.term-bar span{width:8px;height:8px;border-radius:50%;background:#2a323c;}
+.code{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:18px;
+  line-height:1.95;
+  color:#e2e7eb;
+  overflow-x:auto;
+}
+.code .ln{
+  display:block;
+  padding:1px 8px;
+  border-radius:5px;
+  border-left:2px solid transparent;
+  transition:background .25s, border-color .25s, color .25s;
+  white-space:pre;
+}
+.code .ln .k{color:#c99a5b;}
+.code .ln.active{color:var(--ink);background:var(--accent-dim);border-left-color:var(--accent);}
+.lbl{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 9.5px);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--muted);
+  display:block;
+  margin-bottom:7px;
+}
+.chip{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11.5px);
+  padding:5px 9px;
+  border-radius:6px;
+  background:var(--panel-2);
+  border:1px solid var(--accent);
+  color:var(--accent);
+  opacity:0;
+  transform:scale(.9);
+  animation:pop .22s ease forwards;
+  display:inline-block;
+}
+.chip.warn{border-color:var(--accent-2);color:var(--accent-2);}
+.chip.bad{border-color:var(--danger);color:var(--danger);}
+.chip.muted{border-color:var(--line);color:var(--muted);}
+@keyframes pop{from{opacity:0;transform:scale(.9);}to{opacity:1;transform:scale(1);}}
+.note{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:20px;
+  color:var(--muted);
+  text-align:center;
+  min-height:34px;
+  line-height:1.5;
+  padding:0 10px;
+}
+.timeline{max-width:920px;margin:22px auto 0;height:3px;background:var(--line);border-radius:2px;overflow:hidden;}
+.timeline-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent-2),var(--accent));transition:width .05s linear;}
+.verdict{
+  text-align:center;
+  margin:22px auto 0;
+  max-width:600px;
+  font-size:calc(var(--fs,1) * 14px);
+  color:var(--muted);
+  line-height:1.6;
+  min-height:30px;
+  opacity:0;
+  transition:opacity .4s;
+}
+.verdict.show{opacity:1;}
+.verdict b{color:var(--ink);font-weight:600;}
+.controls{
+  position:fixed;
+  left:50%;
+  bottom:16px;
+  transform:translateX(-50%);
+  width:calc(100% - 32px);
+  max-width:1200px;
+  margin:0;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:14px 18px;
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px 20px;
+  z-index:100;
+  box-shadow:0 12px 36px rgba(0,0,0,.5);
+}
+.ctrl-group{display:flex;align-items:center;gap:8px;}
+.ctrl-btn{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 12px);
+  letter-spacing:.03em;
+  color:var(--ink);
+  background:var(--panel-2);
+  border:1px solid var(--line);
+  border-radius:7px;
+  padding:8px 14px;
+  cursor:pointer;
+  transition:border-color .2s, color .2s;
+}
+.ctrl-btn:hover:not(:disabled){border-color:var(--ink);}
+.ctrl-btn:disabled{opacity:.35;cursor:default;}
+.ctrl-btn.play{min-width:132px;border-color:var(--accent);color:var(--accent);}
+.ctrl-btn.step{font-size:calc(var(--fs,1) * 14px);padding:8px 12px;}
+.ctrl-label{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 10px);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin-right:2px;
+}
+.speed-group{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;}
+.speed-btn{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11.5px);
+  color:var(--muted);
+  background:var(--panel-2);
+  border:none;
+  padding:7px 11px;
+  cursor:pointer;
+  border-right:1px solid var(--line);
+  transition:background .2s, color .2s;
+}
+.speed-btn:last-child{border-right:none;}
+.speed-btn.active{background:var(--accent-dim);color:var(--accent);}
+.step-counter{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11px);
+  color:var(--muted);
+  margin-left:auto;
+}
+@media (prefers-reduced-motion: reduce){
+  *{transition-duration:.001ms !important; animation-duration:.001ms !important;}
+}
+.stage-lr{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;}
+@media (max-width:760px){.stage-lr{grid-template-columns:1fr;}}
+.stage-lr .col-code{display:flex;flex-direction:column;}
+.stage-lr .col-code .panel.term{height:100%;}
+.stage-lr .col-out{display:flex;flex-direction:column;gap:14px;}
+
+
+.tabbar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:16px;}
+.tab-btn{
+  font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 11.5px);color:var(--muted);
+  background:var(--panel-2);border:1px solid var(--line);border-radius:20px;
+  padding:7px 14px;cursor:pointer;transition:border-color .2s,color .2s,background .2s;
+}
+.tab-btn:hover{color:var(--ink);}
+.tab-btn.active{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+.term{padding:16px 18px;}
+.form-panel{padding:20px 22px;display:flex;flex-direction:column;gap:6px;}
+.field-row{display:flex;align-items:center;gap:10px;}
+.field-label{
+  font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 11.5px);color:var(--muted);
+  width:82px;flex-shrink:0;
+}
+.field-box{
+  flex:1;display:flex;align-items:center;justify-content:space-between;gap:8px;
+  border:1.5px solid var(--line);border-radius:7px;background:var(--panel-2);
+  padding:8px 12px;transition:border-color .25s,background .25s;
+}
+.field-box.invalid{border-color:var(--danger);background:rgba(226,114,91,.08);}
+.field-box.valid{border-color:var(--good);background:rgba(124,217,146,.08);}
+.field-val{
+  font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 13px);color:var(--ink);
+  min-height:16px;
+}
+.field-val:empty::before{content:'';}
+.field-icon{font-size:calc(var(--fs,1) * 13px);flex-shrink:0;}
+.field-error{
+  font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 11px);color:var(--danger);
+  min-height:15px;margin:0 0 4px 92px;opacity:0;transition:opacity .2s;
+}
+.field-error.show{opacity:1;}
+.submit-row{margin-top:8px;display:flex;justify-content:center;}
+.submit-btn{
+  font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 12.5px);color:var(--ink);
+  background:var(--panel-2);border:1px solid var(--line);border-radius:7px;
+  padding:9px 22px;transition:border-color .2s,background .2s,transform .15s;
+}
+.submit-btn.clicked{border-color:var(--accent);background:var(--accent-dim);color:var(--accent);transform:scale(.96);}
+.out-panel{padding:14px 16px;min-height:40px;}
+.out{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 11.5px);}
+.out span{display:block;margin:2px 0;padding:2px 8px;border-radius:5px;background:var(--panel-2);border:1px solid var(--line);color:var(--muted);opacity:0;transform:translateX(-4px);animation:pop .22s ease forwards;}
+
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">JavaScript · Formularios y eventos</p>
+  <h1>¿Cuándo validar un formulario?</h1>
+  <p class="sub">El mismo formulario (email + contraseña) validado de cuatro formas distintas: al enviar, al salir de cada campo, en cada tecla, y la estrategia combinada que usan los formularios profesionales.</p>
+
+
+  <div class="tabbar" id="tabbar">
+    <button class="tab-btn active" data-tab="submit">Al enviar (submit)</button>
+    <button class="tab-btn" data-tab="blur">Al perder el foco (blur)</button>
+    <button class="tab-btn" data-tab="input">Mientras escribes (input)</button>
+    <button class="tab-btn" data-tab="hybrid">Estrategia recomendada</button>
+  </div>
+  <div class="stage">
+  <div class="tab-panel active" data-tab="submit">
+    <div class="stage-lr">
+      <div class="col-code">
+        <div class="panel term">
+          <div class="term-bar"><span></span><span></span><span></span></div>
+          <div class="code">
+            <span class="ln" data-i="setup"><span class="k">const</span> form = document.querySelector('form');</span>
+        <span class="ln" data-i="setup">&nbsp;</span>
+        <span class="ln" data-i="submit">form.addEventListener('submit', <span class="k">function</span>(e) {</span>
+        <span class="ln" data-i="submit">&nbsp;&nbsp;e.preventDefault();</span>
+        <span class="ln" data-i="validar">&nbsp;&nbsp;<span class="k">const</span> errores = validarTodo();&nbsp;<span style="color:var(--muted)">// revisa TODOS los campos</span></span>
+        <span class="ln" data-i="validar">&nbsp;&nbsp;mostrarErrores(errores);</span>
+        <span class="ln" data-i="submit">});</span>
+          </div>
+        </div>
+      </div>
+      <div class="col-out">
+        <div class="panel form-panel">
+      <div class="field-row" data-field="email">
+        <span class="field-label">Email</span>
+        <div class="field-box" data-role="box-email">
+          <span class="field-val" data-role="val-email"></span>
+          <span class="field-icon" data-role="icon-email"></span>
+        </div>
+      </div>
+      <p class="field-error" data-role="err-email"></p>
+      <div class="field-row" data-field="password">
+        <span class="field-label">Contraseña</span>
+        <div class="field-box" data-role="box-password">
+          <span class="field-val" data-role="val-password"></span>
+          <span class="field-icon" data-role="icon-password"></span>
+        </div>
+      </div>
+      <p class="field-error" data-role="err-password"></p>
+      <div class="submit-row"><button class="submit-btn" data-role="submit">Enviar</button></div></div>
+        <div class="panel out-panel">
+          <span class="lbl">Eventos</span>
+          <div class="out" data-role="out"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="tab-panel" data-tab="blur">
+    <div class="stage-lr">
+      <div class="col-code">
+        <div class="panel term">
+          <div class="term-bar"><span></span><span></span><span></span></div>
+          <div class="code">
+            <span class="ln" data-i="setup">[email, password].forEach(<span class="k">function</span>(campo) {</span>
+        <span class="ln" data-i="blur">&nbsp;&nbsp;campo.addEventListener('blur', <span class="k">function</span>() {</span>
+        <span class="ln" data-i="blur">&nbsp;&nbsp;&nbsp;&nbsp;validarCampo(campo);&nbsp;<span style="color:var(--muted)">// valida SOLO este campo</span></span>
+        <span class="ln" data-i="blur">&nbsp;&nbsp;});</span>
+        <span class="ln" data-i="setup">});</span>
+          </div>
+        </div>
+      </div>
+      <div class="col-out">
+        <div class="panel form-panel">
+      <div class="field-row" data-field="email">
+        <span class="field-label">Email</span>
+        <div class="field-box" data-role="box-email">
+          <span class="field-val" data-role="val-email"></span>
+          <span class="field-icon" data-role="icon-email"></span>
+        </div>
+      </div>
+      <p class="field-error" data-role="err-email"></p>
+      <div class="field-row" data-field="password">
+        <span class="field-label">Contraseña</span>
+        <div class="field-box" data-role="box-password">
+          <span class="field-val" data-role="val-password"></span>
+          <span class="field-icon" data-role="icon-password"></span>
+        </div>
+      </div>
+      <p class="field-error" data-role="err-password"></p>
+      <div class="submit-row"><button class="submit-btn" data-role="submit">Enviar</button></div></div>
+        <div class="panel out-panel">
+          <span class="lbl">Eventos</span>
+          <div class="out" data-role="out"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="tab-panel" data-tab="input">
+    <div class="stage-lr">
+      <div class="col-code">
+        <div class="panel term">
+          <div class="term-bar"><span></span><span></span><span></span></div>
+          <div class="code">
+            <span class="ln" data-i="setup">[email, password].forEach(<span class="k">function</span>(campo) {</span>
+        <span class="ln" data-i="input">&nbsp;&nbsp;campo.addEventListener('input', <span class="k">function</span>() {</span>
+        <span class="ln" data-i="input">&nbsp;&nbsp;&nbsp;&nbsp;validarCampo(campo);&nbsp;<span style="color:var(--muted)">// valida en cada pulsación</span></span>
+        <span class="ln" data-i="input">&nbsp;&nbsp;});</span>
+        <span class="ln" data-i="setup">});</span>
+          </div>
+        </div>
+      </div>
+      <div class="col-out">
+        <div class="panel form-panel">
+      <div class="field-row" data-field="email">
+        <span class="field-label">Email</span>
+        <div class="field-box" data-role="box-email">
+          <span class="field-val" data-role="val-email"></span>
+          <span class="field-icon" data-role="icon-email"></span>
+        </div>
+      </div>
+      <p class="field-error" data-role="err-email"></p>
+      <div class="field-row" data-field="password">
+        <span class="field-label">Contraseña</span>
+        <div class="field-box" data-role="box-password">
+          <span class="field-val" data-role="val-password"></span>
+          <span class="field-icon" data-role="icon-password"></span>
+        </div>
+      </div>
+      <p class="field-error" data-role="err-password"></p>
+      <div class="submit-row"><button class="submit-btn" data-role="submit">Enviar</button></div></div>
+        <div class="panel out-panel">
+          <span class="lbl">Eventos</span>
+          <div class="out" data-role="out"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="tab-panel" data-tab="hybrid">
+    <div class="stage-lr">
+      <div class="col-code">
+        <div class="panel term">
+          <div class="term-bar"><span></span><span></span><span></span></div>
+          <div class="code">
+            <span class="ln" data-i="setup"><span class="k">const</span> tocado = { email: <span class="k">false</span>, password: <span class="k">false</span> };</span>
+        <span class="ln" data-i="setup">&nbsp;</span>
+        <span class="ln" data-i="setup">[email, password].forEach(<span class="k">function</span>(campo) {</span>
+        <span class="ln" data-i="blur">&nbsp;&nbsp;campo.addEventListener('blur', <span class="k">function</span>() {</span>
+        <span class="ln" data-i="blur">&nbsp;&nbsp;&nbsp;&nbsp;tocado[campo.name] = <span class="k">true</span>; validarCampo(campo);</span>
+        <span class="ln" data-i="blur">&nbsp;&nbsp;});</span>
+        <span class="ln" data-i="input">&nbsp;&nbsp;campo.addEventListener('input', <span class="k">function</span>() {</span>
+        <span class="ln" data-i="input">&nbsp;&nbsp;&nbsp;&nbsp;<span class="k">if</span> (tocado[campo.name]) validarCampo(campo);</span>
+        <span class="ln" data-i="input">&nbsp;&nbsp;});</span>
+        <span class="ln" data-i="setup">});</span>
+        <span class="ln" data-i="setup">&nbsp;</span>
+        <span class="ln" data-i="submit">form.addEventListener('submit', <span class="k">function</span>(e) { e.preventDefault(); enviar(); });</span>
+          </div>
+        </div>
+      </div>
+      <div class="col-out">
+        <div class="panel form-panel">
+      <div class="field-row" data-field="email">
+        <span class="field-label">Email</span>
+        <div class="field-box" data-role="box-email">
+          <span class="field-val" data-role="val-email"></span>
+          <span class="field-icon" data-role="icon-email"></span>
+        </div>
+      </div>
+      <p class="field-error" data-role="err-email"></p>
+      <div class="field-row" data-field="password">
+        <span class="field-label">Contraseña</span>
+        <div class="field-box" data-role="box-password">
+          <span class="field-val" data-role="val-password"></span>
+          <span class="field-icon" data-role="icon-password"></span>
+        </div>
+      </div>
+      <p class="field-error" data-role="err-password"></p>
+      <div class="submit-row"><button class="submit-btn" data-role="submit">Enviar</button></div></div>
+        <div class="panel out-panel">
+          <span class="lbl">Eventos</span>
+          <div class="out" data-role="out"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+  <p class="note" id="noteBox"></p>
+
+
+  <div class="timeline"><div class="timeline-fill" id="fill"></div></div>
+  <p class="verdict" id="verdict"></p>
+  <div class="controls">
+    <div class="ctrl-group">
+      <button id="rewindBtn" class="ctrl-btn step" title="Rebobinar al principio">&#9198;</button>
+      <button id="prevBtn" class="ctrl-btn step" title="Paso anterior">&#9664;&#9664;</button>
+      <button id="playBtn" class="ctrl-btn play">&#9654; Reproducir</button>
+      <button id="nextBtn" class="ctrl-btn step" title="Paso siguiente">&#9654;&#9654;</button>
+      <button id="delayPlayBtn" class="ctrl-btn" title="Empezar tras una cuenta atrás de 10s">&#9654; +10s</button>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Velocidad</span>
+      <div class="speed-group">
+        <button class="speed-btn active" data-speed="0.25">0.25&times;</button>
+        <button class="speed-btn" data-speed="0.5">0.5&times;</button>
+      </div>
+    </div>
+    <span class="step-counter" id="stepCounter">Paso 1 / N</span>
+  </div>
+
+</div>
+
+<script>
+
+var ICONS = {"idle": "⏳", "invalid": "❌", "valid": "✅"};
+var TABS = {
+  submit: { states: [{"active": null, "email": {"val": "", "status": "idle", "err": ""}, "password": {"val": "", "status": "idle", "err": ""}, "out": [], "note": "El usuario empieza a rellenar el formulario.", "verdict": null}, {"active": null, "email": {"val": "ana@", "status": "idle", "err": ""}, "password": {"val": "", "status": "idle", "err": ""}, "out": [], "note": "Escribe el email... no pasa nada, no hay listener en cada campo.", "verdict": null}, {"active": null, "email": {"val": "ana@", "status": "idle", "err": ""}, "password": {"val": "123", "status": "idle", "err": ""}, "out": [], "note": "Escribe la contraseña... tampoco hay validación mientras tanto.", "verdict": null}, {"active": "submit", "email": {"val": "ana@", "status": "idle", "err": ""}, "password": {"val": "123", "status": "idle", "err": ""}, "out": ["🖱️ submit"], "note": "Pulsa \"Enviar\" → salta el listener de submit.", "verdict": null}, {"active": "validar", "email": {"val": "ana@", "status": "invalid", "err": "Formato de email no válido"}, "password": {"val": "123", "status": "invalid", "err": "Mínimo 6 caracteres"}, "out": ["🖱️ submit", "validarTodo() revisa los 2 campos a la vez", "❌ email: formato no válido", "❌ contraseña: mínimo 6 caracteres"], "note": "Todos los errores aparecen de golpe, aunque el email llevaba un rato mal escrito sin que se supiera.", "verdict": null}, {"active": null, "email": {"val": "ana@gmail.com", "status": "invalid", "err": "Formato de email no válido"}, "password": {"val": "123456", "status": "invalid", "err": "Mínimo 6 caracteres"}, "out": ["🖱️ submit", "validarTodo() revisa los 2 campos a la vez", "❌ email: formato no válido", "❌ contraseña: mínimo 6 caracteres"], "note": "Corrige ambos campos... pero el error sigue en pantalla, no desaparece hasta el próximo submit.", "verdict": null}, {"active": "submit", "email": {"val": "ana@gmail.com", "status": "invalid", "err": "Formato de email no válido"}, "password": {"val": "123456", "status": "invalid", "err": "Mínimo 6 caracteres"}, "out": ["🖱️ submit", "validarTodo() revisa los 2 campos a la vez", "❌ email: formato no válido", "❌ contraseña: mínimo 6 caracteres", "🖱️ submit"], "note": "Vuelve a pulsar \"Enviar\".", "verdict": null}, {"active": "validar", "email": {"val": "ana@gmail.com", "status": "valid", "err": ""}, "password": {"val": "123456", "status": "valid", "err": ""}, "out": ["🖱️ submit", "validarTodo() revisa los 2 campos a la vez", "❌ email: formato no válido", "❌ contraseña: mínimo 6 caracteres", "🖱️ submit", "✅ formulario válido → enviado"], "note": "", "verdict": "Validar todo al enviar: un solo punto de validación, código simple. Pero el usuario no se entera de ningún error hasta que pulsa <b>Enviar</b> — puede llevar rato rellenando mal sin saberlo."}], durations: [700, 900, 900, 700, 1300, 1400, 700, 1300] },
+  blur: { states: [{"active": null, "email": {"val": "", "status": "idle", "err": ""}, "password": {"val": "", "status": "idle", "err": ""}, "out": [], "note": "El usuario empieza a rellenar el formulario.", "verdict": null}, {"active": null, "email": {"val": "ana@", "status": "idle", "err": ""}, "password": {"val": "", "status": "idle", "err": ""}, "out": [], "note": "Escribe el email...", "verdict": null}, {"active": "blur", "email": {"val": "ana@", "status": "invalid", "err": "Formato de email no válido"}, "password": {"val": "", "status": "idle", "err": ""}, "out": ["👁️‍🗨️ blur email → validarCampo(email)"], "note": "Al salir del campo (blur) se valida SOLO ese campo, al instante.", "verdict": null}, {"active": null, "email": {"val": "ana@", "status": "invalid", "err": "Formato de email no válido"}, "password": {"val": "123", "status": "idle", "err": ""}, "out": ["👁️‍🗨️ blur email → validarCampo(email)"], "note": "Pasa a la contraseña y escribe...", "verdict": null}, {"active": "blur", "email": {"val": "ana@", "status": "invalid", "err": "Formato de email no válido"}, "password": {"val": "123", "status": "invalid", "err": "Mínimo 6 caracteres"}, "out": ["👁️‍🗨️ blur email → validarCampo(email)", "👁️‍🗨️ blur contraseña → validarCampo(contraseña)"], "note": "Vuelve a validarse solo ese campo al salir.", "verdict": null}, {"active": null, "email": {"val": "ana@gmail.com", "status": "invalid", "err": "Formato de email no válido"}, "password": {"val": "123", "status": "invalid", "err": "Mínimo 6 caracteres"}, "out": ["👁️‍🗨️ blur email → validarCampo(email)", "👁️‍🗨️ blur contraseña → validarCampo(contraseña)"], "note": "Reescribe el email... pero el error no se actualiza hasta que vuelva a salir del campo.", "verdict": null}, {"active": "blur", "email": {"val": "ana@gmail.com", "status": "valid", "err": ""}, "password": {"val": "123", "status": "invalid", "err": "Mínimo 6 caracteres"}, "out": ["👁️‍🗨️ blur email → validarCampo(email)", "👁️‍🗨️ blur contraseña → validarCampo(contraseña)", "👁️‍🗨️ blur email → ✅"], "note": "Al salir de nuevo, se revalida y ahora está bien.", "verdict": null}, {"active": null, "email": {"val": "ana@gmail.com", "status": "valid", "err": ""}, "password": {"val": "123456", "status": "invalid", "err": "Mínimo 6 caracteres"}, "out": ["👁️‍🗨️ blur email → validarCampo(email)", "👁️‍🗨️ blur contraseña → validarCampo(contraseña)", "👁️‍🗨️ blur email → ✅"], "note": "Igual con la contraseña: la corrige, pero el error sigue ahí.", "verdict": null}, {"active": "blur", "email": {"val": "ana@gmail.com", "status": "valid", "err": ""}, "password": {"val": "123456", "status": "valid", "err": ""}, "out": ["👁️‍🗨️ blur email → validarCampo(email)", "👁️‍🗨️ blur contraseña → validarCampo(contraseña)", "👁️‍🗨️ blur email → ✅", "👁️‍🗨️ blur contraseña → ✅"], "note": "", "verdict": "Validar uno a uno al <b>perder el foco (blur)</b>: feedback más rápido, campo a campo. Pero si corriges el error sin volver a salir del campo, el mensaje se queda <b>desactualizado</b> hasta el próximo blur."}], durations: [700, 900, 900, 1300, 900, 1300, 900, 1300] },
+  input: { states: [{"active": null, "email": {"val": "", "status": "idle", "err": ""}, "password": {"val": "", "status": "idle", "err": ""}, "out": [], "note": "El usuario empieza a escribir.", "verdict": null}, {"active": "input", "email": {"val": "a", "status": "invalid", "err": "Formato de email no válido"}, "password": {"val": "", "status": "idle", "err": ""}, "out": ["⌨️ input email \"a\" → ❌"], "note": "Con cada tecla se dispara el evento input → se valida al instante.", "verdict": null}, {"active": "input", "email": {"val": "an", "status": "invalid", "err": "Formato de email no válido"}, "password": {"val": "", "status": "idle", "err": ""}, "out": ["⌨️ input email \"a\" → ❌", "⌨️ input email \"an\" → ❌"], "note": "Sigue en rojo aunque solo lleva dos letras.", "verdict": null}, {"active": "input", "email": {"val": "ana@gmail.com", "status": "valid", "err": ""}, "password": {"val": "", "status": "idle", "err": ""}, "out": ["⌨️ input email \"a\" → ❌", "⌨️ input email \"an\" → ❌", "⌨️ input email → ✅"], "note": "En cuanto el formato es válido, se pone en verde al instante.", "verdict": null}, {"active": "input", "email": {"val": "ana@gmail.com", "status": "valid", "err": ""}, "password": {"val": "1", "status": "invalid", "err": "Mínimo 6 caracteres"}, "out": ["⌨️ input email → ✅", "⌨️ input contraseña \"1\" → ❌"], "note": "Lo mismo con la contraseña: rojo desde la primera tecla.", "verdict": null}, {"active": "input", "email": {"val": "ana@gmail.com", "status": "valid", "err": ""}, "password": {"val": "12345", "status": "invalid", "err": "Mínimo 6 caracteres"}, "out": ["⌨️ input email → ✅", "⌨️ input contraseña \"1\" → ❌", "⌨️ input contraseña \"12345\" → ❌"], "note": "", "verdict": null}, {"active": "input", "email": {"val": "ana@gmail.com", "status": "valid", "err": ""}, "password": {"val": "123456", "status": "valid", "err": ""}, "out": ["⌨️ input email → ✅", "⌨️ input contraseña \"1\" → ❌", "⌨️ input contraseña \"12345\" → ❌", "⌨️ input contraseña → ✅"], "note": "Válida justo cuando se cumple la regla.", "verdict": "Validar en cada tecla (<b>input</b>): el feedback es inmediato. El problema: el campo se pone en rojo desde la primera letra, antes de que el usuario termine de escribir — puede resultar agresivo."}], durations: [700, 900, 900, 1300, 900, 900, 1300] },
+  hybrid: { states: [{"active": null, "email": {"val": "", "status": "idle", "err": ""}, "password": {"val": "", "status": "idle", "err": ""}, "out": [], "note": "El usuario empieza a rellenar el formulario.", "verdict": null}, {"active": null, "email": {"val": "ana@", "status": "idle", "err": ""}, "password": {"val": "", "status": "idle", "err": ""}, "out": [], "note": "Escribe el email por primera vez: como el campo aún no está \"tocado\", el input no valida nada.", "verdict": null}, {"active": "blur", "email": {"val": "ana@", "status": "invalid", "err": "Formato de email no válido"}, "password": {"val": "", "status": "idle", "err": ""}, "out": ["👁️‍🗨️ blur email (primera vez) → tocado=true → ❌"], "note": "Al salir por primera vez se marca como \"tocado\" y se valida.", "verdict": null}, {"active": "input", "email": {"val": "ana@gmail.com", "status": "valid", "err": ""}, "password": {"val": "", "status": "idle", "err": ""}, "out": ["👁️‍🗨️ blur email (primera vez) → tocado=true → ❌", "⌨️ input email (ya tocado) → ✅"], "note": "Ahora que ya está \"tocado\", el input SÍ revalida en vivo: en cuanto lo corrige, se pone en verde al instante.", "verdict": null}, {"active": null, "email": {"val": "ana@gmail.com", "status": "valid", "err": ""}, "password": {"val": "123", "status": "idle", "err": ""}, "out": ["👁️‍🗨️ blur email (primera vez) → tocado=true → ❌", "⌨️ input email (ya tocado) → ✅"], "note": "Con la contraseña pasa lo mismo: mientras no se haya tocado, escribir no valida.", "verdict": null}, {"active": "blur", "email": {"val": "ana@gmail.com", "status": "valid", "err": ""}, "password": {"val": "123", "status": "invalid", "err": "Mínimo 6 caracteres"}, "out": ["👁️‍🗨️ blur email (primera vez) → tocado=true → ❌", "⌨️ input email (ya tocado) → ✅", "👁️‍🗨️ blur contraseña (primera vez) → tocado=true → ❌"], "note": "", "verdict": null}, {"active": "input", "email": {"val": "ana@gmail.com", "status": "valid", "err": ""}, "password": {"val": "123456", "status": "valid", "err": ""}, "out": ["👁️‍🗨️ blur email (primera vez) → tocado=true → ❌", "⌨️ input email (ya tocado) → ✅", "👁️‍🗨️ blur contraseña (primera vez) → tocado=true → ❌", "⌨️ input contraseña (ya tocado) → ✅"], "note": "Corrige y, como ya está tocado, valida en vivo.", "verdict": null}, {"active": "submit", "email": {"val": "ana@gmail.com", "status": "valid", "err": ""}, "password": {"val": "123456", "status": "valid", "err": ""}, "out": ["👁️‍🗨️ blur email (primera vez) → tocado=true → ❌", "⌨️ input email (ya tocado) → ✅", "👁️‍🗨️ blur contraseña (primera vez) → tocado=true → ❌", "⌨️ input contraseña (ya tocado) → ✅", "🖱️ submit"], "note": "Pulsa \"Enviar\" con todo ya validado.", "verdict": null}, {"active": "submit", "email": {"val": "ana@gmail.com", "status": "valid", "err": ""}, "password": {"val": "123456", "status": "valid", "err": ""}, "out": ["👁️‍🗨️ blur email (primera vez) → tocado=true → ❌", "⌨️ input email (ya tocado) → ✅", "👁️‍🗨️ blur contraseña (primera vez) → tocado=true → ❌", "⌨️ input contraseña (ya tocado) → ✅", "🖱️ submit", "✅ formulario válido → enviado"], "note": "", "verdict": "La estrategia más usada en formularios reales: no valides mientras el usuario escribe por primera vez; valida al <b>blur</b> (y ahí lo marcas como 'tocado'); a partir de ahí revalida en <b>input</b> para dar feedback instantáneo al corregir. Lo mejor de los tres mundos."}], durations: [700, 900, 1300, 900, 900, 1300, 900, 1300] }
+};
+var currentTab = 'submit';
+
+var playBtn = document.getElementById('playBtn');
+var prevBtn = document.getElementById('prevBtn');
+var nextBtn = document.getElementById('nextBtn');
+var rewindBtn = document.getElementById('rewindBtn');
+var delayPlayBtn = document.getElementById('delayPlayBtn');
+var stepCounter = document.getElementById('stepCounter');
+var fill = document.getElementById('fill');
+var verdict = document.getElementById('verdict');
+var noteBox = document.getElementById('noteBox');
+var speedBtns = document.querySelectorAll('.speed-btn');
+var tabBtns = document.querySelectorAll('.tab-btn');
+
+var curIndex = 0, playing = false, speed = 0.25, playTimer = null, countdownTimer = null;
+
+function renderField(root, key, f){
+  var box = root.querySelector('[data-role="box-'+key+'"]');
+  var val = root.querySelector('[data-role="val-'+key+'"]');
+  var icon = root.querySelector('[data-role="icon-'+key+'"]');
+  var err = root.querySelector('[data-role="err-'+key+'"]');
+  box.className = 'field-box' + (f.status !== 'idle' ? ' ' + f.status : '');
+  val.textContent = f.val;
+  icon.textContent = ICONS[f.status];
+  err.textContent = f.err;
+  err.classList.toggle('show', !!f.err);
+}
+
+function renderVisual(tabKey, s){
+  var root = document.querySelector('.tab-panel[data-tab="'+tabKey+'"]');
+  var codeLines = root.querySelectorAll('.code .ln');
+  codeLines.forEach(function(el){ el.classList.remove('active'); });
+  if(s.active){
+    codeLines.forEach(function(el){ if(el.getAttribute('data-i') === s.active) el.classList.add('active'); });
+  }
+  renderField(root, 'email', s.email);
+  renderField(root, 'password', s.password);
+  var submitBtn = root.querySelector('[data-role="submit"]');
+  submitBtn.classList.toggle('clicked', s.active === 'submit');
+  root.querySelector('[data-role="out"]').innerHTML = s.out.map(function(v){ return '<span>'+v+'</span>'; }).join('');
+}
+
+function show(i){
+  var data = TABS[currentTab];
+  var s = data.states[i];
+  renderVisual(currentTab, s);
+  verdict.innerHTML = s.verdict || '';
+  verdict.classList.toggle('show', !!s.verdict);
+  noteBox.textContent = s.note || '';
+  fill.style.width = (i / (data.states.length - 1) * 100) + '%';
+  stepCounter.textContent = 'Paso ' + (i+1) + ' / ' + data.states.length;
+  prevBtn.disabled = (i === 0);
+  nextBtn.disabled = (i === data.states.length - 1);
+}
+
+function stopCountdown(){
+  if(countdownTimer){ clearInterval(countdownTimer); countdownTimer = null; }
+  delayPlayBtn.textContent = '▶ +10s';
+  playBtn.disabled = false;
+}
+function stopPlay(){ playing = false; playBtn.textContent = '▶ Reproducir'; clearTimeout(playTimer); }
+function scheduleNext(){
+  var data = TABS[currentTab];
+  if(curIndex >= data.states.length - 1){ stopPlay(); return; }
+  var dur = data.durations[curIndex] / speed;
+  playTimer = setTimeout(function(){ curIndex++; show(curIndex); scheduleNext(); }, dur);
+}
+function startPlay(){
+  var data = TABS[currentTab];
+  if(curIndex >= data.states.length - 1){ curIndex = 0; show(0); }
+  playing = true; playBtn.textContent = '❘❘ Pausar'; scheduleNext();
+}
+
+playBtn.addEventListener('click', function(){ stopCountdown(); playing ? stopPlay() : startPlay(); });
+prevBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex = Math.max(0, curIndex - 1); show(curIndex); });
+nextBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); var data=TABS[currentTab]; curIndex = Math.min(data.states.length - 1, curIndex + 1); show(curIndex); });
+rewindBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex = 0; show(0); });
+speedBtns.forEach(function(b){ b.addEventListener('click', function(){ speedBtns.forEach(function(x){x.classList.remove('active');}); b.classList.add('active'); speed = parseFloat(b.getAttribute('data-speed')); }); });
+delayPlayBtn.addEventListener('click', function(){
+  if(countdownTimer){ stopCountdown(); return; }
+  stopPlay();
+  var remaining = 10; playBtn.disabled = true; delayPlayBtn.textContent = 'Empieza en ' + remaining + 's…';
+  countdownTimer = setInterval(function(){
+    remaining--;
+    if(remaining <= 0){ clearInterval(countdownTimer); countdownTimer = null; delayPlayBtn.textContent = '▶ +10s'; playBtn.disabled = false; startPlay(); }
+    else{ delayPlayBtn.textContent = 'Empieza en ' + remaining + 's…'; }
+  }, 1000);
+});
+
+tabBtns.forEach(function(b){
+  b.addEventListener('click', function(){
+    stopCountdown(); stopPlay();
+    currentTab = b.getAttribute('data-tab');
+    tabBtns.forEach(function(x){ x.classList.remove('active'); });
+    b.classList.add('active');
+    document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.toggle('active', p.getAttribute('data-tab') === currentTab); });
+    curIndex = 0;
+    show(0);
+  });
+});
+
+document.addEventListener('keydown', function(e){
+  if(e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable)) return;
+  var advance = ['ArrowRight','ArrowDown','PageDown',' ','Spacebar'];
+  var back = ['ArrowLeft','ArrowUp','PageUp','Backspace'];
+  if(advance.indexOf(e.key) !== -1){ e.preventDefault(); nextBtn.click(); }
+  else if(back.indexOf(e.key) !== -1){ e.preventDefault(); prevBtn.click(); }
+});
+
+show(0);
+
+</script>

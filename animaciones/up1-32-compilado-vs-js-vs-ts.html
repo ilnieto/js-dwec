@@ -1,0 +1,495 @@
+<title>Compilado vs JavaScript vs TypeScript</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+
+:root{
+  --bg:#0b0e12;
+  --panel:#11161d;
+  --panel-2:#161d26;
+  --line:#232b34;
+  --ink:#e5e9ed;
+  --muted:#e7ebef;
+  --accent:#4dd9c0;
+  --accent-2:#f2a154;
+  --violet:#a78bfa;
+  --good:#7cd992;
+  --danger:#e2725b;
+  --accent-dim:rgba(77,217,192,.12);
+  --accent2-dim:rgba(242,161,84,.12);
+  --fs:1.35;
+}
+*{box-sizing:border-box;}
+html,body{background:var(--bg);}
+body{
+  margin:0;
+  color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,sans-serif;
+  padding:10px 20px 140px;
+}
+.wrap{max-width:1400px;margin:0 auto;}
+.eyebrow{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11.5px);
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--muted);
+  text-align:center;
+  margin:0 0 12px;
+}
+h1{
+  text-align:center;
+  font-family:"IBM Plex Mono",monospace;
+  font-size:36px;
+  font-weight:600;
+  margin:0 0 10px;
+  text-wrap:balance;
+}
+.sub{
+  text-align:center;
+  color:var(--muted);
+  font-size:calc(var(--fs,1) * 14px);
+  max-width:1400px;
+  margin:0 auto 34px;
+  line-height:1.55;
+}
+.panel{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:10px;
+}
+.term-bar{display:flex;gap:5px;margin-bottom:10px;}
+.term-bar span{width:8px;height:8px;border-radius:50%;background:#2a323c;}
+.code{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:18px;
+  line-height:1.95;
+  color:#e2e7eb;
+  overflow-x:auto;
+}
+.code .ln{
+  display:block;
+  padding:1px 8px;
+  border-radius:5px;
+  border-left:2px solid transparent;
+  transition:background .25s, border-color .25s, color .25s;
+  white-space:pre;
+}
+.code .ln .k{color:#c99a5b;}
+.code .ln.active{color:var(--ink);background:var(--accent-dim);border-left-color:var(--accent);}
+.lbl{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 9.5px);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--muted);
+  display:block;
+  margin-bottom:7px;
+}
+.chip{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11.5px);
+  padding:5px 9px;
+  border-radius:6px;
+  background:var(--panel-2);
+  border:1px solid var(--accent);
+  color:var(--accent);
+  opacity:0;
+  transform:scale(.9);
+  animation:pop .22s ease forwards;
+  display:inline-block;
+}
+.chip.warn{border-color:var(--accent-2);color:var(--accent-2);}
+.chip.bad{border-color:var(--danger);color:var(--danger);}
+.chip.muted{border-color:var(--line);color:var(--muted);}
+@keyframes pop{from{opacity:0;transform:scale(.9);}to{opacity:1;transform:scale(1);}}
+.note{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:20px;
+  color:var(--muted);
+  text-align:center;
+  min-height:34px;
+  line-height:1.5;
+  padding:0 10px;
+}
+.timeline{max-width:920px;margin:22px auto 0;height:3px;background:var(--line);border-radius:2px;overflow:hidden;}
+.timeline-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent-2),var(--accent));transition:width .05s linear;}
+.verdict{
+  text-align:center;
+  margin:22px auto 0;
+  max-width:600px;
+  font-size:calc(var(--fs,1) * 14px);
+  color:var(--muted);
+  line-height:1.6;
+  min-height:30px;
+  opacity:0;
+  transition:opacity .4s;
+}
+.verdict.show{opacity:1;}
+.verdict b{color:var(--ink);font-weight:600;}
+.controls{
+  position:fixed;
+  left:50%;
+  bottom:16px;
+  transform:translateX(-50%);
+  width:calc(100% - 32px);
+  max-width:1200px;
+  margin:0;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:14px 18px;
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px 20px;
+  z-index:100;
+  box-shadow:0 12px 36px rgba(0,0,0,.5);
+}
+.ctrl-group{display:flex;align-items:center;gap:8px;}
+.ctrl-btn{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 12px);
+  letter-spacing:.03em;
+  color:var(--ink);
+  background:var(--panel-2);
+  border:1px solid var(--line);
+  border-radius:7px;
+  padding:8px 14px;
+  cursor:pointer;
+  transition:border-color .2s, color .2s;
+}
+.ctrl-btn:hover:not(:disabled){border-color:var(--ink);}
+.ctrl-btn:disabled{opacity:.35;cursor:default;}
+.ctrl-btn.play{min-width:132px;border-color:var(--accent);color:var(--accent);}
+.ctrl-btn.step{font-size:calc(var(--fs,1) * 14px);padding:8px 12px;}
+.ctrl-label{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 10px);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin-right:2px;
+}
+.speed-group{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;}
+.speed-btn{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11.5px);
+  color:var(--muted);
+  background:var(--panel-2);
+  border:none;
+  padding:7px 11px;
+  cursor:pointer;
+  border-right:1px solid var(--line);
+  transition:background .2s, color .2s;
+}
+.speed-btn:last-child{border-right:none;}
+.speed-btn.active{background:var(--accent-dim);color:var(--accent);}
+.step-counter{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11px);
+  color:var(--muted);
+  margin-left:auto;
+}
+@media (prefers-reduced-motion: reduce){
+  *{transition-duration:.001ms !important; animation-duration:.001ms !important;}
+}
+.stage-lr{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;}
+@media (max-width:760px){.stage-lr{grid-template-columns:1fr;}}
+.stage-lr .col-code{display:flex;flex-direction:column;}
+.stage-lr .col-code .panel.term{height:100%;}
+.stage-lr .col-out{display:flex;flex-direction:column;gap:14px;}
+
+
+.tabbar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:16px;}
+.tab-btn{
+  font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 12px);color:var(--muted);
+  background:var(--panel-2);border:1px solid var(--line);border-radius:20px;
+  padding:7px 15px;cursor:pointer;transition:border-color .2s,color .2s,background .2s;
+}
+.tab-btn:hover{color:var(--ink);}
+.tab-btn.active{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+.term{padding:16px 18px;}
+.pipeline{padding:18px 20px;display:flex;flex-direction:column;gap:6px;}
+.pstep{
+  display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:8px;
+  border:1px solid var(--line);background:var(--panel-2);opacity:.4;
+  transition:opacity .3s,border-color .3s,background .3s,color .3s;
+}
+.pstep .picon{font-size:calc(var(--fs,1) * 15px);flex-shrink:0;width:24px;text-align:center;}
+.pstep .plabel{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 12.5px);color:var(--muted);transition:color .3s;}
+.pstep.active{opacity:1;border-color:var(--accent);background:var(--accent-dim);}
+.pstep.active .plabel{color:var(--ink);}
+.pstep.done{opacity:1;border-color:var(--good);}
+.pstep.done .plabel{color:var(--ink);}
+.pstep.error{opacity:1;border-color:var(--danger);background:rgba(226,114,91,.08);}
+.pstep.error .plabel{color:var(--danger);}
+.parrow{text-align:center;color:var(--muted);font-size:calc(var(--fs,1) * 13px);margin:-2px 0;}
+.error-box{
+  font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 11.5px);color:var(--danger);
+  background:rgba(226,114,91,.08);border:1px solid var(--danger);border-radius:8px;
+  padding:0 14px;min-height:0;max-height:0;overflow:hidden;opacity:0;line-height:1.5;
+  transition:opacity .25s,max-height .25s,padding .25s;
+}
+.error-box.show{opacity:1;max-height:80px;padding:10px 14px;}
+.out-panel{padding:14px 16px;min-height:44px;}
+.out{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 13px);}
+.out span{display:block;margin:2px 0;padding:2px 8px;border-radius:5px;background:var(--panel-2);border:1px solid var(--good);color:var(--good);opacity:0;transform:translateX(-4px);animation:pop .22s ease forwards;}
+
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">JavaScript · Fundamentos del lenguaje</p>
+  <h1>¿Qué significa "compilado"? C, JavaScript y TypeScript</h1>
+  <p class="sub">Un lenguaje compilado revisa los tipos ANTES de ejecutar. JavaScript no revisa nada y ejecuta igual. TypeScript añade esa revisión de tipos... pero por debajo sigue siendo JavaScript.</p>
+
+
+  <div class="tabbar" id="tabbar">
+    <button class="tab-btn active" data-tab="compilado">Lenguaje compilado (C)</button>
+    <button class="tab-btn" data-tab="js">JavaScript</button>
+    <button class="tab-btn" data-tab="ts">TypeScript</button>
+  </div>
+  <div class="stage">
+  <div class="tab-panel active" data-tab="compilado">
+    <div class="stage-lr">
+      <div class="col-code">
+        <div class="panel term">
+          <div class="term-bar"><span></span><span></span><span></span></div>
+          <div class="code">
+            <span class="ln" data-i="fn"><span class="k">int</span> sumar(<span class="k">int</span> a, <span class="k">int</span> b) {</span>
+        <span class="ln" data-i="fn">&nbsp;&nbsp;<span class="k">return</span> a + b;</span>
+        <span class="ln" data-i="fn">}</span>
+        <span class="ln" data-i="fn">&nbsp;</span>
+        <span class="ln" data-i="fn"><span class="k">int</span> main() {</span>
+        <span class="ln" data-i="call">&nbsp;&nbsp;printf(<span style="color:var(--good)">"%d"</span>, sumar(5, <span style="color:var(--good)">"10"</span>));</span>
+        <span class="ln" data-i="fn">}</span>
+          </div>
+        </div>
+      </div>
+      <div class="col-out">
+        <div class="panel pipeline">
+      <div class="pstep" data-step="editor">
+        <span class="picon">&#128221;</span>
+        <span class="plabel">Editor &mdash; c&oacute;digo fuente .c</span>
+      </div><div class="parrow">&#8595;</div>
+      <div class="pstep" data-step="compilador">
+        <span class="picon">&#128736;&#65039;</span>
+        <span class="plabel">Compilador (gcc) &mdash; revisa TODO antes de ejecutar</span>
+      </div><div class="parrow">&#8595;</div>
+      <div class="pstep" data-step="ejecutable">
+        <span class="picon">&#128230;</span>
+        <span class="plabel">Ejecutable binario</span>
+      </div></div>
+        <p class="error-box" data-role="error"></p>
+        <div class="panel out-panel">
+          <span class="lbl">Salida</span>
+          <div class="out" data-role="out"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="tab-panel" data-tab="js">
+    <div class="stage-lr">
+      <div class="col-code">
+        <div class="panel term">
+          <div class="term-bar"><span></span><span></span><span></span></div>
+          <div class="code">
+            <span class="ln" data-i="fn"><span class="k">function</span> sumar(a, b) {</span>
+        <span class="ln" data-i="fn">&nbsp;&nbsp;<span class="k">return</span> a + b;</span>
+        <span class="ln" data-i="fn">}</span>
+        <span class="ln" data-i="fn">&nbsp;</span>
+        <span class="ln" data-i="call">console.log(sumar(5, <span style="color:var(--good)">"10"</span>));</span>
+          </div>
+        </div>
+      </div>
+      <div class="col-out">
+        <div class="panel pipeline">
+      <div class="pstep" data-step="motor">
+        <span class="picon">&#9881;&#65039;</span>
+        <span class="plabel">Motor (V8) &mdash; interpreta sobre la marcha</span>
+      </div><div class="parrow">&#8595;</div>
+      <div class="pstep" data-step="ejecuta">
+        <span class="picon">&#9654;&#65039;</span>
+        <span class="plabel">Ejecuta la llamada, sin comprobar tipos</span>
+      </div></div>
+        <p class="error-box" data-role="error"></p>
+        <div class="panel out-panel">
+          <span class="lbl">Salida</span>
+          <div class="out" data-role="out"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="tab-panel" data-tab="ts">
+    <div class="stage-lr">
+      <div class="col-code">
+        <div class="panel term">
+          <div class="term-bar"><span></span><span></span><span></span></div>
+          <div class="code">
+            <span class="ln" data-i="fn"><span class="k">function</span> sumar(a: <span class="k">number</span>, b: <span class="k">number</span>): <span class="k">number</span> {</span>
+        <span class="ln" data-i="fn">&nbsp;&nbsp;<span class="k">return</span> a + b;</span>
+        <span class="ln" data-i="fn">}</span>
+        <span class="ln" data-i="fn">&nbsp;</span>
+        <span class="ln" data-i="call">console.log(sumar(5, <span style="color:var(--good)">"10"</span>));</span>
+          </div>
+        </div>
+      </div>
+      <div class="col-out">
+        <div class="panel pipeline">
+      <div class="pstep" data-step="editor">
+        <span class="picon">&#128221;</span>
+        <span class="plabel">Editor &mdash; c&oacute;digo fuente .ts</span>
+      </div><div class="parrow">&#8595;</div>
+      <div class="pstep" data-step="tsc">
+        <span class="picon">&#128269;</span>
+        <span class="plabel">Compilador tsc &mdash; revisa los TIPOS antes de generar nada</span>
+      </div><div class="parrow">&#8595;</div>
+      <div class="pstep" data-step="jsgen">
+        <span class="picon">&#128196;</span>
+        <span class="plabel">Genera un .js normal (sin tipos)</span>
+      </div><div class="parrow">&#8595;</div>
+      <div class="pstep" data-step="motor">
+        <span class="picon">&#9881;&#65039;</span>
+        <span class="plabel">Motor (V8) ejecuta ese JavaScript</span>
+      </div></div>
+        <p class="error-box" data-role="error"></p>
+        <div class="panel out-panel">
+          <span class="lbl">Salida</span>
+          <div class="out" data-role="out"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+  <p class="note" id="noteBox"></p>
+
+
+  <div class="timeline"><div class="timeline-fill" id="fill"></div></div>
+  <p class="verdict" id="verdict"></p>
+  <div class="controls">
+    <div class="ctrl-group">
+      <button id="rewindBtn" class="ctrl-btn step" title="Rebobinar al principio">&#9198;</button>
+      <button id="prevBtn" class="ctrl-btn step" title="Paso anterior">&#9664;&#9664;</button>
+      <button id="playBtn" class="ctrl-btn play">&#9654; Reproducir</button>
+      <button id="nextBtn" class="ctrl-btn step" title="Paso siguiente">&#9654;&#9654;</button>
+      <button id="delayPlayBtn" class="ctrl-btn" title="Empezar tras una cuenta atrás de 10s">&#9654; +10s</button>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Velocidad</span>
+      <div class="speed-group">
+        <button class="speed-btn active" data-speed="0.25">0.25&times;</button>
+        <button class="speed-btn" data-speed="0.5">0.5&times;</button>
+      </div>
+    </div>
+    <span class="step-counter" id="stepCounter">Paso 1 / N</span>
+  </div>
+
+</div>
+
+<script>
+
+var TABS = {
+  compilado: { states: [{"active": null, "steps": {"editor": "active", "compilador": "idle", "ejecutable": "idle"}, "error": "", "out": [], "note": "Escribimos el c&oacute;digo fuente completo, con tipos expl&iacute;citos (int, int), antes de ejecutar nada.", "verdict": null}, {"active": "fn", "steps": {"editor": "done", "compilador": "active", "ejecutable": "idle"}, "error": "", "out": [], "note": "El compilador (gcc) analiza TODO el programa antes de crear nada ejecutable: tipos, sintaxis, que todo encaje.", "verdict": null}, {"active": "call", "steps": {"editor": "done", "compilador": "error", "ejecutable": "idle"}, "error": "error: incompatible pointer to integer conversion passing &#39;char *&#39; to parameter of type &#39;int&#39;", "out": [], "note": "Detecta que \"10\" es texto, no un n&uacute;mero entero &mdash; y el par&aacute;metro b es int. Incompatible.", "verdict": null}, {"active": null, "steps": {"editor": "done", "compilador": "error", "ejecutable": "idle"}, "error": "error: incompatible pointer to integer conversion passing &#39;char *&#39; to parameter of type &#39;int&#39;", "out": [], "note": "", "verdict": "En un lenguaje compilado, TODO el programa se traduce a binario antes de ejecutarse &mdash; y ese paso revisa los tipos. Si no encajan, el compilador se detiene ah&iacute;: nunca se genera un ejecutable, nunca llega a correr nada."}], durations: [1000, 1300, 1500] },
+  js: { states: [{"active": null, "steps": {"motor": "active", "ejecuta": "idle"}, "error": "", "out": [], "note": "JavaScript no tiene un paso de compilaci&oacute;n aparte: el motor (V8) va leyendo y ejecutando el c&oacute;digo seg&uacute;n llega.", "verdict": null}, {"active": "fn", "steps": {"motor": "done", "ejecuta": "active"}, "error": "", "out": [], "note": "a y b no llevan tipo &mdash; pueden ser cualquier cosa: n&uacute;mero, texto, lo que sea.", "verdict": null}, {"active": "call", "steps": {"motor": "done", "ejecuta": "active"}, "error": "", "out": [], "note": "Llama a sumar(5, \"10\"): un n&uacute;mero y un texto. JavaScript no se queja, lo intenta igualmente.", "verdict": null}, {"active": "call", "steps": {"motor": "done", "ejecuta": "done"}, "error": "", "out": ["5 + \"10\" &rarr; \"510\""], "note": "El + con un texto concatena en vez de sumar: el resultado es \"510\", no 15.", "verdict": null}, {"active": null, "steps": {"motor": "done", "ejecuta": "done"}, "error": "", "out": ["5 + \"10\" &rarr; \"510\""], "note": "", "verdict": "JavaScript es din&aacute;mico e interpretado: no hay ning&uacute;n paso que revise tipos antes de ejecutar. El programa siempre arranca &mdash; los errores de tipo, si los hay, aparecen como resultados raros <b>ya en marcha</b>, a veces delante del usuario."}], durations: [900, 1000, 1100, 1400] },
+  ts: { states: [{"active": null, "steps": {"editor": "active", "tsc": "idle", "jsgen": "idle", "motor": "idle"}, "error": "", "out": [], "note": "Escribimos TypeScript: es JavaScript + anotaciones de tipo (a: number, b: number).", "verdict": null}, {"active": "fn", "steps": {"editor": "done", "tsc": "active", "jsgen": "idle", "motor": "idle"}, "error": "", "out": [], "note": "El compilador tsc revisa los tipos de TODO el archivo antes de generar nada, como un compilador cl&aacute;sico.", "verdict": null}, {"active": "call", "steps": {"editor": "done", "tsc": "error", "jsgen": "idle", "motor": "idle"}, "error": "error TS2345: Argument of type 'string' is not assignable to parameter of type 'number'.", "out": [], "note": "\"10\" es un string, pero b espera number. tsc lo atrapa aqu&iacute; &mdash; antes de generar ni una l&iacute;nea de JS.", "verdict": null}, {"active": "call", "steps": {"editor": "done", "tsc": "active", "jsgen": "idle", "motor": "idle"}, "error": "", "out": [], "note": "Corregimos la llamada a sumar(5, 10): ahora los tipos encajan.", "verdict": null}, {"active": "call", "steps": {"editor": "done", "tsc": "done", "jsgen": "active", "motor": "idle"}, "error": "", "out": [], "note": "tsc ya no protesta &rarr; genera un .js normal y corriente, sin tipos (los borra).", "verdict": null}, {"active": "call", "steps": {"editor": "done", "tsc": "done", "jsgen": "done", "motor": "active"}, "error": "", "out": [], "note": "Ese JavaScript generado se ejecuta en el mismo motor (V8) que el JS normal.", "verdict": null}, {"active": null, "steps": {"editor": "done", "tsc": "done", "jsgen": "done", "motor": "done"}, "error": "", "out": ["sumar(5, 10) &rarr; 15"], "note": "", "verdict": "TypeScript a&ntilde;ade una revisi&oacute;n de TIPOS antes de ejecutar, como un compilado &mdash; pero su compilador (tsc) no genera c&oacute;digo m&aacute;quina: genera JavaScript normal, que luego corre en el mismo motor interpretado de siempre. Tipado en el editor, JavaScript por debajo."}], durations: [900, 1100, 1500, 1100, 900, 1100] }
+};
+var currentTab = 'compilado';
+
+var playBtn = document.getElementById('playBtn');
+var prevBtn = document.getElementById('prevBtn');
+var nextBtn = document.getElementById('nextBtn');
+var rewindBtn = document.getElementById('rewindBtn');
+var delayPlayBtn = document.getElementById('delayPlayBtn');
+var stepCounter = document.getElementById('stepCounter');
+var fill = document.getElementById('fill');
+var verdict = document.getElementById('verdict');
+var noteBox = document.getElementById('noteBox');
+var speedBtns = document.querySelectorAll('.speed-btn');
+var tabBtns = document.querySelectorAll('.tab-btn');
+
+var curIndex = 0, playing = false, speed = 0.25, playTimer = null, countdownTimer = null;
+
+function renderVisual(tabKey, s){
+  var root = document.querySelector('.tab-panel[data-tab="'+tabKey+'"]');
+  var codeLines = root.querySelectorAll('.code .ln');
+  codeLines.forEach(function(el){ el.classList.remove('active'); });
+  if(s.active){
+    codeLines.forEach(function(el){ if(el.getAttribute('data-i') === s.active) el.classList.add('active'); });
+  }
+  Object.keys(s.steps).forEach(function(key){
+    var el = root.querySelector('.pstep[data-step="'+key+'"]');
+    if(!el) return;
+    el.classList.remove('active','done','error');
+    var st = s.steps[key];
+    if(st === 'active' || st === 'done' || st === 'error') el.classList.add(st);
+  });
+  var errBox = root.querySelector('[data-role="error"]');
+  errBox.innerHTML = s.error || '';
+  errBox.classList.toggle('show', !!s.error);
+  root.querySelector('[data-role="out"]').innerHTML = s.out.map(function(v){ return '<span>'+v+'</span>'; }).join('');
+}
+
+function show(i){
+  var data = TABS[currentTab];
+  var s = data.states[i];
+  renderVisual(currentTab, s);
+  verdict.innerHTML = s.verdict || '';
+  verdict.classList.toggle('show', !!s.verdict);
+  noteBox.textContent = s.note || '';
+  fill.style.width = (i / (data.states.length - 1) * 100) + '%';
+  stepCounter.textContent = 'Paso ' + (i+1) + ' / ' + data.states.length;
+  prevBtn.disabled = (i === 0);
+  nextBtn.disabled = (i === data.states.length - 1);
+}
+
+function stopCountdown(){
+  if(countdownTimer){ clearInterval(countdownTimer); countdownTimer = null; }
+  delayPlayBtn.textContent = '▶ +10s';
+  playBtn.disabled = false;
+}
+function stopPlay(){ playing = false; playBtn.textContent = '▶ Reproducir'; clearTimeout(playTimer); }
+function scheduleNext(){
+  var data = TABS[currentTab];
+  if(curIndex >= data.states.length - 1){ stopPlay(); return; }
+  var dur = data.durations[curIndex] / speed;
+  playTimer = setTimeout(function(){ curIndex++; show(curIndex); scheduleNext(); }, dur);
+}
+function startPlay(){
+  var data = TABS[currentTab];
+  if(curIndex >= data.states.length - 1){ curIndex = 0; show(0); }
+  playing = true; playBtn.textContent = '❘❘ Pausar'; scheduleNext();
+}
+
+playBtn.addEventListener('click', function(){ stopCountdown(); playing ? stopPlay() : startPlay(); });
+prevBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex = Math.max(0, curIndex - 1); show(curIndex); });
+nextBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); var data=TABS[currentTab]; curIndex = Math.min(data.states.length - 1, curIndex + 1); show(curIndex); });
+rewindBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex = 0; show(0); });
+speedBtns.forEach(function(b){ b.addEventListener('click', function(){ speedBtns.forEach(function(x){x.classList.remove('active');}); b.classList.add('active'); speed = parseFloat(b.getAttribute('data-speed')); }); });
+delayPlayBtn.addEventListener('click', function(){
+  if(countdownTimer){ stopCountdown(); return; }
+  stopPlay();
+  var remaining = 10; playBtn.disabled = true; delayPlayBtn.textContent = 'Empieza en ' + remaining + 's…';
+  countdownTimer = setInterval(function(){
+    remaining--;
+    if(remaining <= 0){ clearInterval(countdownTimer); countdownTimer = null; delayPlayBtn.textContent = '▶ +10s'; playBtn.disabled = false; startPlay(); }
+    else{ delayPlayBtn.textContent = 'Empieza en ' + remaining + 's…'; }
+  }, 1000);
+});
+
+tabBtns.forEach(function(b){
+  b.addEventListener('click', function(){
+    stopCountdown(); stopPlay();
+    currentTab = b.getAttribute('data-tab');
+    tabBtns.forEach(function(x){ x.classList.remove('active'); });
+    b.classList.add('active');
+    document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.toggle('active', p.getAttribute('data-tab') === currentTab); });
+    curIndex = 0;
+    show(0);
+  });
+});
+
+show(0);
+
+</script>

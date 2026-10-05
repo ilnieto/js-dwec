@@ -1,0 +1,482 @@
+<title>Promesas en juego: secuencial vs paralelo</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+
+:root{
+  --bg:#0b0e12;
+  --panel:#11161d;
+  --panel-2:#161d26;
+  --line:#232b34;
+  --ink:#e5e9ed;
+  --muted:#e7ebef;
+  --accent:#4dd9c0;
+  --accent-2:#f2a154;
+  --violet:#a78bfa;
+  --good:#7cd992;
+  --danger:#e2725b;
+  --accent-dim:rgba(77,217,192,.12);
+  --accent2-dim:rgba(242,161,84,.12);
+  --fs:1.35;
+}
+*{box-sizing:border-box;}
+html,body{background:var(--bg);}
+body{
+  margin:0;
+  color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,sans-serif;
+  padding:10px 20px 140px;
+}
+.wrap{max-width:1400px;margin:0 auto;}
+.eyebrow{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11.5px);
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--muted);
+  text-align:center;
+  margin:0 0 12px;
+}
+h1{
+  text-align:center;
+  font-family:"IBM Plex Mono",monospace;
+  font-size:36px;
+  font-weight:600;
+  margin:0 0 10px;
+  text-wrap:balance;
+}
+.sub{
+  text-align:center;
+  color:var(--muted);
+  font-size:calc(var(--fs,1) * 14px);
+  max-width:1400px;
+  margin:0 auto 34px;
+  line-height:1.55;
+}
+.panel{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:10px;
+}
+.term-bar{display:flex;gap:5px;margin-bottom:10px;}
+.term-bar span{width:8px;height:8px;border-radius:50%;background:#2a323c;}
+.code{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:18px;
+  line-height:1.95;
+  color:#e2e7eb;
+  overflow-x:auto;
+}
+.code .ln{
+  display:block;
+  padding:1px 8px;
+  border-radius:5px;
+  border-left:2px solid transparent;
+  transition:background .25s, border-color .25s, color .25s;
+  white-space:pre;
+}
+.code .ln .k{color:#c99a5b;}
+.code .ln.active{color:var(--ink);background:var(--accent-dim);border-left-color:var(--accent);}
+.lbl{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 9.5px);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--muted);
+  display:block;
+  margin-bottom:7px;
+}
+.chip{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11.5px);
+  padding:5px 9px;
+  border-radius:6px;
+  background:var(--panel-2);
+  border:1px solid var(--accent);
+  color:var(--accent);
+  opacity:0;
+  transform:scale(.9);
+  animation:pop .22s ease forwards;
+  display:inline-block;
+}
+.chip.warn{border-color:var(--accent-2);color:var(--accent-2);}
+.chip.bad{border-color:var(--danger);color:var(--danger);}
+.chip.muted{border-color:var(--line);color:var(--muted);}
+@keyframes pop{from{opacity:0;transform:scale(.9);}to{opacity:1;transform:scale(1);}}
+.note{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:20px;
+  color:var(--muted);
+  text-align:center;
+  min-height:34px;
+  line-height:1.5;
+  padding:0 10px;
+}
+.timeline{max-width:920px;margin:22px auto 0;height:3px;background:var(--line);border-radius:2px;overflow:hidden;}
+.timeline-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent-2),var(--accent));transition:width .05s linear;}
+.verdict{
+  text-align:center;
+  margin:22px auto 0;
+  max-width:600px;
+  font-size:calc(var(--fs,1) * 14px);
+  color:var(--muted);
+  line-height:1.6;
+  min-height:30px;
+  opacity:0;
+  transition:opacity .4s;
+}
+.verdict.show{opacity:1;}
+.verdict b{color:var(--ink);font-weight:600;}
+.controls{
+  position:fixed;
+  left:50%;
+  bottom:16px;
+  transform:translateX(-50%);
+  width:calc(100% - 32px);
+  max-width:1200px;
+  margin:0;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:14px 18px;
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px 20px;
+  z-index:100;
+  box-shadow:0 12px 36px rgba(0,0,0,.5);
+}
+.ctrl-group{display:flex;align-items:center;gap:8px;}
+.ctrl-btn{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 12px);
+  letter-spacing:.03em;
+  color:var(--ink);
+  background:var(--panel-2);
+  border:1px solid var(--line);
+  border-radius:7px;
+  padding:8px 14px;
+  cursor:pointer;
+  transition:border-color .2s, color .2s;
+}
+.ctrl-btn:hover:not(:disabled){border-color:var(--ink);}
+.ctrl-btn:disabled{opacity:.35;cursor:default;}
+.ctrl-btn.play{min-width:132px;border-color:var(--accent);color:var(--accent);}
+.ctrl-btn.step{font-size:calc(var(--fs,1) * 14px);padding:8px 12px;}
+.ctrl-label{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 10px);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin-right:2px;
+}
+.speed-group{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;}
+.speed-btn{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11.5px);
+  color:var(--muted);
+  background:var(--panel-2);
+  border:none;
+  padding:7px 11px;
+  cursor:pointer;
+  border-right:1px solid var(--line);
+  transition:background .2s, color .2s;
+}
+.speed-btn:last-child{border-right:none;}
+.speed-btn.active{background:var(--accent-dim);color:var(--accent);}
+.step-counter{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11px);
+  color:var(--muted);
+  margin-left:auto;
+}
+@media (prefers-reduced-motion: reduce){
+  *{transition-duration:.001ms !important; animation-duration:.001ms !important;}
+}
+.stage-lr{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;}
+@media (max-width:760px){.stage-lr{grid-template-columns:1fr;}}
+.stage-lr .col-code{display:flex;flex-direction:column;}
+.stage-lr .col-code .panel.term{height:100%;}
+.stage-lr .col-out{display:flex;flex-direction:column;gap:14px;}
+
+
+.tabbar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:16px;}
+.tab-btn{
+  font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 12px);color:var(--muted);
+  background:var(--panel-2);border:1px solid var(--line);border-radius:20px;
+  padding:7px 15px;cursor:pointer;transition:border-color .2s,color .2s,background .2s;
+}
+.tab-btn:hover{color:var(--ink);}
+.tab-btn.active{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+.term{padding:16px 18px;}
+.bars-panel{padding:18px 20px;display:flex;flex-direction:column;gap:14px;}
+.bar-row{display:flex;align-items:center;gap:12px;}
+.bar-label{
+  font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 12.5px);color:var(--muted);
+  width:110px;flex-shrink:0;transition:color .3s;
+}
+.bar-row.done .bar-label{color:var(--ink);}
+.bar-track{
+  flex:1;height:10px;border-radius:6px;background:var(--panel-2);
+  border:1px solid var(--line);overflow:hidden;
+}
+.bar-fill{height:100%;width:0%;border-radius:6px;}
+.bar-ms{
+  font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 11px);color:var(--muted);
+  width:76px;text-align:right;flex-shrink:0;
+}
+.bar-row.done .bar-ms{color:var(--good);}
+.elapsed-row{
+  display:flex;align-items:baseline;justify-content:center;gap:8px;
+  padding:14px;
+}
+.elapsed-num{
+  font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:calc(var(--fs,1) * 26px);color:var(--ink);
+  font-variant-numeric:tabular-nums;
+}
+.elapsed-lbl{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 11px);color:var(--muted);letter-spacing:.08em;text-transform:uppercase;}
+.out-panel{padding:14px 16px;min-height:40px;}
+.out{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 12.5px);}
+.out span{display:block;margin:2px 0;padding:2px 8px;border-radius:5px;background:var(--panel-2);border:1px solid var(--good);color:var(--good);opacity:0;transform:translateX(-4px);animation:pop .22s ease forwards;}
+
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">JavaScript · Promesas</p>
+  <h1>Cargar un juego: uno a uno o todos a la vez</h1>
+  <p class="sub">El mismo videojuego cargando jugador, mapa y enemigos — con await secuencial el tiempo se SUMA, con Promise.all solo esperas al recurso más lento.</p>
+
+
+  <div class="tabbar" id="tabbar">
+    <button class="tab-btn active" data-tab="sequential">Secuencial (await)</button>
+    <button class="tab-btn" data-tab="parallel">Paralelo (Promise.all)</button>
+  </div>
+  <div class="stage">
+  <div class="tab-panel active" data-tab="sequential">
+    <div class="stage-lr">
+      <div class="col-code">
+        <div class="panel term">
+          <div class="term-bar"><span></span><span></span><span></span></div>
+          <div class="code">
+            <span class="ln" data-i="fn"><span class="k">async function</span> cargarJuego() {</span>
+        <span class="ln" data-i="jugador">&nbsp;&nbsp;<span class="k">const</span> jugador = <span class="k">await</span> cargarJugador();&nbsp;&nbsp;<span style="color:var(--muted)">// 800ms</span></span>
+        <span class="ln" data-i="mapa">&nbsp;&nbsp;<span class="k">const</span> mapa = <span class="k">await</span> cargarMapa();&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--muted)">// 1300ms</span></span>
+        <span class="ln" data-i="enemigos">&nbsp;&nbsp;<span class="k">const</span> enemigos = <span class="k">await</span> cargarEnemigos();&nbsp;<span style="color:var(--muted)">// 500ms</span></span>
+        <span class="ln" data-i="start">&nbsp;&nbsp;iniciarPartida(jugador, mapa, enemigos);</span>
+        <span class="ln" data-i="call">}<br>cargarJuego();</span>
+          </div>
+        </div>
+      </div>
+      <div class="col-out">
+        <div class="panel bars-panel">
+      <div class="bar-row" data-asset="jugador">
+        <span class="bar-label">🧑 Jugador</span>
+        <div class="bar-track"><div class="bar-fill" data-asset-fill="jugador" style="background:var(--accent);transition-duration:800ms;"></div></div>
+        <span class="bar-ms" data-asset-ms="jugador">800ms</span>
+      </div>
+      <div class="bar-row" data-asset="mapa">
+        <span class="bar-label">🗺️ Mapa</span>
+        <div class="bar-track"><div class="bar-fill" data-asset-fill="mapa" style="background:var(--accent-2);transition-duration:1300ms;"></div></div>
+        <span class="bar-ms" data-asset-ms="mapa">1300ms</span>
+      </div>
+      <div class="bar-row" data-asset="enemigos">
+        <span class="bar-label">👾 Enemigos</span>
+        <div class="bar-track"><div class="bar-fill" data-asset-fill="enemigos" style="background:var(--violet);transition-duration:500ms;"></div></div>
+        <span class="bar-ms" data-asset-ms="enemigos">500ms</span>
+      </div></div>
+        <div class="panel elapsed-row">
+          <span class="elapsed-lbl">Tiempo transcurrido</span>
+          <span class="elapsed-num" data-role="elapsed">0ms</span>
+        </div>
+        <div class="panel out-panel">
+          <span class="lbl">Consola</span>
+          <div class="out" data-role="out"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="tab-panel" data-tab="parallel">
+    <div class="stage-lr">
+      <div class="col-code">
+        <div class="panel term">
+          <div class="term-bar"><span></span><span></span><span></span></div>
+          <div class="code">
+            <span class="ln" data-i="fn"><span class="k">async function</span> cargarJuego() {</span>
+        <span class="ln" data-i="call">&nbsp;&nbsp;<span class="k">const</span> [jugador, mapa, enemigos] = <span class="k">await</span> Promise.all([</span>
+        <span class="ln" data-i="call">&nbsp;&nbsp;&nbsp;&nbsp;cargarJugador(),&nbsp;&nbsp;&nbsp;<span style="color:var(--muted)">// 800ms</span></span>
+        <span class="ln" data-i="call">&nbsp;&nbsp;&nbsp;&nbsp;cargarMapa(),&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--muted)">// 1300ms</span></span>
+        <span class="ln" data-i="call">&nbsp;&nbsp;&nbsp;&nbsp;cargarEnemigos(),&nbsp;&nbsp;<span style="color:var(--muted)">// 500ms</span></span>
+        <span class="ln" data-i="call">&nbsp;&nbsp;]);</span>
+        <span class="ln" data-i="start">&nbsp;&nbsp;iniciarPartida(jugador, mapa, enemigos);</span>
+        <span class="ln" data-i="end">}<br>cargarJuego();</span>
+          </div>
+        </div>
+      </div>
+      <div class="col-out">
+        <div class="panel bars-panel">
+      <div class="bar-row" data-asset="jugador">
+        <span class="bar-label">🧑 Jugador</span>
+        <div class="bar-track"><div class="bar-fill" data-asset-fill="jugador" style="background:var(--accent);transition-duration:800ms;"></div></div>
+        <span class="bar-ms" data-asset-ms="jugador">800ms</span>
+      </div>
+      <div class="bar-row" data-asset="mapa">
+        <span class="bar-label">🗺️ Mapa</span>
+        <div class="bar-track"><div class="bar-fill" data-asset-fill="mapa" style="background:var(--accent-2);transition-duration:1300ms;"></div></div>
+        <span class="bar-ms" data-asset-ms="mapa">1300ms</span>
+      </div>
+      <div class="bar-row" data-asset="enemigos">
+        <span class="bar-label">👾 Enemigos</span>
+        <div class="bar-track"><div class="bar-fill" data-asset-fill="enemigos" style="background:var(--violet);transition-duration:500ms;"></div></div>
+        <span class="bar-ms" data-asset-ms="enemigos">500ms</span>
+      </div></div>
+        <div class="panel elapsed-row">
+          <span class="elapsed-lbl">Tiempo transcurrido</span>
+          <span class="elapsed-num" data-role="elapsed">0ms</span>
+        </div>
+        <div class="panel out-panel">
+          <span class="lbl">Consola</span>
+          <div class="out" data-role="out"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+  <p class="note" id="noteBox"></p>
+
+
+  <div class="timeline"><div class="timeline-fill" id="fill"></div></div>
+  <p class="verdict" id="verdict"></p>
+  <div class="controls">
+    <div class="ctrl-group">
+      <button id="rewindBtn" class="ctrl-btn step" title="Rebobinar al principio">&#9198;</button>
+      <button id="prevBtn" class="ctrl-btn step" title="Paso anterior">&#9664;&#9664;</button>
+      <button id="playBtn" class="ctrl-btn play">&#9654; Reproducir</button>
+      <button id="nextBtn" class="ctrl-btn step" title="Paso siguiente">&#9654;&#9654;</button>
+      <button id="delayPlayBtn" class="ctrl-btn" title="Empezar tras una cuenta atrás de 10s">&#9654; +10s</button>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Velocidad</span>
+      <div class="speed-group">
+        <button class="speed-btn active" data-speed="0.25">0.25&times;</button>
+        <button class="speed-btn" data-speed="0.5">0.5&times;</button>
+      </div>
+    </div>
+    <span class="step-counter" id="stepCounter">Paso 1 / N</span>
+  </div>
+
+</div>
+
+<script>
+
+var TABS = {
+  sequential: { states: [{"active": "fn", "bars": {"jugador": "idle", "mapa": "idle", "enemigos": "idle"}, "out": [], "note": "Llamamos a cargarJuego()", "elapsed": 0, "verdict": null}, {"active": "jugador", "bars": {"jugador": "loading", "mapa": "idle", "enemigos": "idle"}, "out": [], "note": "await cargarJugador() — la función se PAUSA aquí hasta que termine (800ms)", "elapsed": 0, "verdict": null}, {"active": "mapa", "bars": {"jugador": "done", "mapa": "loading", "enemigos": "idle"}, "out": ["jugador ✔ (800ms)"], "note": "jugador listo (800ms) → ahora empieza a cargar el mapa", "elapsed": 800, "verdict": null}, {"active": "enemigos", "bars": {"jugador": "done", "mapa": "done", "enemigos": "loading"}, "out": ["jugador ✔ (800ms)", "mapa ✔ (2100ms)"], "note": "mapa listo (2100ms) → ahora empieza a cargar los enemigos", "elapsed": 2100, "verdict": null}, {"active": "start", "bars": {"jugador": "done", "mapa": "done", "enemigos": "done"}, "out": ["jugador ✔ (800ms)", "mapa ✔ (2100ms)", "enemigos ✔ (2600ms)"], "note": "enemigos listos (2600ms) → iniciarPartida()", "elapsed": 2600, "verdict": null}, {"active": null, "bars": {"jugador": "done", "mapa": "done", "enemigos": "done"}, "out": ["jugador ✔ (800ms)", "mapa ✔ (2100ms)", "enemigos ✔ (2600ms)", "¡Partida iniciada! 🎮"], "note": "", "elapsed": 2600, "verdict": "Secuencial: cada <b>await</b> espera a que termine el anterior antes de seguir. Tiempo total = 800 + 1300 + 500 = <b>2600ms</b> — la SUMA de las tres esperas."}], durations: [500, 800, 1300, 500, 700] },
+  parallel: { states: [{"active": "fn", "bars": {"jugador": "idle", "mapa": "idle", "enemigos": "idle"}, "out": [], "note": "Llamamos a cargarJuego()", "elapsed": 0, "verdict": null}, {"active": "call", "bars": {"jugador": "loading", "mapa": "loading", "enemigos": "loading"}, "out": [], "note": "Promise.all arranca las TRES cargas a la vez, en paralelo", "elapsed": 0, "verdict": null}, {"active": "call", "bars": {"jugador": "loading", "mapa": "loading", "enemigos": "done"}, "out": ["enemigos ✔ (500ms)"], "note": "enemigos termina primero (500ms) — pero Promise.all sigue esperando a los demás", "elapsed": 500, "verdict": null}, {"active": "call", "bars": {"jugador": "done", "mapa": "loading", "enemigos": "done"}, "out": ["enemigos ✔ (500ms)", "jugador ✔ (800ms)"], "note": "jugador termina (800ms) — solo falta el mapa", "elapsed": 800, "verdict": null}, {"active": "start", "bars": {"jugador": "done", "mapa": "done", "enemigos": "done"}, "out": ["enemigos ✔ (500ms)", "jugador ✔ (800ms)", "mapa ✔ (1300ms)"], "note": "mapa termina el último (1300ms) → Promise.all se resuelve ahora", "elapsed": 1300, "verdict": null}, {"active": null, "bars": {"jugador": "done", "mapa": "done", "enemigos": "done"}, "out": ["enemigos ✔ (500ms)", "jugador ✔ (800ms)", "mapa ✔ (1300ms)", "¡Partida iniciada! 🎮"], "note": "", "elapsed": 1300, "verdict": "Paralelo con <b>Promise.all</b>: las tres cargas arrancan a la vez y avanzan de forma independiente. Tiempo total = <b>1300ms</b> — el tiempo del MÁS LENTO, no la suma."}], durations: [500, 500, 300, 500, 700] }
+};
+var currentTab = 'sequential';
+
+var playBtn = document.getElementById('playBtn');
+var prevBtn = document.getElementById('prevBtn');
+var nextBtn = document.getElementById('nextBtn');
+var rewindBtn = document.getElementById('rewindBtn');
+var delayPlayBtn = document.getElementById('delayPlayBtn');
+var stepCounter = document.getElementById('stepCounter');
+var fill = document.getElementById('fill');
+var verdict = document.getElementById('verdict');
+var noteBox = document.getElementById('noteBox');
+var speedBtns = document.querySelectorAll('.speed-btn');
+var tabBtns = document.querySelectorAll('.tab-btn');
+
+var curIndex = 0, playing = false, speed = 0.25, playTimer = null, countdownTimer = null;
+
+function renderVisual(tabKey, s){
+  var root = document.querySelector('.tab-panel[data-tab="'+tabKey+'"]');
+  var codeLines = root.querySelectorAll('.code .ln');
+  codeLines.forEach(function(el){ el.classList.remove('active'); });
+  if(s.active){
+    codeLines.forEach(function(el){ if(el.getAttribute('data-i') === s.active) el.classList.add('active'); });
+  }
+  Object.keys(s.bars).forEach(function(key){
+    var status = s.bars[key];
+    var row = root.querySelector('.bar-row[data-asset="'+key+'"]');
+    var barFill = root.querySelector('[data-asset-fill="'+key+'"]');
+    row.classList.toggle('done', status === 'done');
+    barFill.style.width = (status === 'idle') ? '0%' : '100%';
+    barFill.style.opacity = (status === 'idle') ? '.4' : '1';
+  });
+  root.querySelector('[data-role="elapsed"]').textContent = s.elapsed + 'ms';
+  root.querySelector('[data-role="out"]').innerHTML = s.out.map(function(v){ return '<span>'+v+'</span>'; }).join('');
+}
+
+function show(i){
+  var data = TABS[currentTab];
+  var s = data.states[i];
+  renderVisual(currentTab, s);
+  verdict.innerHTML = s.verdict || '';
+  verdict.classList.toggle('show', !!s.verdict);
+  noteBox.textContent = s.note || '';
+  fill.style.width = (i / (data.states.length - 1) * 100) + '%';
+  stepCounter.textContent = 'Paso ' + (i+1) + ' / ' + data.states.length;
+  prevBtn.disabled = (i === 0);
+  nextBtn.disabled = (i === data.states.length - 1);
+}
+
+function stopCountdown(){
+  if(countdownTimer){ clearInterval(countdownTimer); countdownTimer = null; }
+  delayPlayBtn.textContent = '▶ +10s';
+  playBtn.disabled = false;
+}
+function stopPlay(){ playing = false; playBtn.textContent = '▶ Reproducir'; clearTimeout(playTimer); }
+function scheduleNext(){
+  var data = TABS[currentTab];
+  if(curIndex >= data.states.length - 1){ stopPlay(); return; }
+  var dur = data.durations[curIndex] / speed;
+  playTimer = setTimeout(function(){ curIndex++; show(curIndex); scheduleNext(); }, dur);
+}
+function startPlay(){
+  var data = TABS[currentTab];
+  if(curIndex >= data.states.length - 1){ curIndex = 0; show(0); }
+  playing = true; playBtn.textContent = '❘❘ Pausar'; scheduleNext();
+}
+
+playBtn.addEventListener('click', function(){ stopCountdown(); playing ? stopPlay() : startPlay(); });
+prevBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex = Math.max(0, curIndex - 1); show(curIndex); });
+nextBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); var data=TABS[currentTab]; curIndex = Math.min(data.states.length - 1, curIndex + 1); show(curIndex); });
+rewindBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex = 0; show(0); });
+speedBtns.forEach(function(b){ b.addEventListener('click', function(){ speedBtns.forEach(function(x){x.classList.remove('active');}); b.classList.add('active'); speed = parseFloat(b.getAttribute('data-speed')); }); });
+delayPlayBtn.addEventListener('click', function(){
+  if(countdownTimer){ stopCountdown(); return; }
+  stopPlay();
+  var remaining = 10; playBtn.disabled = true; delayPlayBtn.textContent = 'Empieza en ' + remaining + 's…';
+  countdownTimer = setInterval(function(){
+    remaining--;
+    if(remaining <= 0){ clearInterval(countdownTimer); countdownTimer = null; delayPlayBtn.textContent = '▶ +10s'; playBtn.disabled = false; startPlay(); }
+    else{ delayPlayBtn.textContent = 'Empieza en ' + remaining + 's…'; }
+  }, 1000);
+});
+
+tabBtns.forEach(function(b){
+  b.addEventListener('click', function(){
+    stopCountdown(); stopPlay();
+    currentTab = b.getAttribute('data-tab');
+    tabBtns.forEach(function(x){ x.classList.remove('active'); });
+    b.classList.add('active');
+    document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.toggle('active', p.getAttribute('data-tab') === currentTab); });
+    curIndex = 0;
+    show(0);
+  });
+});
+
+document.addEventListener('keydown', function(e){
+  if(e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable)) return;
+  var advance = ['ArrowRight','ArrowDown','PageDown',' ','Spacebar'];
+  var back = ['ArrowLeft','ArrowUp','PageUp','Backspace'];
+  if(advance.indexOf(e.key) !== -1){ e.preventDefault(); nextBtn.click(); }
+  else if(back.indexOf(e.key) !== -1){ e.preventDefault(); prevBtn.click(); }
+});
+
+show(0);
+
+</script>

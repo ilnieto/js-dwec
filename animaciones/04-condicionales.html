@@ -1,0 +1,399 @@
+<title>Condicionales en acción</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+
+:root{
+  --bg:#0b0e12;
+  --panel:#11161d;
+  --panel-2:#161d26;
+  --line:#232b34;
+  --ink:#e5e9ed;
+  --muted:#e7ebef;
+  --accent:#4dd9c0;
+  --accent-2:#f2a154;
+  --violet:#a78bfa;
+  --good:#7cd992;
+  --danger:#e2725b;
+  --accent-dim:rgba(77,217,192,.12);
+  --accent2-dim:rgba(242,161,84,.12);
+  --fs:1.35;
+}
+*{box-sizing:border-box;}
+html,body{background:var(--bg);}
+body{
+  margin:0;
+  color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,sans-serif;
+  padding:10px 20px 140px;
+}
+.wrap{max-width:1400px;margin:0 auto;}
+.eyebrow{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11.5px);
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--muted);
+  text-align:center;
+  margin:0 0 12px;
+}
+h1{
+  text-align:center;
+  font-family:"IBM Plex Mono",monospace;
+  font-size:36px;
+  font-weight:600;
+  margin:0 0 10px;
+  text-wrap:balance;
+}
+.sub{
+  text-align:center;
+  color:var(--muted);
+  font-size:calc(var(--fs,1) * 14px);
+  max-width:1400px;
+  margin:0 auto 34px;
+  line-height:1.55;
+}
+.panel{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:10px;
+}
+.term-bar{display:flex;gap:5px;margin-bottom:10px;}
+.term-bar span{width:8px;height:8px;border-radius:50%;background:#2a323c;}
+.code{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:18px;
+  line-height:1.95;
+  color:#e2e7eb;
+  overflow-x:auto;
+}
+.code .ln{
+  display:block;
+  padding:1px 8px;
+  border-radius:5px;
+  border-left:2px solid transparent;
+  transition:background .25s, border-color .25s, color .25s;
+  white-space:pre;
+}
+.code .ln .k{color:#c99a5b;}
+.code .ln.active{color:var(--ink);background:var(--accent-dim);border-left-color:var(--accent);}
+.lbl{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 9.5px);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--muted);
+  display:block;
+  margin-bottom:7px;
+}
+.chip{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11.5px);
+  padding:5px 9px;
+  border-radius:6px;
+  background:var(--panel-2);
+  border:1px solid var(--accent);
+  color:var(--accent);
+  opacity:0;
+  transform:scale(.9);
+  animation:pop .22s ease forwards;
+  display:inline-block;
+}
+.chip.warn{border-color:var(--accent-2);color:var(--accent-2);}
+.chip.bad{border-color:var(--danger);color:var(--danger);}
+.chip.muted{border-color:var(--line);color:var(--muted);}
+@keyframes pop{from{opacity:0;transform:scale(.9);}to{opacity:1;transform:scale(1);}}
+.note{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:20px;
+  color:var(--muted);
+  text-align:center;
+  min-height:34px;
+  line-height:1.5;
+  padding:0 10px;
+}
+.timeline{max-width:920px;margin:22px auto 0;height:3px;background:var(--line);border-radius:2px;overflow:hidden;}
+.timeline-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent-2),var(--accent));transition:width .05s linear;}
+.verdict{
+  text-align:center;
+  margin:22px auto 0;
+  max-width:600px;
+  font-size:calc(var(--fs,1) * 14px);
+  color:var(--muted);
+  line-height:1.6;
+  min-height:30px;
+  opacity:0;
+  transition:opacity .4s;
+}
+.verdict.show{opacity:1;}
+.verdict b{color:var(--ink);font-weight:600;}
+.controls{
+  position:fixed;
+  left:50%;
+  bottom:16px;
+  transform:translateX(-50%);
+  width:calc(100% - 32px);
+  max-width:1200px;
+  margin:0;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:14px 18px;
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px 20px;
+  z-index:100;
+  box-shadow:0 12px 36px rgba(0,0,0,.5);
+}
+.ctrl-group{display:flex;align-items:center;gap:8px;}
+.ctrl-btn{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 12px);
+  letter-spacing:.03em;
+  color:var(--ink);
+  background:var(--panel-2);
+  border:1px solid var(--line);
+  border-radius:7px;
+  padding:8px 14px;
+  cursor:pointer;
+  transition:border-color .2s, color .2s;
+}
+.ctrl-btn:hover:not(:disabled){border-color:var(--ink);}
+.ctrl-btn:disabled{opacity:.35;cursor:default;}
+.ctrl-btn.play{min-width:132px;border-color:var(--accent);color:var(--accent);}
+.ctrl-btn.step{font-size:calc(var(--fs,1) * 14px);padding:8px 12px;}
+.ctrl-label{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 10px);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin-right:2px;
+}
+.speed-group{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;}
+.speed-btn{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11.5px);
+  color:var(--muted);
+  background:var(--panel-2);
+  border:none;
+  padding:7px 11px;
+  cursor:pointer;
+  border-right:1px solid var(--line);
+  transition:background .2s, color .2s;
+}
+.speed-btn:last-child{border-right:none;}
+.speed-btn.active{background:var(--accent-dim);color:var(--accent);}
+.step-counter{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11px);
+  color:var(--muted);
+  margin-left:auto;
+}
+@media (prefers-reduced-motion: reduce){
+  *{transition-duration:.001ms !important; animation-duration:.001ms !important;}
+}
+.stage-lr{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;}
+@media (max-width:760px){.stage-lr{grid-template-columns:1fr;}}
+.stage-lr .col-code{display:flex;flex-direction:column;}
+.stage-lr .col-code .panel.term{height:100%;}
+.stage-lr .col-out{display:flex;flex-direction:column;gap:14px;}
+
+
+.term{padding:16px 18px;}
+.flow{padding:22px 18px;display:flex;flex-direction:column;align-items:center;gap:16px;}
+.cond-box{
+  font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 14px);
+  border:1px solid var(--line);border-radius:8px;
+  padding:10px 18px;background:var(--panel-2);
+  transition:border-color .3s, color .3s;
+}
+.cond-box.evaluating{border-color:var(--accent-2);color:var(--accent-2);}
+.branches{display:flex;gap:18px;width:100%;justify-content:center;}
+.branch{
+  flex:1;max-width:260px;
+  border:1px dashed var(--line);border-radius:8px;
+  padding:12px 14px;text-align:center;
+  font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 12.5px);
+  color:var(--muted);
+  transition:border-color .3s, color .3s, background .3s;
+}
+.branch .tag{display:block;font-size:calc(var(--fs,1) * 10px);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px;color:inherit;opacity:.8;}
+.branch.lit-true{border:1px solid var(--good);color:var(--good);background:rgba(124,217,146,.08);}
+.branch.lit-false{border:1px solid var(--danger);color:var(--danger);background:rgba(226,114,91,.08);}
+.out-panel{padding:14px 16px;min-height:50px;}
+.out{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 13px);}
+.out span{display:block;margin:2px 0;padding:2px 8px;border-radius:5px;background:var(--panel-2);border:1px solid var(--line);color:var(--ink);opacity:0;transform:translateX(-4px);animation:pop .22s ease forwards;}
+
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">JavaScript · Fundamentos</p>
+  <h1>if / else en acción</h1>
+  <p class="sub">Un if evalúa una condición y decide qué camino tomar. Solo una de las dos ramas se ejecuta nunca — nunca las dos, nunca ninguna.</p>
+
+
+  <div class="stage-lr">
+    <div class="col-code">
+      <div class="panel term">
+        <div class="term-bar"><span></span><span></span><span></span></div>
+        <div class="code" id="code">
+          <span class="ln" data-i="0"><span class="k">let</span> edad = <span id="edadVal">16</span>;</span>
+          <span class="ln" data-i="1"><span class="k">if</span> (edad &gt;= 18) {</span>
+          <span class="ln" data-i="2">&nbsp;&nbsp;<span class="k">console.log</span>("Eres mayor de edad");</span>
+          <span class="ln" data-i="3">} <span class="k">else</span> {</span>
+          <span class="ln" data-i="4">&nbsp;&nbsp;<span class="k">console.log</span>("Eres menor de edad");</span>
+          <span class="ln" data-i="5">}</span>
+        </div>
+      </div>
+    </div>
+    <div class="col-out">
+      <div class="panel flow">
+        <div class="cond-box" id="condBox">edad &gt;= 18</div>
+        <div class="branches">
+          <div class="branch" id="branchTrue"><span class="tag">if (true)</span>console.log("Eres mayor de edad")</div>
+          <div class="branch" id="branchFalse"><span class="tag">else (false)</span>console.log("Eres menor de edad")</div>
+        </div>
+      </div>
+      <div class="panel out-panel">
+        <span class="lbl">Consola</span>
+        <div class="out" id="out"></div>
+      </div>
+    </div>
+  </div>
+  <p class="note" id="noteBox"></p>
+
+
+  <div class="timeline"><div class="timeline-fill" id="fill"></div></div>
+  <p class="verdict" id="verdict"></p>
+  <div class="controls">
+    <div class="ctrl-group">
+      <button id="rewindBtn" class="ctrl-btn step" title="Rebobinar al principio">&#9198;</button>
+      <button id="prevBtn" class="ctrl-btn step" title="Paso anterior">&#9664;&#9664;</button>
+      <button id="playBtn" class="ctrl-btn play">&#9654; Reproducir</button>
+      <button id="nextBtn" class="ctrl-btn step" title="Paso siguiente">&#9654;&#9654;</button>
+      <button id="delayPlayBtn" class="ctrl-btn" title="Empezar tras una cuenta atrás de 10s">&#9654; +10s</button>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Velocidad</span>
+      <div class="speed-group">
+        <button class="speed-btn active" data-speed="0.25">0.25&times;</button>
+        <button class="speed-btn" data-speed="0.5">0.5&times;</button>
+      </div>
+    </div>
+    <span class="step-counter" id="stepCounter">Paso 1 / N</span>
+  </div>
+
+</div>
+
+<script>
+
+var codeLines = document.querySelectorAll('#code .ln');
+var edadVal = document.getElementById('edadVal');
+var condBox = document.getElementById('condBox');
+var branchTrue = document.getElementById('branchTrue');
+var branchFalse = document.getElementById('branchFalse');
+var out = document.getElementById('out');
+var noteBox = document.getElementById('noteBox');
+
+var VERDICT = '<b>if</b> evalúa una condición a true o false. Si es true ejecuta su bloque; si no, pasa al <b>else</b>. Solo se ejecuta <b>una</b> de las dos ramas, nunca las dos.';
+
+var STATES = [
+  {active:0, edad:16, cond:'evaluating', branch:null, out:[], note:'edad vale 16', verdict:null},
+  {active:1, edad:16, cond:'evaluating', branch:null, out:[], note:'evaluando: 16 >= 18 ?', verdict:null},
+  {active:1, edad:16, cond:'done', branch:'false', out:[], note:'16 >= 18 es false → toma la rama else', verdict:null},
+  {active:4, edad:16, cond:'done', branch:'false', out:['"Eres menor de edad"'], note:'se ejecuta el bloque else', verdict:null},
+  {active:0, edad:20, cond:'evaluating', branch:null, out:['"Eres menor de edad"'], note:'ahora probamos con edad = 20', verdict:null},
+  {active:1, edad:20, cond:'evaluating', branch:null, out:['"Eres menor de edad"'], note:'evaluando: 20 >= 18 ?', verdict:null},
+  {active:1, edad:20, cond:'done', branch:'true', out:['"Eres menor de edad"'], note:'20 >= 18 es true → toma la rama if', verdict:null},
+  {active:2, edad:20, cond:'done', branch:'true', out:['"Eres menor de edad"','"Eres mayor de edad"'], note:'se ejecuta el bloque if — el else se ignora por completo', verdict:null},
+  {active:-1, edad:20, cond:'done', branch:'true', out:['"Eres menor de edad"','"Eres mayor de edad"'], note:'', verdict:VERDICT}
+];
+
+var DURATIONS = [600,700,700,900,600,700,700,900];
+
+function renderState(s){
+  codeLines.forEach(function(el){ el.classList.remove('active'); });
+  if(s.active >= 0){
+    codeLines.forEach(function(el){ if(parseInt(el.getAttribute('data-i'),10) === s.active) el.classList.add('active'); });
+  }
+  edadVal.textContent = s.edad;
+  condBox.textContent = edad_text(s.edad);
+  condBox.className = 'cond-box' + (s.cond === 'evaluating' ? ' evaluating' : '');
+  branchTrue.className = 'branch' + (s.branch === 'true' ? ' lit-true' : '');
+  branchFalse.className = 'branch' + (s.branch === 'false' ? ' lit-false' : '');
+  out.innerHTML = s.out.map(function(v){ return '<span>'+v+'</span>'; }).join('');
+  noteBox.textContent = s.note || '';
+}
+function edad_text(edad){ return edad + ' >= 18'; }
+
+</script>
+<script>
+
+(function(){
+  var playBtn = document.getElementById('playBtn');
+  var prevBtn = document.getElementById('prevBtn');
+  var nextBtn = document.getElementById('nextBtn');
+  var rewindBtn = document.getElementById('rewindBtn');
+  var delayPlayBtn = document.getElementById('delayPlayBtn');
+  var stepCounter = document.getElementById('stepCounter');
+  var fill = document.getElementById('fill');
+  var verdict = document.getElementById('verdict');
+  var speedBtns = document.querySelectorAll('.speed-btn');
+
+  var curIndex = 0, playing = false, speed = 0.25, playTimer = null, countdownTimer = null;
+
+  function stopCountdown(){
+    if(countdownTimer){ clearInterval(countdownTimer); countdownTimer = null; }
+    delayPlayBtn.textContent = '▶ +10s';
+    playBtn.disabled = false;
+  }
+  function show(i){
+    var s = STATES[i];
+    renderState(s, i);
+    if(verdict){
+      verdict.innerHTML = s.verdict || '';
+      verdict.classList.toggle('show', !!s.verdict);
+    }
+    if(fill) fill.style.width = (i/(STATES.length-1)*100) + '%';
+    stepCounter.textContent = 'Paso ' + (i+1) + ' / ' + STATES.length;
+    prevBtn.disabled = (i===0);
+    nextBtn.disabled = (i===STATES.length-1);
+  }
+  function stopPlay(){ playing=false; playBtn.textContent='▶ Reproducir'; clearTimeout(playTimer); }
+  function scheduleNext(){
+    if(curIndex >= STATES.length-1){ stopPlay(); return; }
+    var dur = DURATIONS[curIndex] / speed;
+    playTimer = setTimeout(function(){ curIndex++; show(curIndex); scheduleNext(); }, dur);
+  }
+  function startPlay(){
+    if(curIndex >= STATES.length-1){ curIndex=0; show(0); }
+    playing = true; playBtn.textContent='❘❘ Pausar'; scheduleNext();
+  }
+  playBtn.addEventListener('click', function(){ stopCountdown(); playing?stopPlay():startPlay(); });
+  prevBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex=Math.max(0,curIndex-1); show(curIndex); });
+  nextBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex=Math.min(STATES.length-1,curIndex+1); show(curIndex); });
+  rewindBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex=0; show(0); });
+  speedBtns.forEach(function(b){ b.addEventListener('click', function(){ speedBtns.forEach(function(x){x.classList.remove('active');}); b.classList.add('active'); speed=parseFloat(b.getAttribute('data-speed')); }); });
+  delayPlayBtn.addEventListener('click', function(){
+    if(countdownTimer){ stopCountdown(); return; }
+    stopPlay();
+    var remaining=10; playBtn.disabled=true; delayPlayBtn.textContent='Empieza en '+remaining+'s…';
+    countdownTimer=setInterval(function(){
+      remaining--;
+      if(remaining<=0){ clearInterval(countdownTimer); countdownTimer=null; delayPlayBtn.textContent='▶ +10s'; playBtn.disabled=false; startPlay(); }
+      else{ delayPlayBtn.textContent='Empieza en '+remaining+'s…'; }
+    },1000);
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.target && (e.target.tagName==='INPUT' || e.target.tagName==='TEXTAREA' || e.target.isContentEditable)) return;
+    var advance = ['ArrowRight','ArrowDown','PageDown',' ','Spacebar'];
+    var back = ['ArrowLeft','ArrowUp','PageUp','Backspace'];
+    if(advance.indexOf(e.key)!==-1){ e.preventDefault(); nextBtn.click(); }
+    else if(back.indexOf(e.key)!==-1){ e.preventDefault(); prevBtn.click(); }
+  });
+  show(0);
+})();
+
+</script>

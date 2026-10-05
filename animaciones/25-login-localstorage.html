@@ -1,0 +1,433 @@
+<title>Login real: qué guardar en localStorage</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+
+:root{
+  --bg:#0b0e12;
+  --panel:#11161d;
+  --panel-2:#161d26;
+  --line:#232b34;
+  --ink:#e5e9ed;
+  --muted:#e7ebef;
+  --accent:#4dd9c0;
+  --accent-2:#f2a154;
+  --violet:#a78bfa;
+  --good:#7cd992;
+  --danger:#e2725b;
+  --accent-dim:rgba(77,217,192,.12);
+  --accent2-dim:rgba(242,161,84,.12);
+  --fs:1.35;
+}
+*{box-sizing:border-box;}
+html,body{background:var(--bg);}
+body{
+  margin:0;
+  color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,sans-serif;
+  padding:10px 20px 140px;
+}
+.wrap{max-width:1400px;margin:0 auto;}
+.eyebrow{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11.5px);
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--muted);
+  text-align:center;
+  margin:0 0 12px;
+}
+h1{
+  text-align:center;
+  font-family:"IBM Plex Mono",monospace;
+  font-size:36px;
+  font-weight:600;
+  margin:0 0 10px;
+  text-wrap:balance;
+}
+.sub{
+  text-align:center;
+  color:var(--muted);
+  font-size:calc(var(--fs,1) * 14px);
+  max-width:1400px;
+  margin:0 auto 34px;
+  line-height:1.55;
+}
+.panel{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:10px;
+}
+.term-bar{display:flex;gap:5px;margin-bottom:10px;}
+.term-bar span{width:8px;height:8px;border-radius:50%;background:#2a323c;}
+.code{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:18px;
+  line-height:1.95;
+  color:#e2e7eb;
+  overflow-x:auto;
+}
+.code .ln{
+  display:block;
+  padding:1px 8px;
+  border-radius:5px;
+  border-left:2px solid transparent;
+  transition:background .25s, border-color .25s, color .25s;
+  white-space:pre;
+}
+.code .ln .k{color:#c99a5b;}
+.code .ln.active{color:var(--ink);background:var(--accent-dim);border-left-color:var(--accent);}
+.lbl{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 9.5px);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--muted);
+  display:block;
+  margin-bottom:7px;
+}
+.chip{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11.5px);
+  padding:5px 9px;
+  border-radius:6px;
+  background:var(--panel-2);
+  border:1px solid var(--accent);
+  color:var(--accent);
+  opacity:0;
+  transform:scale(.9);
+  animation:pop .22s ease forwards;
+  display:inline-block;
+}
+.chip.warn{border-color:var(--accent-2);color:var(--accent-2);}
+.chip.bad{border-color:var(--danger);color:var(--danger);}
+.chip.muted{border-color:var(--line);color:var(--muted);}
+@keyframes pop{from{opacity:0;transform:scale(.9);}to{opacity:1;transform:scale(1);}}
+.note{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:20px;
+  color:var(--muted);
+  text-align:center;
+  min-height:34px;
+  line-height:1.5;
+  padding:0 10px;
+}
+.timeline{max-width:920px;margin:22px auto 0;height:3px;background:var(--line);border-radius:2px;overflow:hidden;}
+.timeline-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent-2),var(--accent));transition:width .05s linear;}
+.verdict{
+  text-align:center;
+  margin:22px auto 0;
+  max-width:600px;
+  font-size:calc(var(--fs,1) * 14px);
+  color:var(--muted);
+  line-height:1.6;
+  min-height:30px;
+  opacity:0;
+  transition:opacity .4s;
+}
+.verdict.show{opacity:1;}
+.verdict b{color:var(--ink);font-weight:600;}
+.controls{
+  position:fixed;
+  left:50%;
+  bottom:16px;
+  transform:translateX(-50%);
+  width:calc(100% - 32px);
+  max-width:1200px;
+  margin:0;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:14px 18px;
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px 20px;
+  z-index:100;
+  box-shadow:0 12px 36px rgba(0,0,0,.5);
+}
+.ctrl-group{display:flex;align-items:center;gap:8px;}
+.ctrl-btn{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 12px);
+  letter-spacing:.03em;
+  color:var(--ink);
+  background:var(--panel-2);
+  border:1px solid var(--line);
+  border-radius:7px;
+  padding:8px 14px;
+  cursor:pointer;
+  transition:border-color .2s, color .2s;
+}
+.ctrl-btn:hover:not(:disabled){border-color:var(--ink);}
+.ctrl-btn:disabled{opacity:.35;cursor:default;}
+.ctrl-btn.play{min-width:132px;border-color:var(--accent);color:var(--accent);}
+.ctrl-btn.step{font-size:calc(var(--fs,1) * 14px);padding:8px 12px;}
+.ctrl-label{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 10px);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin-right:2px;
+}
+.speed-group{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;}
+.speed-btn{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11.5px);
+  color:var(--muted);
+  background:var(--panel-2);
+  border:none;
+  padding:7px 11px;
+  cursor:pointer;
+  border-right:1px solid var(--line);
+  transition:background .2s, color .2s;
+}
+.speed-btn:last-child{border-right:none;}
+.speed-btn.active{background:var(--accent-dim);color:var(--accent);}
+.step-counter{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11px);
+  color:var(--muted);
+  margin-left:auto;
+}
+@media (prefers-reduced-motion: reduce){
+  *{transition-duration:.001ms !important; animation-duration:.001ms !important;}
+}
+.stage-lr{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;}
+@media (max-width:760px){.stage-lr{grid-template-columns:1fr;}}
+.stage-lr .col-code{display:flex;flex-direction:column;}
+.stage-lr .col-code .panel.term{height:100%;}
+.stage-lr .col-out{display:flex;flex-direction:column;gap:14px;}
+
+
+.term{padding:16px 18px;}
+.screens{position:relative;min-height:150px;}
+.screen{
+  padding:20px 22px;display:none;flex-direction:column;gap:10px;align-items:center;
+}
+.screen.show{display:flex;}
+.field-mock{
+  width:100%;max-width:280px;display:flex;justify-content:space-between;gap:10px;
+  font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 12px);
+  border:1px solid var(--line);border-radius:7px;padding:8px 12px;background:var(--panel-2);color:var(--ink);
+}
+.field-mock .k{color:var(--muted);}
+.mock-btn{
+  font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 12.5px);color:var(--ink);
+  background:var(--panel-2);border:1px solid var(--line);border-radius:7px;
+  padding:9px 22px;transition:border-color .2s,background .2s,transform .15s;margin-top:4px;
+}
+.mock-btn.clicked{border-color:var(--accent);background:var(--accent-dim);color:var(--accent);transform:scale(.96);}
+.mock-btn.danger.clicked{border-color:var(--danger);background:rgba(226,114,91,.12);color:var(--danger);}
+.avatar{
+  width:46px;height:46px;border-radius:50%;background:var(--accent-dim);border:1.5px solid var(--accent);
+  display:flex;align-items:center;justify-content:center;font-size:calc(var(--fs,1) * 20px);
+}
+.welcome-name{font-family:"IBM Plex Sans",sans-serif;font-weight:600;font-size:calc(var(--fs,1) * 15px);color:var(--ink);}
+.welcome-role{
+  font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 10.5px);color:var(--accent-2);
+  border:1px solid var(--accent-2);border-radius:20px;padding:2px 10px;background:var(--accent2-dim);
+}
+.scenario{
+  text-align:center;font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 12px);color:var(--accent-2);
+  border:1px solid var(--line);border-radius:20px;padding:7px 16px;
+  opacity:0;transition:opacity .3s;min-height:16px;
+}
+.scenario.show{opacity:1;border-color:var(--accent-2);background:var(--accent2-dim);}
+.storage-panel{padding:16px 18px;display:flex;flex-direction:column;gap:8px;}
+.store-entry{
+  font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 12px);
+  border-radius:6px;padding:8px 10px;background:var(--panel-2);border:1px solid var(--accent);color:var(--accent);
+  opacity:0;transform:translateY(4px);animation:entryIn .3s ease forwards;
+  display:flex;gap:8px;
+}
+@keyframes entryIn{to{opacity:1;transform:translateY(0);}}
+.store-entry .k{color:var(--ink);flex-shrink:0;}
+.store-entry .v{color:var(--accent);word-break:break-all;}
+.store-empty{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 12px);color:var(--muted);opacity:.6;}
+
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">JavaScript · Navegador</p>
+  <h1>Un login real: ¿qué guardamos en localStorage?</h1>
+  <p class="sub">No solo el token de sesión — también el usuario completo, una preferencia y una fecha. Y al cerrar sesión, no todo tiene por qué borrarse.</p>
+
+
+  <div class="stage-lr">
+    <div class="col-code">
+      <div class="panel term">
+        <div class="term-bar"><span></span><span></span><span></span></div>
+        <div class="code" id="code">
+          <span class="ln" data-i="submit"><span class="k">async function</span> login(email, password) {</span>
+          <span class="ln" data-i="fetch">&nbsp;&nbsp;<span class="k">const</span> res = <span class="k">await</span> fetch('/api/login', { <span class="k">method</span>:'POST', body: ... });</span>
+          <span class="ln" data-i="data">&nbsp;&nbsp;<span class="k">const</span> data = <span class="k">await</span> res.json();&nbsp;<span style="color:var(--muted)">// { token, usuario }</span></span>
+          <span class="ln" data-i="token">&nbsp;&nbsp;localStorage.setItem('token', data.token);</span>
+          <span class="ln" data-i="usuario">&nbsp;&nbsp;localStorage.setItem('usuario', JSON.stringify(data.usuario));</span>
+          <span class="ln" data-i="tema">&nbsp;&nbsp;localStorage.setItem('tema', 'oscuro');&nbsp;<span style="color:var(--muted)">// preferencia</span></span>
+          <span class="ln" data-i="ultimoLogin">&nbsp;&nbsp;localStorage.setItem('ultimoLogin', <span class="k">new</span> Date().toISOString());</span>
+          <span class="ln" data-i="fn-end">}</span>
+          <span class="ln" data-i="leer">&nbsp;</span>
+          <span class="ln" data-i="leer"><span style="color:var(--muted)">// ...al cargar la página (aunque se haya recargado)...</span></span>
+          <span class="ln" data-i="leer"><span class="k">const</span> usuario = JSON.parse(localStorage.getItem('usuario'));</span>
+          <span class="ln" data-i="logout">&nbsp;</span>
+          <span class="ln" data-i="logout"><span class="k">function</span> logout() {</span>
+          <span class="ln" data-i="logout">&nbsp;&nbsp;localStorage.removeItem('token');</span>
+          <span class="ln" data-i="logout">&nbsp;&nbsp;localStorage.removeItem('usuario');</span>
+          <span class="ln" data-i="logout">&nbsp;&nbsp;localStorage.removeItem('ultimoLogin');</span>
+          <span class="ln" data-i="logout">&nbsp;&nbsp;<span style="color:var(--muted)">// 'tema' se queda: es una preferencia, no algo de la sesión</span></span>
+          <span class="ln" data-i="logout">}</span>
+        </div>
+      </div>
+    </div>
+    <div class="col-out">
+      <div class="panel screens">
+        <div class="screen" id="screenLogin">
+          <div class="field-mock"><span class="k">email</span><span>ana@correo.com</span></div>
+          <div class="field-mock"><span class="k">password</span><span>••••••••</span></div>
+          <button class="mock-btn" id="loginBtn">Iniciar sesión</button>
+        </div>
+        <div class="screen" id="screenApp">
+          <div class="avatar">🙂</div>
+          <span class="welcome-name" id="welcomeName">Bienvenida, Ana</span>
+          <span class="welcome-role" id="welcomeRole">admin</span>
+          <button class="mock-btn danger" id="logoutBtn">Cerrar sesión</button>
+        </div>
+      </div>
+      <p class="scenario" id="scenario"></p>
+      <div class="panel storage-panel">
+        <span class="lbl">localStorage</span>
+        <div id="storageEntries"></div>
+      </div>
+    </div>
+  </div>
+  <p class="note" id="noteBox"></p>
+
+
+  <div class="timeline"><div class="timeline-fill" id="fill"></div></div>
+  <p class="verdict" id="verdict"></p>
+  <div class="controls">
+    <div class="ctrl-group">
+      <button id="rewindBtn" class="ctrl-btn step" title="Rebobinar al principio">&#9198;</button>
+      <button id="prevBtn" class="ctrl-btn step" title="Paso anterior">&#9664;&#9664;</button>
+      <button id="playBtn" class="ctrl-btn play">&#9654; Reproducir</button>
+      <button id="nextBtn" class="ctrl-btn step" title="Paso siguiente">&#9654;&#9654;</button>
+      <button id="delayPlayBtn" class="ctrl-btn" title="Empezar tras una cuenta atrás de 10s">&#9654; +10s</button>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Velocidad</span>
+      <div class="speed-group">
+        <button class="speed-btn active" data-speed="0.25">0.25&times;</button>
+        <button class="speed-btn" data-speed="0.5">0.5&times;</button>
+      </div>
+    </div>
+    <span class="step-counter" id="stepCounter">Paso 1 / N</span>
+  </div>
+
+</div>
+
+<script>
+
+var codeLines = document.querySelectorAll('#code .ln');
+var screenLogin = document.getElementById('screenLogin');
+var screenApp = document.getElementById('screenApp');
+var loginBtn = document.getElementById('loginBtn');
+var logoutBtn = document.getElementById('logoutBtn');
+var scenario = document.getElementById('scenario');
+var storageEntries = document.getElementById('storageEntries');
+var noteBox = document.getElementById('noteBox');
+
+var STATES = [{"active": null, "stage": "login", "scenario": "", "storage": [], "note": "El usuario introduce su email y contraseña.", "verdict": null}, {"active": "submit", "stage": "login", "scenario": "", "storage": [], "note": "Pulsa \"Iniciar sesión\" → se llama a login(email, password).", "verdict": null}, {"active": "fetch", "stage": "login", "scenario": "", "storage": [], "note": "Se envía la petición al servidor con fetch()... la función se pausa aquí.", "verdict": null}, {"active": "data", "stage": "login", "scenario": "", "storage": [], "note": "El servidor responde con un token y los datos del usuario.", "verdict": null}, {"active": "token", "stage": "login", "scenario": "", "storage": [["token", "eyJhbGciOi...9kf82a"]], "note": "Primero, el token de sesión — lo típico en cualquier login.", "verdict": null}, {"active": "usuario", "stage": "login", "scenario": "", "storage": [["token", "eyJhbGciOi...9kf82a"], ["usuario", "{\"nombre\":\"Ana\",\"rol\":\"admin\"}"]], "note": "Pero también podemos guardar el objeto usuario ENTERO — convertido a texto con JSON.stringify().", "verdict": null}, {"active": "tema", "stage": "login", "scenario": "", "storage": [["token", "eyJhbGciOi...9kf82a"], ["usuario", "{\"nombre\":\"Ana\",\"rol\":\"admin\"}"], ["tema", "oscuro"]], "note": "O una preferencia, como el tema elegido — no tiene nada que ver con la sesión.", "verdict": null}, {"active": "ultimoLogin", "stage": "login", "scenario": "", "storage": [["token", "eyJhbGciOi...9kf82a"], ["usuario", "{\"nombre\":\"Ana\",\"rol\":\"admin\"}"], ["tema", "oscuro"], ["ultimoLogin", "2026-09-02T10:15:00Z"]], "note": "O un metadato, como la fecha del último acceso.", "verdict": null}, {"active": null, "stage": "app", "scenario": "", "storage": [["token", "eyJhbGciOi...9kf82a"], ["usuario", "{\"nombre\":\"Ana\",\"rol\":\"admin\"}"], ["tema", "oscuro"], ["ultimoLogin", "2026-09-02T10:15:00Z"]], "note": "Con los 4 datos guardados, mostramos la pantalla de bienvenida.", "verdict": null}, {"active": null, "stage": "app", "scenario": "🔄 recargas la página (F5)", "storage": [["token", "eyJhbGciOi...9kf82a"], ["usuario", "{\"nombre\":\"Ana\",\"rol\":\"admin\"}"], ["tema", "oscuro"], ["ultimoLogin", "2026-09-02T10:15:00Z"]], "note": "localStorage no se borra al recargar — los 4 datos siguen ahí tal cual.", "verdict": null}, {"active": "leer", "stage": "app", "scenario": "", "storage": [["token", "eyJhbGciOi...9kf82a"], ["usuario", "{\"nombre\":\"Ana\",\"rol\":\"admin\"}"], ["tema", "oscuro"], ["ultimoLogin", "2026-09-02T10:15:00Z"]], "note": "Al cargar la página, leemos usuario con getItem() + JSON.parse() y reconstruimos la pantalla sin pedir login otra vez.", "verdict": null}, {"active": "logout", "stage": "app", "scenario": "", "storage": [["token", "eyJhbGciOi...9kf82a"], ["usuario", "{\"nombre\":\"Ana\",\"rol\":\"admin\"}"], ["tema", "oscuro"], ["ultimoLogin", "2026-09-02T10:15:00Z"]], "note": "El usuario pulsa \"Cerrar sesión\".", "verdict": null}, {"active": "logout", "stage": "login", "scenario": "", "storage": [["tema", "oscuro"]], "note": "Se borran token, usuario y ultimoLogin — pero \"tema\" se queda: es una preferencia del navegador, no algo ligado a la sesión.", "verdict": null}, {"active": null, "stage": "login", "scenario": "", "storage": [["tema", "oscuro"]], "note": "", "verdict": "localStorage no es solo para guardar un token: puedes guardar tantas claves como quieras — el objeto usuario completo (convertido con JSON.stringify), preferencias como el tema, fechas... Y no todo tiene por qué borrarse al cerrar sesión: cada dato puede tener su propio ciclo de vida."}];
+var DURATIONS = [700, 700, 900, 900, 900, 1100, 900, 900, 1000, 1300, 1100, 900, 1300];
+
+function renderState(s){
+  codeLines.forEach(function(el){ el.classList.remove('active'); });
+  if(s.active){
+    codeLines.forEach(function(el){ if(el.getAttribute('data-i') === s.active) el.classList.add('active'); });
+  }
+  screenLogin.classList.toggle('show', s.stage === 'login');
+  screenApp.classList.toggle('show', s.stage === 'app');
+  loginBtn.classList.toggle('clicked', s.active === 'submit');
+  logoutBtn.classList.toggle('clicked', s.active === 'logout' && s.stage === 'app');
+  scenario.textContent = s.scenario;
+  scenario.classList.toggle('show', !!s.scenario);
+  if(s.storage.length === 0){
+    storageEntries.innerHTML = '<span class="store-empty">vacío</span>';
+  } else {
+    storageEntries.innerHTML = s.storage.map(function(e){
+      return '<div class="store-entry"><span class="k">'+e[0]+'</span><span class="v">'+e[1]+'</span></div>';
+    }).join('');
+  }
+  noteBox.textContent = s.note || '';
+}
+
+</script>
+<script>
+
+(function(){
+  var playBtn = document.getElementById('playBtn');
+  var prevBtn = document.getElementById('prevBtn');
+  var nextBtn = document.getElementById('nextBtn');
+  var rewindBtn = document.getElementById('rewindBtn');
+  var delayPlayBtn = document.getElementById('delayPlayBtn');
+  var stepCounter = document.getElementById('stepCounter');
+  var fill = document.getElementById('fill');
+  var verdict = document.getElementById('verdict');
+  var speedBtns = document.querySelectorAll('.speed-btn');
+
+  var curIndex = 0, playing = false, speed = 0.25, playTimer = null, countdownTimer = null;
+
+  function stopCountdown(){
+    if(countdownTimer){ clearInterval(countdownTimer); countdownTimer = null; }
+    delayPlayBtn.textContent = '▶ +10s';
+    playBtn.disabled = false;
+  }
+  function show(i){
+    var s = STATES[i];
+    renderState(s, i);
+    if(verdict){
+      verdict.innerHTML = s.verdict || '';
+      verdict.classList.toggle('show', !!s.verdict);
+    }
+    if(fill) fill.style.width = (i/(STATES.length-1)*100) + '%';
+    stepCounter.textContent = 'Paso ' + (i+1) + ' / ' + STATES.length;
+    prevBtn.disabled = (i===0);
+    nextBtn.disabled = (i===STATES.length-1);
+  }
+  function stopPlay(){ playing=false; playBtn.textContent='▶ Reproducir'; clearTimeout(playTimer); }
+  function scheduleNext(){
+    if(curIndex >= STATES.length-1){ stopPlay(); return; }
+    var dur = DURATIONS[curIndex] / speed;
+    playTimer = setTimeout(function(){ curIndex++; show(curIndex); scheduleNext(); }, dur);
+  }
+  function startPlay(){
+    if(curIndex >= STATES.length-1){ curIndex=0; show(0); }
+    playing = true; playBtn.textContent='❘❘ Pausar'; scheduleNext();
+  }
+  playBtn.addEventListener('click', function(){ stopCountdown(); playing?stopPlay():startPlay(); });
+  prevBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex=Math.max(0,curIndex-1); show(curIndex); });
+  nextBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex=Math.min(STATES.length-1,curIndex+1); show(curIndex); });
+  rewindBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex=0; show(0); });
+  speedBtns.forEach(function(b){ b.addEventListener('click', function(){ speedBtns.forEach(function(x){x.classList.remove('active');}); b.classList.add('active'); speed=parseFloat(b.getAttribute('data-speed')); }); });
+  delayPlayBtn.addEventListener('click', function(){
+    if(countdownTimer){ stopCountdown(); return; }
+    stopPlay();
+    var remaining=10; playBtn.disabled=true; delayPlayBtn.textContent='Empieza en '+remaining+'s…';
+    countdownTimer=setInterval(function(){
+      remaining--;
+      if(remaining<=0){ clearInterval(countdownTimer); countdownTimer=null; delayPlayBtn.textContent='▶ +10s'; playBtn.disabled=false; startPlay(); }
+      else{ delayPlayBtn.textContent='Empieza en '+remaining+'s…'; }
+    },1000);
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.target && (e.target.tagName==='INPUT' || e.target.tagName==='TEXTAREA' || e.target.isContentEditable)) return;
+    var advance = ['ArrowRight','ArrowDown','PageDown',' ','Spacebar'];
+    var back = ['ArrowLeft','ArrowUp','PageUp','Backspace'];
+    if(advance.indexOf(e.key)!==-1){ e.preventDefault(); nextBtn.click(); }
+    else if(back.indexOf(e.key)!==-1){ e.preventDefault(); prevBtn.click(); }
+  });
+  show(0);
+})();
+
+</script>

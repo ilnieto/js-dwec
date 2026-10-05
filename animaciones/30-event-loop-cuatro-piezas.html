@@ -1,0 +1,461 @@
+<title>Event Loop: las cuatro piezas</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+
+:root{
+  --bg:#0b0e12;
+  --panel:#11161d;
+  --panel-2:#161d26;
+  --line:#232b34;
+  --ink:#e5e9ed;
+  --muted:#e7ebef;
+  --accent:#4dd9c0;
+  --accent-2:#f2a154;
+  --violet:#a78bfa;
+  --good:#7cd992;
+  --danger:#e2725b;
+  --accent-dim:rgba(77,217,192,.12);
+  --accent2-dim:rgba(242,161,84,.12);
+  --fs:1.35;
+}
+*{box-sizing:border-box;}
+html,body{background:var(--bg);}
+body{
+  margin:0;
+  color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,sans-serif;
+  padding:10px 20px 140px;
+}
+.wrap{max-width:1400px;margin:0 auto;}
+.eyebrow{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11.5px);
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--muted);
+  text-align:center;
+  margin:0 0 12px;
+}
+h1{
+  text-align:center;
+  font-family:"IBM Plex Mono",monospace;
+  font-size:36px;
+  font-weight:600;
+  margin:0 0 10px;
+  text-wrap:balance;
+}
+.sub{
+  text-align:center;
+  color:var(--muted);
+  font-size:calc(var(--fs,1) * 14px);
+  max-width:1400px;
+  margin:0 auto 34px;
+  line-height:1.55;
+}
+.panel{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:10px;
+}
+.term-bar{display:flex;gap:5px;margin-bottom:10px;}
+.term-bar span{width:8px;height:8px;border-radius:50%;background:#2a323c;}
+.code{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:18px;
+  line-height:1.95;
+  color:#e2e7eb;
+  overflow-x:auto;
+}
+.code .ln{
+  display:block;
+  padding:1px 8px;
+  border-radius:5px;
+  border-left:2px solid transparent;
+  transition:background .25s, border-color .25s, color .25s;
+  white-space:pre;
+}
+.code .ln .k{color:#c99a5b;}
+.code .ln.active{color:var(--ink);background:var(--accent-dim);border-left-color:var(--accent);}
+.lbl{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 9.5px);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--muted);
+  display:block;
+  margin-bottom:7px;
+}
+.chip{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11.5px);
+  padding:5px 9px;
+  border-radius:6px;
+  background:var(--panel-2);
+  border:1px solid var(--accent);
+  color:var(--accent);
+  opacity:0;
+  transform:scale(.9);
+  animation:pop .22s ease forwards;
+  display:inline-block;
+}
+.chip.warn{border-color:var(--accent-2);color:var(--accent-2);}
+.chip.bad{border-color:var(--danger);color:var(--danger);}
+.chip.muted{border-color:var(--line);color:var(--muted);}
+@keyframes pop{from{opacity:0;transform:scale(.9);}to{opacity:1;transform:scale(1);}}
+.note{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:20px;
+  color:var(--muted);
+  text-align:center;
+  min-height:34px;
+  line-height:1.5;
+  padding:0 10px;
+}
+.timeline{max-width:920px;margin:22px auto 0;height:3px;background:var(--line);border-radius:2px;overflow:hidden;}
+.timeline-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent-2),var(--accent));transition:width .05s linear;}
+.verdict{
+  text-align:center;
+  margin:22px auto 0;
+  max-width:600px;
+  font-size:calc(var(--fs,1) * 14px);
+  color:var(--muted);
+  line-height:1.6;
+  min-height:30px;
+  opacity:0;
+  transition:opacity .4s;
+}
+.verdict.show{opacity:1;}
+.verdict b{color:var(--ink);font-weight:600;}
+.controls{
+  position:fixed;
+  left:50%;
+  bottom:16px;
+  transform:translateX(-50%);
+  width:calc(100% - 32px);
+  max-width:1200px;
+  margin:0;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:14px 18px;
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px 20px;
+  z-index:100;
+  box-shadow:0 12px 36px rgba(0,0,0,.5);
+}
+.ctrl-group{display:flex;align-items:center;gap:8px;}
+.ctrl-btn{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 12px);
+  letter-spacing:.03em;
+  color:var(--ink);
+  background:var(--panel-2);
+  border:1px solid var(--line);
+  border-radius:7px;
+  padding:8px 14px;
+  cursor:pointer;
+  transition:border-color .2s, color .2s;
+}
+.ctrl-btn:hover:not(:disabled){border-color:var(--ink);}
+.ctrl-btn:disabled{opacity:.35;cursor:default;}
+.ctrl-btn.play{min-width:132px;border-color:var(--accent);color:var(--accent);}
+.ctrl-btn.step{font-size:calc(var(--fs,1) * 14px);padding:8px 12px;}
+.ctrl-label{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 10px);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin-right:2px;
+}
+.speed-group{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;}
+.speed-btn{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11.5px);
+  color:var(--muted);
+  background:var(--panel-2);
+  border:none;
+  padding:7px 11px;
+  cursor:pointer;
+  border-right:1px solid var(--line);
+  transition:background .2s, color .2s;
+}
+.speed-btn:last-child{border-right:none;}
+.speed-btn.active{background:var(--accent-dim);color:var(--accent);}
+.step-counter{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11px);
+  color:var(--muted);
+  margin-left:auto;
+}
+@media (prefers-reduced-motion: reduce){
+  *{transition-duration:.001ms !important; animation-duration:.001ms !important;}
+}
+.stage-lr{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;}
+@media (max-width:760px){.stage-lr{grid-template-columns:1fr;}}
+.stage-lr .col-code{display:flex;flex-direction:column;}
+.stage-lr .col-code .panel.term{height:100%;}
+.stage-lr .col-out{display:flex;flex-direction:column;gap:14px;}
+
+
+.term{padding:16px 18px;}
+.el-wrap{position:relative;margin-top:16px;}
+.el-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+@media (max-width:640px){.el-grid{grid-template-columns:1fr;}}
+.el-box{padding:14px 16px;min-height:108px;position:relative;}
+.el-box .tag{
+  font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 9.5px);letter-spacing:.08em;
+  color:var(--muted);text-transform:uppercase;display:block;margin-bottom:2px;
+}
+.el-box .lbl-sub{display:block;font-size:calc(var(--fs,1) * 11px);color:var(--muted);margin:2px 0 8px;font-family:"IBM Plex Sans",sans-serif;letter-spacing:0;text-transform:none;}
+.el-box.stack{border-color:var(--good);}
+.el-box.stack .lbl{color:var(--good);}
+.el-box.webapi{border-color:var(--violet);}
+.el-box.webapi .lbl{color:var(--violet);}
+.el-box.micro{border-color:var(--accent);}
+.el-box.micro .lbl{color:var(--accent);}
+.el-box.macro{border-color:var(--accent-2);}
+.el-box.macro .lbl{color:var(--accent-2);}
+.el-box.flash{box-shadow:0 0 0 1px currentColor;}
+.el-items{display:flex;gap:8px;flex-wrap:wrap;min-height:30px;}
+.el-chip{
+  font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 11px);padding:5px 9px;border-radius:6px;
+  background:var(--panel-2);border:1px solid currentColor;
+  opacity:0;transform:translateY(4px);animation:pop .2s ease forwards;
+}
+.el-loop{
+  text-align:center;margin:14px 0;font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 11px);
+  color:var(--muted);letter-spacing:.04em;
+}
+.el-loop b{color:var(--ink);}
+.el-loop.flash{color:var(--ink);}
+.el-loop .pill{
+  display:inline-block;padding:4px 12px;border-radius:99px;border:1px solid var(--line);
+  background:var(--panel-2);transition:border-color .2s, color .2s;
+}
+.el-loop.flash .pill{border-color:var(--ink);}
+.out-panel{padding:14px 16px;min-height:44px;}
+.out{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 13px);display:flex;flex-wrap:wrap;gap:8px;}
+.out span{display:inline-block;padding:2px 8px;border-radius:5px;background:var(--panel-2);border:1px solid var(--good);color:var(--good);opacity:0;transform:scale(.85);animation:pop .22s ease forwards;}
+
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">JavaScript · Event Loop</p>
+  <h1>Event Loop: las cuatro piezas fundamentales</h1>
+  <p class="sub">Call Stack, Web APIs, cola de microtareas y cola de callbacks. Con dos setTimeout y una cadena de promesas, el orden de salida (A, F, C, D, B, E) no tiene nada que ver con el orden del código.</p>
+
+
+  <div class="stage-lr">
+    <div class="col-code">
+      <div class="panel term">
+        <div class="term-bar"><span></span><span></span><span></span></div>
+        <div class="code" id="code">
+          <span class="ln" data-i="0"><span class="k">console.log</span>('A');</span>
+          <span class="ln" data-i="1"><span class="k">setTimeout</span>(() =&gt; log('B'), 0);</span>
+          <span class="ln" data-i="2"><span class="k">Promise.resolve</span>().<span class="k">then</span>(() =&gt; log('C')).<span class="k">then</span>(() =&gt; log('D'));</span>
+          <span class="ln" data-i="3"><span class="k">setTimeout</span>(() =&gt; log('E'), 0);</span>
+          <span class="ln" data-i="4"><span class="k">console.log</span>('F');</span>
+        </div>
+      </div>
+    </div>
+    <div class="col-out">
+      <div class="el-wrap">
+        <div class="el-grid">
+          <div class="panel el-box stack" id="stackBox">
+            <span class="tag">1</span>
+            <span class="lbl">Call Stack<span class="lbl-sub">el motor de JS, una cosa cada vez</span></span>
+            <div class="el-items" id="stackItems"></div>
+          </div>
+          <div class="panel el-box webapi" id="webapiBox">
+            <span class="tag">2</span>
+            <span class="lbl">Web APIs<span class="lbl-sub">el navegador: timers, red…</span></span>
+            <div class="el-items" id="webapiItems"></div>
+          </div>
+          <div class="panel el-box micro" id="microBox">
+            <span class="tag">3</span>
+            <span class="lbl">Cola de microtareas<span class="lbl-sub">Promises — se vacía ENTERA cada vez</span></span>
+            <div class="el-items" id="microItems"></div>
+          </div>
+          <div class="panel el-box macro" id="macroBox">
+            <span class="tag">4</span>
+            <span class="lbl">Cola de callbacks<span class="lbl-sub">setTimeout, eventos — UNA cada vez</span></span>
+            <div class="el-items" id="macroItems"></div>
+          </div>
+        </div>
+        <p class="el-loop" id="loopBadge"><span class="pill">🔁 Event Loop: ¿pila vacía? → vacía <b>microtareas</b> → saca <b>1</b> de callbacks → repite</span></p>
+      </div>
+      <div class="panel out-panel">
+        <span class="lbl">Consola</span>
+        <div class="out" id="out"></div>
+      </div>
+    </div>
+  </div>
+  <p class="note" id="noteBox"></p>
+
+
+  <div class="timeline"><div class="timeline-fill" id="fill"></div></div>
+  <p class="verdict" id="verdict"></p>
+  <div class="controls">
+    <div class="ctrl-group">
+      <button id="rewindBtn" class="ctrl-btn step" title="Rebobinar al principio">&#9198;</button>
+      <button id="prevBtn" class="ctrl-btn step" title="Paso anterior">&#9664;&#9664;</button>
+      <button id="playBtn" class="ctrl-btn play">&#9654; Reproducir</button>
+      <button id="nextBtn" class="ctrl-btn step" title="Paso siguiente">&#9654;&#9654;</button>
+      <button id="delayPlayBtn" class="ctrl-btn" title="Empezar tras una cuenta atrás de 10s">&#9654; +10s</button>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Velocidad</span>
+      <div class="speed-group">
+        <button class="speed-btn active" data-speed="0.25">0.25&times;</button>
+        <button class="speed-btn" data-speed="0.5">0.5&times;</button>
+      </div>
+    </div>
+    <span class="step-counter" id="stepCounter">Paso 1 / N</span>
+  </div>
+
+</div>
+
+<script>
+
+var codeLines = document.querySelectorAll('#code .ln');
+var stackBox = document.getElementById('stackBox');
+var webapiBox = document.getElementById('webapiBox');
+var microBox = document.getElementById('microBox');
+var macroBox = document.getElementById('macroBox');
+var stackItems = document.getElementById('stackItems');
+var webapiItems = document.getElementById('webapiItems');
+var microItems = document.getElementById('microItems');
+var macroItems = document.getElementById('macroItems');
+var loopBadge = document.getElementById('loopBadge');
+var out = document.getElementById('out');
+var noteBox = document.getElementById('noteBox');
+
+var VERDICT = 'Cuatro piezas: la <b>pila</b> ejecuta código, una cosa cada vez. Las <b>Web APIs</b> del navegador cuentan temporizadores y hacen peticiones sin bloquear JS. La <b>cola de microtareas</b> (Promises) se vacía SIEMPRE entera, encadenados incluidos. La <b>cola de callbacks</b> (setTimeout, eventos…) solo suelta UNA tarea cada vez que la pila y las microtareas están vacías, en el orden en que llegaron. Por eso el orden real fue <b>A, F, C, D, B, E</b> — nada que ver con el orden del código.';
+
+function chip(t, cls){ return '<div class="el-chip" style="color:var(--'+cls+')">'+t+'</div>'; }
+function itemsHtml(arr, cls){ return arr.map(function(t){ return chip(t, cls); }).join(''); }
+
+var STATES = [
+  {active:0, stack:["log('A')"], webapi:[], micro:[], macro:[], out:[], flash:null, note:"ejecuta console.log('A')", verdict:null},
+  {active:0, stack:[], webapi:[], micro:[], macro:[], out:['A'], flash:null, note:"imprime 'A'", verdict:null},
+
+  {active:1, stack:['setTimeout'], webapi:[], micro:[], macro:[], out:['A'], flash:null, note:'se llama al primer setTimeout…', verdict:null},
+  {active:1, stack:[], webapi:['⏱ timer #1 (0ms)'], micro:[], macro:[], out:['A'], flash:'webapi', note:'…y se delega a las Web APIs (pieza 2): no bloquea nada, aunque sea 0ms', verdict:null},
+
+  {active:2, stack:['Promise.then×2'], webapi:['⏱ timer #1 (0ms)'], micro:[], macro:[], out:['A'], flash:null, note:'la promesa ya está resuelta: se registra la cadena .then().then()…', verdict:null},
+  {active:2, stack:[], webapi:['⏱ timer #1 (0ms)'], micro:["then→'C'"], macro:[], out:['A'], flash:'micro', note:'…el PRIMER .then va ya a la cola de microtareas (pieza 3); el segundo espera a que el primero resuelva', verdict:null},
+
+  {active:3, stack:['setTimeout'], webapi:['⏱ timer #1 (0ms)'], micro:["then→'C'"], macro:[], out:['A'], flash:null, note:'se llama al segundo setTimeout…', verdict:null},
+  {active:3, stack:[], webapi:['⏱ timer #1 (0ms)', '⏱ timer #2 (0ms)'], micro:["then→'C'"], macro:[], out:['A'], flash:'webapi', note:'…también a las Web APIs. Van dos timers contando en paralelo, fuera de JS', verdict:null},
+
+  {active:4, stack:["log('F')"], webapi:['⏱ timer #1 (0ms)', '⏱ timer #2 (0ms)'], micro:["then→'C'"], macro:[], out:['A'], flash:null, note:'última línea síncrona', verdict:null},
+  {active:4, stack:[], webapi:['⏱ timer #1 (0ms)', '⏱ timer #2 (0ms)'], micro:["then→'C'"], macro:[], out:['A','F'], flash:null, note:"imprime 'F' — el código síncrono ha terminado", verdict:null},
+
+  {active:-1, stack:[], webapi:['⏱ timer #1 (0ms)', '⏱ timer #2 (0ms)'], micro:[], macro:[], out:['A','F'], flash:'micro', note:'pila vacía → el event loop mira PRIMERO la cola de microtareas y saca la de C', verdict:null},
+  {active:-1, stack:["log('C')"], webapi:['⏱ timer #1 (0ms)', '⏱ timer #2 (0ms)'], micro:[], macro:[], out:['A','F'], flash:null, note:'ejecuta el primer .then', verdict:null},
+  {active:-1, stack:[], webapi:['⏱ timer #1 (0ms)', '⏱ timer #2 (0ms)'], micro:["then→'D'"], macro:[], out:['A','F','C'], flash:'micro', note:"imprime 'C' → y justo AHORA se encola el segundo .then (D), porque el primero ya resolvió", verdict:null},
+  {active:-1, stack:["log('D')"], webapi:['⏱ timer #1 (0ms)', '⏱ timer #2 (0ms)'], micro:[], macro:[], out:['A','F','C'], flash:null, note:'la cola de microtareas sigue sin estar vacía → se ejecuta D antes que NADA más', verdict:null},
+  {active:-1, stack:[], webapi:['⏱ timer #1 (0ms)', '⏱ timer #2 (0ms)'], micro:[], macro:[], out:['A','F','C','D'], flash:null, note:"imprime 'D' — la cadena de promesas, completa, sin que nada se colara en medio", verdict:null},
+
+  {active:-1, stack:[], webapi:[], micro:[], macro:["setTimeout→'B'","setTimeout→'E'"], out:['A','F','C','D'], flash:'macro', note:'los dos timers terminan (0ms) → sus callbacks pasan a la cola de callbacks, EN ORDEN DE LLEGADA', verdict:null},
+  {active:-1, stack:["log('B')"], webapi:[], micro:[], macro:["setTimeout→'E'"], out:['A','F','C','D'], flash:null, note:'microtareas vacía → ahora sí, se saca UNA sola macrotarea: la primera en llegar', verdict:null},
+  {active:-1, stack:[], webapi:[], micro:[], macro:["setTimeout→'E'"], out:['A','F','C','D','B'], flash:null, note:"imprime 'B'", verdict:null},
+  {active:-1, stack:["log('E')"], webapi:[], micro:[], macro:[], out:['A','F','C','D','B'], flash:null, note:'se repite el ciclo: pila y microtareas vacías → se saca la siguiente macrotarea', verdict:null},
+  {active:-1, stack:[], webapi:[], micro:[], macro:[], out:['A','F','C','D','B','E'], flash:null, note:"imprime 'E' — fin", verdict:null},
+
+  {active:-1, stack:[], webapi:[], micro:[], macro:[], out:['A','F','C','D','B','E'], flash:null, note:'', verdict:VERDICT}
+];
+
+var DURATIONS = [550,600, 500,650, 550,700, 500,700, 550,700, 700,600,700,600,700, 750,650,600,650,600];
+
+function renderState(s){
+  codeLines.forEach(function(el){ el.classList.remove('active'); });
+  if(s.active >= 0){
+    codeLines.forEach(function(el){ if(parseInt(el.getAttribute('data-i'),10) === s.active) el.classList.add('active'); });
+  }
+  stackItems.innerHTML = itemsHtml(s.stack, 'good');
+  webapiItems.innerHTML = itemsHtml(s.webapi, 'violet');
+  microItems.innerHTML = itemsHtml(s.micro, 'accent');
+  macroItems.innerHTML = itemsHtml(s.macro, 'accent-2');
+  stackBox.className = 'panel el-box stack' + (s.flash === 'stack' ? ' flash' : '');
+  webapiBox.className = 'panel el-box webapi' + (s.flash === 'webapi' ? ' flash' : '');
+  microBox.className = 'panel el-box micro' + (s.flash === 'micro' ? ' flash' : '');
+  macroBox.className = 'panel el-box macro' + (s.flash === 'macro' ? ' flash' : '');
+  loopBadge.className = 'el-loop' + (s.flash === 'micro' || s.flash === 'macro' ? ' flash' : '');
+  out.innerHTML = s.out.map(function(v){ return '<span>'+v+'</span>'; }).join('');
+  noteBox.textContent = s.note || '';
+}
+
+</script>
+<script>
+
+(function(){
+  var playBtn = document.getElementById('playBtn');
+  var prevBtn = document.getElementById('prevBtn');
+  var nextBtn = document.getElementById('nextBtn');
+  var rewindBtn = document.getElementById('rewindBtn');
+  var delayPlayBtn = document.getElementById('delayPlayBtn');
+  var stepCounter = document.getElementById('stepCounter');
+  var fill = document.getElementById('fill');
+  var verdict = document.getElementById('verdict');
+  var speedBtns = document.querySelectorAll('.speed-btn');
+
+  var curIndex = 0, playing = false, speed = 0.25, playTimer = null, countdownTimer = null;
+
+  function stopCountdown(){
+    if(countdownTimer){ clearInterval(countdownTimer); countdownTimer = null; }
+    delayPlayBtn.textContent = '▶ +10s';
+    playBtn.disabled = false;
+  }
+  function show(i){
+    var s = STATES[i];
+    renderState(s, i);
+    if(verdict){
+      verdict.innerHTML = s.verdict || '';
+      verdict.classList.toggle('show', !!s.verdict);
+    }
+    if(fill) fill.style.width = (i/(STATES.length-1)*100) + '%';
+    stepCounter.textContent = 'Paso ' + (i+1) + ' / ' + STATES.length;
+    prevBtn.disabled = (i===0);
+    nextBtn.disabled = (i===STATES.length-1);
+  }
+  function stopPlay(){ playing=false; playBtn.textContent='▶ Reproducir'; clearTimeout(playTimer); }
+  function scheduleNext(){
+    if(curIndex >= STATES.length-1){ stopPlay(); return; }
+    var dur = DURATIONS[curIndex] / speed;
+    playTimer = setTimeout(function(){ curIndex++; show(curIndex); scheduleNext(); }, dur);
+  }
+  function startPlay(){
+    if(curIndex >= STATES.length-1){ curIndex=0; show(0); }
+    playing = true; playBtn.textContent='❘❘ Pausar'; scheduleNext();
+  }
+  playBtn.addEventListener('click', function(){ stopCountdown(); playing?stopPlay():startPlay(); });
+  prevBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex=Math.max(0,curIndex-1); show(curIndex); });
+  nextBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex=Math.min(STATES.length-1,curIndex+1); show(curIndex); });
+  rewindBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex=0; show(0); });
+  speedBtns.forEach(function(b){ b.addEventListener('click', function(){ speedBtns.forEach(function(x){x.classList.remove('active');}); b.classList.add('active'); speed=parseFloat(b.getAttribute('data-speed')); }); });
+  delayPlayBtn.addEventListener('click', function(){
+    if(countdownTimer){ stopCountdown(); return; }
+    stopPlay();
+    var remaining=10; playBtn.disabled=true; delayPlayBtn.textContent='Empieza en '+remaining+'s…';
+    countdownTimer=setInterval(function(){
+      remaining--;
+      if(remaining<=0){ clearInterval(countdownTimer); countdownTimer=null; delayPlayBtn.textContent='▶ +10s'; playBtn.disabled=false; startPlay(); }
+      else{ delayPlayBtn.textContent='Empieza en '+remaining+'s…'; }
+    },1000);
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.target && (e.target.tagName==='INPUT' || e.target.tagName==='TEXTAREA' || e.target.isContentEditable)) return;
+    var advance = ['ArrowRight','ArrowDown','PageDown',' ','Spacebar'];
+    var back = ['ArrowLeft','ArrowUp','PageUp','Backspace'];
+    if(advance.indexOf(e.key)!==-1){ e.preventDefault(); nextBtn.click(); }
+    else if(back.indexOf(e.key)!==-1){ e.preventDefault(); prevBtn.click(); }
+  });
+  show(0);
+})();
+
+</script>

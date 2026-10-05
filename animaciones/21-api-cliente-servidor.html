@@ -1,0 +1,370 @@
+<title>Cómo funciona una API</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+
+:root{
+  --bg:#0b0e12;
+  --panel:#11161d;
+  --panel-2:#161d26;
+  --line:#232b34;
+  --ink:#e5e9ed;
+  --muted:#e7ebef;
+  --accent:#4dd9c0;
+  --accent-2:#f2a154;
+  --violet:#a78bfa;
+  --good:#7cd992;
+  --danger:#e2725b;
+  --accent-dim:rgba(77,217,192,.12);
+  --accent2-dim:rgba(242,161,84,.12);
+  --fs:1.35;
+}
+*{box-sizing:border-box;}
+html,body{background:var(--bg);}
+body{
+  margin:0;
+  color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,sans-serif;
+  padding:10px 20px 140px;
+}
+.wrap{max-width:1400px;margin:0 auto;}
+.eyebrow{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11.5px);
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--muted);
+  text-align:center;
+  margin:0 0 12px;
+}
+h1{
+  text-align:center;
+  font-family:"IBM Plex Mono",monospace;
+  font-size:36px;
+  font-weight:600;
+  margin:0 0 10px;
+  text-wrap:balance;
+}
+.sub{
+  text-align:center;
+  color:var(--muted);
+  font-size:calc(var(--fs,1) * 14px);
+  max-width:1400px;
+  margin:0 auto 34px;
+  line-height:1.55;
+}
+.panel{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:10px;
+}
+.term-bar{display:flex;gap:5px;margin-bottom:10px;}
+.term-bar span{width:8px;height:8px;border-radius:50%;background:#2a323c;}
+.code{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:18px;
+  line-height:1.95;
+  color:#e2e7eb;
+  overflow-x:auto;
+}
+.code .ln{
+  display:block;
+  padding:1px 8px;
+  border-radius:5px;
+  border-left:2px solid transparent;
+  transition:background .25s, border-color .25s, color .25s;
+  white-space:pre;
+}
+.code .ln .k{color:#c99a5b;}
+.code .ln.active{color:var(--ink);background:var(--accent-dim);border-left-color:var(--accent);}
+.lbl{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 9.5px);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--muted);
+  display:block;
+  margin-bottom:7px;
+}
+.chip{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11.5px);
+  padding:5px 9px;
+  border-radius:6px;
+  background:var(--panel-2);
+  border:1px solid var(--accent);
+  color:var(--accent);
+  opacity:0;
+  transform:scale(.9);
+  animation:pop .22s ease forwards;
+  display:inline-block;
+}
+.chip.warn{border-color:var(--accent-2);color:var(--accent-2);}
+.chip.bad{border-color:var(--danger);color:var(--danger);}
+.chip.muted{border-color:var(--line);color:var(--muted);}
+@keyframes pop{from{opacity:0;transform:scale(.9);}to{opacity:1;transform:scale(1);}}
+.note{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:20px;
+  color:var(--muted);
+  text-align:center;
+  min-height:34px;
+  line-height:1.5;
+  padding:0 10px;
+}
+.timeline{max-width:920px;margin:22px auto 0;height:3px;background:var(--line);border-radius:2px;overflow:hidden;}
+.timeline-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent-2),var(--accent));transition:width .05s linear;}
+.verdict{
+  text-align:center;
+  margin:22px auto 0;
+  max-width:600px;
+  font-size:calc(var(--fs,1) * 14px);
+  color:var(--muted);
+  line-height:1.6;
+  min-height:30px;
+  opacity:0;
+  transition:opacity .4s;
+}
+.verdict.show{opacity:1;}
+.verdict b{color:var(--ink);font-weight:600;}
+.controls{
+  position:fixed;
+  left:50%;
+  bottom:16px;
+  transform:translateX(-50%);
+  width:calc(100% - 32px);
+  max-width:1200px;
+  margin:0;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:14px 18px;
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px 20px;
+  z-index:100;
+  box-shadow:0 12px 36px rgba(0,0,0,.5);
+}
+.ctrl-group{display:flex;align-items:center;gap:8px;}
+.ctrl-btn{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 12px);
+  letter-spacing:.03em;
+  color:var(--ink);
+  background:var(--panel-2);
+  border:1px solid var(--line);
+  border-radius:7px;
+  padding:8px 14px;
+  cursor:pointer;
+  transition:border-color .2s, color .2s;
+}
+.ctrl-btn:hover:not(:disabled){border-color:var(--ink);}
+.ctrl-btn:disabled{opacity:.35;cursor:default;}
+.ctrl-btn.play{min-width:132px;border-color:var(--accent);color:var(--accent);}
+.ctrl-btn.step{font-size:calc(var(--fs,1) * 14px);padding:8px 12px;}
+.ctrl-label{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 10px);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin-right:2px;
+}
+.speed-group{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;}
+.speed-btn{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11.5px);
+  color:var(--muted);
+  background:var(--panel-2);
+  border:none;
+  padding:7px 11px;
+  cursor:pointer;
+  border-right:1px solid var(--line);
+  transition:background .2s, color .2s;
+}
+.speed-btn:last-child{border-right:none;}
+.speed-btn.active{background:var(--accent-dim);color:var(--accent);}
+.step-counter{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11px);
+  color:var(--muted);
+  margin-left:auto;
+}
+@media (prefers-reduced-motion: reduce){
+  *{transition-duration:.001ms !important; animation-duration:.001ms !important;}
+}
+.stage-lr{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;}
+@media (max-width:760px){.stage-lr{grid-template-columns:1fr;}}
+.stage-lr .col-code{display:flex;flex-direction:column;}
+.stage-lr .col-code .panel.term{height:100%;}
+.stage-lr .col-out{display:flex;flex-direction:column;gap:14px;}
+
+
+.stage{display:flex;flex-direction:column;gap:14px;}
+.net-panel{padding:26px 18px;display:flex;flex-direction:column;align-items:center;gap:18px;}
+.net-row{display:flex;align-items:center;gap:16px;width:100%;max-width:520px;justify-content:center;}
+.circle{
+  width:96px;height:96px;border-radius:50%;flex:none;
+  border:1px solid var(--line);background:var(--panel-2);color:var(--muted);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+  font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 11.5px);gap:4px;
+  transition:border-color .3s, color .3s, background .3s, transform .2s;
+}
+.circle .emoji{font-size:calc(var(--fs,1) * 22px);}
+.circle.active{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);transform:scale(1.05);}
+.circle.working{border-color:var(--accent-2);color:var(--accent-2);background:var(--accent2-dim);}
+.net-track{flex:1;height:2px;background:var(--line);position:relative;min-width:80px;}
+.net-dot{
+  position:absolute;top:-5px;width:12px;height:12px;border-radius:50%;
+  background:var(--accent-2);left:0;
+  transition:left .5s ease, background .3s, opacity .2s;
+  box-shadow:0 0 10px var(--accent-2);
+  opacity:0;
+}
+.net-dot.show{opacity:1;}
+.net-dot.reply{background:var(--good);box-shadow:0 0 10px var(--good);}
+.detail-card{
+  width:100%;max-width:420px;
+  border:1px solid var(--line);border-radius:8px;padding:12px 16px;
+  background:var(--panel-2);font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 12px);
+  min-height:70px;
+}
+.detail-card .method{color:var(--accent-2);font-weight:600;}
+.detail-card .status{font-weight:600;}
+.detail-card .status.ok{color:var(--good);}
+.detail-card .status.created{color:var(--accent);}
+.detail-card .row2{color:var(--muted);margin-top:6px;font-size:calc(var(--fs,1) * 11px);}
+
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">JavaScript · Redes</p>
+  <h1>Cliente, servidor y la API entre medias</h1>
+  <p class="sub">Cada vez que tu código pide datos, hay una conversación: el cliente pide algo concreto con un método y una URL, el servidor lo procesa y responde con un código de estado y datos.</p>
+
+
+  <div class="stage">
+    <div class="panel net-panel">
+      <div class="net-row">
+        <div class="circle" id="cCliente"><span class="emoji">🖥️</span>Cliente</div>
+        <div class="net-track"><div class="net-dot" id="dot"></div></div>
+        <div class="circle" id="cServidor"><span class="emoji">🗄️</span>Servidor / API</div>
+      </div>
+      <div class="detail-card" id="detail">esperando…</div>
+    </div>
+    <p class="note" id="noteBox"></p>
+  </div>
+
+
+  <div class="timeline"><div class="timeline-fill" id="fill"></div></div>
+  <p class="verdict" id="verdict"></p>
+  <div class="controls">
+    <div class="ctrl-group">
+      <button id="rewindBtn" class="ctrl-btn step" title="Rebobinar al principio">&#9198;</button>
+      <button id="prevBtn" class="ctrl-btn step" title="Paso anterior">&#9664;&#9664;</button>
+      <button id="playBtn" class="ctrl-btn play">&#9654; Reproducir</button>
+      <button id="nextBtn" class="ctrl-btn step" title="Paso siguiente">&#9654;&#9654;</button>
+      <button id="delayPlayBtn" class="ctrl-btn" title="Empezar tras una cuenta atrás de 10s">&#9654; +10s</button>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Velocidad</span>
+      <div class="speed-group">
+        <button class="speed-btn active" data-speed="0.25">0.25&times;</button>
+        <button class="speed-btn" data-speed="0.5">0.5&times;</button>
+      </div>
+    </div>
+    <span class="step-counter" id="stepCounter">Paso 1 / N</span>
+  </div>
+
+</div>
+
+<script>
+
+var cCliente = document.getElementById('cCliente');
+var cServidor = document.getElementById('cServidor');
+var dot = document.getElementById('dot');
+var detail = document.getElementById('detail');
+var noteBox = document.getElementById('noteBox');
+
+var STATES = [{"client": false, "server": false, "dotShow": false, "dotLeft": 0, "dotReply": false, "detail": "una API es el \"mostrador\" entre tu app (cliente) y los datos de un servidor", "note": "una API es el \"mostrador\" entre tu app (cliente) y los datos de un servidor", "verdict": null}, {"client": true, "server": false, "dotShow": false, "dotLeft": 0, "dotReply": false, "detail": "<span class=\"method\">GET</span> /productos", "note": "el cliente prepara una petición: GET /productos (quiero leer la lista)", "verdict": null}, {"client": true, "server": false, "dotShow": true, "dotLeft": 0, "dotReply": false, "detail": "<span class=\"method\">GET</span> /productos", "note": "la petición viaja por internet hasta el servidor", "verdict": null}, {"client": false, "server": true, "dotShow": true, "dotLeft": 100, "dotReply": false, "detail": "<span class=\"method\">GET</span> /productos<div class=\"row2\">el servidor busca en su base de datos…</div>", "note": "el servidor la procesa: busca los productos", "verdict": null}, {"client": false, "server": true, "dotShow": false, "dotLeft": 100, "dotReply": false, "detail": "<div class=\"status ok\">200 OK</div><div class=\"row2\">[{\"nombre\":\"Taza\"}, {\"nombre\":\"Libreta\"}]</div>", "note": "responde 200 OK, con los datos en formato JSON", "verdict": null}, {"client": false, "server": true, "dotShow": true, "dotLeft": 100, "dotReply": true, "detail": "<div class=\"status ok\">200 OK</div><div class=\"row2\">[{\"nombre\":\"Taza\"}, {\"nombre\":\"Libreta\"}]</div>", "note": "la respuesta viaja de vuelta al cliente", "verdict": null}, {"client": true, "server": false, "dotShow": false, "dotLeft": 0, "dotReply": true, "detail": "<div class=\"status ok\">200 OK</div><div class=\"row2\">[{\"nombre\":\"Taza\"}, {\"nombre\":\"Libreta\"}]</div>", "note": "el cliente recibe los datos y los usa (por ejemplo, pintarlos en pantalla)", "verdict": null}, {"client": true, "server": false, "dotShow": false, "dotLeft": 0, "dotReply": false, "detail": "<span class=\"method\">POST</span> /pedidos<div class=\"row2\">cuerpo: {\"producto\":\"Taza\",\"cantidad\":2}</div>", "note": "ahora probamos crear algo: POST /pedidos, con datos en el cuerpo de la petición", "verdict": null}, {"client": true, "server": false, "dotShow": true, "dotLeft": 0, "dotReply": false, "detail": "<span class=\"method\">POST</span> /pedidos<div class=\"row2\">cuerpo: {\"producto\":\"Taza\",\"cantidad\":2}</div>", "note": "viaja hacia el servidor", "verdict": null}, {"client": false, "server": true, "dotShow": false, "dotLeft": 100, "dotReply": false, "detail": "<div class=\"status created\">201 Created</div><div class=\"row2\">{\"id\":55,\"producto\":\"Taza\",\"cantidad\":2}</div>", "note": "el servidor crea el pedido y responde 201 Created: \"creado con éxito\"", "verdict": null}, {"client": false, "server": true, "dotShow": true, "dotLeft": 100, "dotReply": true, "detail": "<div class=\"status created\">201 Created</div><div class=\"row2\">{\"id\":55,\"producto\":\"Taza\",\"cantidad\":2}</div>", "note": "la respuesta vuelve al cliente", "verdict": null}, {"client": true, "server": false, "dotShow": false, "dotLeft": 0, "dotReply": true, "detail": "<div class=\"status created\">201 Created</div><div class=\"row2\">{\"id\":55,\"producto\":\"Taza\",\"cantidad\":2}</div>", "note": "distintos métodos (GET, POST, PUT, DELETE…) piden acciones distintas; distintos códigos (200, 201, 404, 500…) cuentan cómo fue", "verdict": null}, {"client": false, "server": false, "dotShow": false, "dotLeft": 0, "dotReply": false, "detail": "—", "note": "", "verdict": "Una API expone 'puertas' (endpoints) que el cliente llama con un método HTTP (GET para leer, POST para crear…) y una URL. El servidor responde con un código de estado (200, 201, 404, 500…) y normalmente datos en JSON. Esto es justo lo que hace fetch() por debajo."}];
+var DURATIONS = [700, 700, 700, 700, 700, 700, 700, 700, 700, 700, 700, 700];
+
+function renderState(s){
+  cCliente.className = 'circle' + (s.client ? ' active' : '');
+  cServidor.className = 'circle' + (s.server ? (s.dotShow ? ' working' : ' active') : '');
+  dot.className = 'net-dot' + (s.dotShow ? ' show' : '') + (s.dotReply ? ' reply' : '');
+  dot.style.left = s.dotLeft + '%';
+  detail.innerHTML = s.detail;
+  noteBox.textContent = s.note || '';
+}
+
+</script>
+<script>
+
+(function(){
+  var playBtn = document.getElementById('playBtn');
+  var prevBtn = document.getElementById('prevBtn');
+  var nextBtn = document.getElementById('nextBtn');
+  var rewindBtn = document.getElementById('rewindBtn');
+  var delayPlayBtn = document.getElementById('delayPlayBtn');
+  var stepCounter = document.getElementById('stepCounter');
+  var fill = document.getElementById('fill');
+  var verdict = document.getElementById('verdict');
+  var speedBtns = document.querySelectorAll('.speed-btn');
+
+  var curIndex = 0, playing = false, speed = 0.25, playTimer = null, countdownTimer = null;
+
+  function stopCountdown(){
+    if(countdownTimer){ clearInterval(countdownTimer); countdownTimer = null; }
+    delayPlayBtn.textContent = '▶ +10s';
+    playBtn.disabled = false;
+  }
+  function show(i){
+    var s = STATES[i];
+    renderState(s, i);
+    if(verdict){
+      verdict.innerHTML = s.verdict || '';
+      verdict.classList.toggle('show', !!s.verdict);
+    }
+    if(fill) fill.style.width = (i/(STATES.length-1)*100) + '%';
+    stepCounter.textContent = 'Paso ' + (i+1) + ' / ' + STATES.length;
+    prevBtn.disabled = (i===0);
+    nextBtn.disabled = (i===STATES.length-1);
+  }
+  function stopPlay(){ playing=false; playBtn.textContent='▶ Reproducir'; clearTimeout(playTimer); }
+  function scheduleNext(){
+    if(curIndex >= STATES.length-1){ stopPlay(); return; }
+    var dur = DURATIONS[curIndex] / speed;
+    playTimer = setTimeout(function(){ curIndex++; show(curIndex); scheduleNext(); }, dur);
+  }
+  function startPlay(){
+    if(curIndex >= STATES.length-1){ curIndex=0; show(0); }
+    playing = true; playBtn.textContent='❘❘ Pausar'; scheduleNext();
+  }
+  playBtn.addEventListener('click', function(){ stopCountdown(); playing?stopPlay():startPlay(); });
+  prevBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex=Math.max(0,curIndex-1); show(curIndex); });
+  nextBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex=Math.min(STATES.length-1,curIndex+1); show(curIndex); });
+  rewindBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex=0; show(0); });
+  speedBtns.forEach(function(b){ b.addEventListener('click', function(){ speedBtns.forEach(function(x){x.classList.remove('active');}); b.classList.add('active'); speed=parseFloat(b.getAttribute('data-speed')); }); });
+  delayPlayBtn.addEventListener('click', function(){
+    if(countdownTimer){ stopCountdown(); return; }
+    stopPlay();
+    var remaining=10; playBtn.disabled=true; delayPlayBtn.textContent='Empieza en '+remaining+'s…';
+    countdownTimer=setInterval(function(){
+      remaining--;
+      if(remaining<=0){ clearInterval(countdownTimer); countdownTimer=null; delayPlayBtn.textContent='▶ +10s'; playBtn.disabled=false; startPlay(); }
+      else{ delayPlayBtn.textContent='Empieza en '+remaining+'s…'; }
+    },1000);
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.target && (e.target.tagName==='INPUT' || e.target.tagName==='TEXTAREA' || e.target.isContentEditable)) return;
+    var advance = ['ArrowRight','ArrowDown','PageDown',' ','Spacebar'];
+    var back = ['ArrowLeft','ArrowUp','PageUp','Backspace'];
+    if(advance.indexOf(e.key)!==-1){ e.preventDefault(); nextBtn.click(); }
+    else if(back.indexOf(e.key)!==-1){ e.preventDefault(); prevBtn.click(); }
+  });
+  show(0);
+})();
+
+</script>

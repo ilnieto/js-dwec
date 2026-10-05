@@ -1,0 +1,388 @@
+<title>JSON y Web Storage</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+
+:root{
+  --bg:#0b0e12;
+  --panel:#11161d;
+  --panel-2:#161d26;
+  --line:#232b34;
+  --ink:#e5e9ed;
+  --muted:#e7ebef;
+  --accent:#4dd9c0;
+  --accent-2:#f2a154;
+  --violet:#a78bfa;
+  --good:#7cd992;
+  --danger:#e2725b;
+  --accent-dim:rgba(77,217,192,.12);
+  --accent2-dim:rgba(242,161,84,.12);
+  --fs:1.35;
+}
+*{box-sizing:border-box;}
+html,body{background:var(--bg);}
+body{
+  margin:0;
+  color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,sans-serif;
+  padding:10px 20px 140px;
+}
+.wrap{max-width:1400px;margin:0 auto;}
+.eyebrow{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11.5px);
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--muted);
+  text-align:center;
+  margin:0 0 12px;
+}
+h1{
+  text-align:center;
+  font-family:"IBM Plex Mono",monospace;
+  font-size:36px;
+  font-weight:600;
+  margin:0 0 10px;
+  text-wrap:balance;
+}
+.sub{
+  text-align:center;
+  color:var(--muted);
+  font-size:calc(var(--fs,1) * 14px);
+  max-width:1400px;
+  margin:0 auto 34px;
+  line-height:1.55;
+}
+.panel{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:10px;
+}
+.term-bar{display:flex;gap:5px;margin-bottom:10px;}
+.term-bar span{width:8px;height:8px;border-radius:50%;background:#2a323c;}
+.code{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:18px;
+  line-height:1.95;
+  color:#e2e7eb;
+  overflow-x:auto;
+}
+.code .ln{
+  display:block;
+  padding:1px 8px;
+  border-radius:5px;
+  border-left:2px solid transparent;
+  transition:background .25s, border-color .25s, color .25s;
+  white-space:pre;
+}
+.code .ln .k{color:#c99a5b;}
+.code .ln.active{color:var(--ink);background:var(--accent-dim);border-left-color:var(--accent);}
+.lbl{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 9.5px);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--muted);
+  display:block;
+  margin-bottom:7px;
+}
+.chip{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11.5px);
+  padding:5px 9px;
+  border-radius:6px;
+  background:var(--panel-2);
+  border:1px solid var(--accent);
+  color:var(--accent);
+  opacity:0;
+  transform:scale(.9);
+  animation:pop .22s ease forwards;
+  display:inline-block;
+}
+.chip.warn{border-color:var(--accent-2);color:var(--accent-2);}
+.chip.bad{border-color:var(--danger);color:var(--danger);}
+.chip.muted{border-color:var(--line);color:var(--muted);}
+@keyframes pop{from{opacity:0;transform:scale(.9);}to{opacity:1;transform:scale(1);}}
+.note{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:20px;
+  color:var(--muted);
+  text-align:center;
+  min-height:34px;
+  line-height:1.5;
+  padding:0 10px;
+}
+.timeline{max-width:920px;margin:22px auto 0;height:3px;background:var(--line);border-radius:2px;overflow:hidden;}
+.timeline-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent-2),var(--accent));transition:width .05s linear;}
+.verdict{
+  text-align:center;
+  margin:22px auto 0;
+  max-width:600px;
+  font-size:calc(var(--fs,1) * 14px);
+  color:var(--muted);
+  line-height:1.6;
+  min-height:30px;
+  opacity:0;
+  transition:opacity .4s;
+}
+.verdict.show{opacity:1;}
+.verdict b{color:var(--ink);font-weight:600;}
+.controls{
+  position:fixed;
+  left:50%;
+  bottom:16px;
+  transform:translateX(-50%);
+  width:calc(100% - 32px);
+  max-width:1200px;
+  margin:0;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:14px 18px;
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px 20px;
+  z-index:100;
+  box-shadow:0 12px 36px rgba(0,0,0,.5);
+}
+.ctrl-group{display:flex;align-items:center;gap:8px;}
+.ctrl-btn{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 12px);
+  letter-spacing:.03em;
+  color:var(--ink);
+  background:var(--panel-2);
+  border:1px solid var(--line);
+  border-radius:7px;
+  padding:8px 14px;
+  cursor:pointer;
+  transition:border-color .2s, color .2s;
+}
+.ctrl-btn:hover:not(:disabled){border-color:var(--ink);}
+.ctrl-btn:disabled{opacity:.35;cursor:default;}
+.ctrl-btn.play{min-width:132px;border-color:var(--accent);color:var(--accent);}
+.ctrl-btn.step{font-size:calc(var(--fs,1) * 14px);padding:8px 12px;}
+.ctrl-label{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 10px);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin-right:2px;
+}
+.speed-group{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;}
+.speed-btn{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11.5px);
+  color:var(--muted);
+  background:var(--panel-2);
+  border:none;
+  padding:7px 11px;
+  cursor:pointer;
+  border-right:1px solid var(--line);
+  transition:background .2s, color .2s;
+}
+.speed-btn:last-child{border-right:none;}
+.speed-btn.active{background:var(--accent-dim);color:var(--accent);}
+.step-counter{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11px);
+  color:var(--muted);
+  margin-left:auto;
+}
+@media (prefers-reduced-motion: reduce){
+  *{transition-duration:.001ms !important; animation-duration:.001ms !important;}
+}
+.stage-lr{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;}
+@media (max-width:760px){.stage-lr{grid-template-columns:1fr;}}
+.stage-lr .col-code{display:flex;flex-direction:column;}
+.stage-lr .col-code .panel.term{height:100%;}
+.stage-lr .col-out{display:flex;flex-direction:column;gap:14px;}
+
+
+.term{padding:16px 18px;}
+.flow{padding:20px 18px;display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;min-height:80px;}
+.card{
+  border:1px solid var(--line);border-radius:8px;padding:12px 16px;background:var(--panel-2);
+  font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 12px);text-align:center;min-width:150px;
+  opacity:.15;transition:opacity .3s, border-color .3s;
+}
+.card.show{opacity:1;}
+.card.obj{border-color:var(--accent);color:var(--accent);}
+.card.txt{border-color:var(--accent-2);color:var(--accent-2);}
+.card .t{font-size:calc(var(--fs,1) * 9.5px);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+.flow-arrow{color:var(--muted);font-size:calc(var(--fs,1) * 16px);opacity:.4;}
+.storage-panel{padding:16px 18px;}
+.storage-box{
+  border:1px solid var(--line);border-radius:8px;padding:12px 16px;
+  font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 12px);
+  min-height:40px;transition:border-color .3s, background .3s;
+}
+.storage-box.filled{border-color:var(--good);background:rgba(124,217,146,.08);}
+.storage-box .k{color:var(--good);}
+.reload-banner{
+  text-align:center;font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 12px);color:var(--accent-2);
+  opacity:0;transition:opacity .3s;min-height:18px;
+}
+.reload-banner.show{opacity:1;}
+
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">JavaScript · Navegador</p>
+  <h1>JSON y localStorage</h1>
+  <p class="sub">JSON convierte entre objetos y texto. localStorage guarda ese texto en el navegador, sobreviviendo a algo que borra todo lo demás: recargar la página.</p>
+
+
+  <div class="stage-lr">
+    <div class="col-code">
+      <div class="panel term">
+        <div class="term-bar"><span></span><span></span><span></span></div>
+        <div class="code" id="code">
+          <span class="ln" data-i="obj"><span class="k">const</span> persona = { nombre: 'Ana', edad: 32 };</span>
+          <span class="ln" data-i="stringify"><span class="k">const</span> texto = JSON.stringify(persona);</span>
+          <span class="ln" data-i="set">localStorage.setItem('usuario', texto);</span>
+          <span class="ln" data-i="reload"><span class="k">// ... el usuario recarga la página ...</span></span>
+          <span class="ln" data-i="get"><span class="k">const</span> guardado = localStorage.getItem('usuario');</span>
+          <span class="ln" data-i="parse"><span class="k">const</span> objeto = JSON.parse(guardado);</span>
+        </div>
+      </div>
+    </div>
+    <div class="col-out">
+      <div class="panel flow">
+        <div class="card obj" id="cardObj"><div class="t">objeto</div>{ nombre: 'Ana', edad: 32 }</div>
+        <div class="flow-arrow">&#8596;</div>
+        <div class="card txt" id="cardTxt"><div class="t">texto (string)</div>'{"nombre":"Ana","edad":32}'</div>
+      </div>
+      <div class="panel storage-panel">
+        <span class="lbl">localStorage (sobrevive a recargar la página)</span>
+        <div class="storage-box" id="storageBox">vacío</div>
+      </div>
+    </div>
+  </div>
+  <p class="reload-banner" id="reloadBanner">&#128260; la página se recarga — toda la memoria de JS se borra…</p>
+  <p class="note" id="noteBox"></p>
+
+
+  <div class="timeline"><div class="timeline-fill" id="fill"></div></div>
+  <p class="verdict" id="verdict"></p>
+  <div class="controls">
+    <div class="ctrl-group">
+      <button id="rewindBtn" class="ctrl-btn step" title="Rebobinar al principio">&#9198;</button>
+      <button id="prevBtn" class="ctrl-btn step" title="Paso anterior">&#9664;&#9664;</button>
+      <button id="playBtn" class="ctrl-btn play">&#9654; Reproducir</button>
+      <button id="nextBtn" class="ctrl-btn step" title="Paso siguiente">&#9654;&#9654;</button>
+      <button id="delayPlayBtn" class="ctrl-btn" title="Empezar tras una cuenta atrás de 10s">&#9654; +10s</button>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Velocidad</span>
+      <div class="speed-group">
+        <button class="speed-btn active" data-speed="0.25">0.25&times;</button>
+        <button class="speed-btn" data-speed="0.5">0.5&times;</button>
+      </div>
+    </div>
+    <span class="step-counter" id="stepCounter">Paso 1 / N</span>
+  </div>
+
+</div>
+
+<script>
+
+var codeLines = document.querySelectorAll('#code .ln');
+var cardObj = document.getElementById('cardObj');
+var cardTxt = document.getElementById('cardTxt');
+var storageBox = document.getElementById('storageBox');
+var reloadBanner = document.getElementById('reloadBanner');
+var noteBox = document.getElementById('noteBox');
+
+var STATES = [{"active": "obj", "obj": true, "txt": false, "storage": null, "reload": false, "note": "partimos de un objeto normal, en memoria", "verdict": null}, {"active": "stringify", "obj": true, "txt": false, "storage": null, "reload": false, "note": "JSON.stringify lo va a convertir en texto…", "verdict": null}, {"active": "stringify", "obj": true, "txt": true, "storage": null, "reload": false, "note": "texto es ahora un STRING — ya no es un objeto de verdad", "verdict": null}, {"active": "set", "obj": true, "txt": true, "storage": null, "reload": false, "note": "localStorage.setItem('usuario', texto)…", "verdict": null}, {"active": "set", "obj": true, "txt": true, "storage": "{\"nombre\":\"Ana\",\"edad\":32}", "reload": false, "note": "se guarda en el navegador, bajo la clave \"usuario\"", "verdict": null}, {"active": "reload", "obj": false, "txt": false, "storage": "{\"nombre\":\"Ana\",\"edad\":32}", "reload": true, "note": "recargas la página… toda la memoria de JS (persona, texto) se borra", "verdict": null}, {"active": "reload", "obj": false, "txt": false, "storage": "{\"nombre\":\"Ana\",\"edad\":32}", "reload": false, "note": "…pero localStorage SOBREVIVE a la recarga", "verdict": null}, {"active": "get", "obj": false, "txt": true, "storage": "{\"nombre\":\"Ana\",\"edad\":32}", "reload": false, "note": "localStorage.getItem('usuario') recupera el texto guardado", "verdict": null}, {"active": "parse", "obj": true, "txt": true, "storage": "{\"nombre\":\"Ana\",\"edad\":32}", "reload": false, "note": "JSON.parse lo convierte otra vez en un objeto de verdad", "verdict": null}, {"active": null, "obj": true, "txt": true, "storage": "{\"nombre\":\"Ana\",\"edad\":32}", "reload": false, "note": "", "verdict": "JSON.stringify/parse convierten entre objeto y texto — el formato que usan APIs y almacenamiento. localStorage guarda texto que sobrevive a recargar la página; las variables normales de JS desaparecen en cuanto eso pasa."}];
+var DURATIONS = [700, 700, 700, 700, 700, 700, 700, 700, 700];
+
+function renderState(s){
+  codeLines.forEach(function(el){ el.classList.remove('active'); });
+  if(s.active){
+    codeLines.forEach(function(el){ if(el.getAttribute('data-i') === s.active) el.classList.add('active'); });
+  }
+  cardObj.classList.toggle('show', s.obj);
+  cardTxt.classList.toggle('show', s.txt);
+  if(s.storage){
+    storageBox.className = 'storage-box filled';
+    storageBox.innerHTML = '<span class="k">usuario</span> &rarr; ' + s.storage;
+  } else {
+    storageBox.className = 'storage-box';
+    storageBox.textContent = 'vacío';
+  }
+  reloadBanner.classList.toggle('show', s.reload);
+  noteBox.textContent = s.note || '';
+}
+
+</script>
+<script>
+
+(function(){
+  var playBtn = document.getElementById('playBtn');
+  var prevBtn = document.getElementById('prevBtn');
+  var nextBtn = document.getElementById('nextBtn');
+  var rewindBtn = document.getElementById('rewindBtn');
+  var delayPlayBtn = document.getElementById('delayPlayBtn');
+  var stepCounter = document.getElementById('stepCounter');
+  var fill = document.getElementById('fill');
+  var verdict = document.getElementById('verdict');
+  var speedBtns = document.querySelectorAll('.speed-btn');
+
+  var curIndex = 0, playing = false, speed = 0.25, playTimer = null, countdownTimer = null;
+
+  function stopCountdown(){
+    if(countdownTimer){ clearInterval(countdownTimer); countdownTimer = null; }
+    delayPlayBtn.textContent = '▶ +10s';
+    playBtn.disabled = false;
+  }
+  function show(i){
+    var s = STATES[i];
+    renderState(s, i);
+    if(verdict){
+      verdict.innerHTML = s.verdict || '';
+      verdict.classList.toggle('show', !!s.verdict);
+    }
+    if(fill) fill.style.width = (i/(STATES.length-1)*100) + '%';
+    stepCounter.textContent = 'Paso ' + (i+1) + ' / ' + STATES.length;
+    prevBtn.disabled = (i===0);
+    nextBtn.disabled = (i===STATES.length-1);
+  }
+  function stopPlay(){ playing=false; playBtn.textContent='▶ Reproducir'; clearTimeout(playTimer); }
+  function scheduleNext(){
+    if(curIndex >= STATES.length-1){ stopPlay(); return; }
+    var dur = DURATIONS[curIndex] / speed;
+    playTimer = setTimeout(function(){ curIndex++; show(curIndex); scheduleNext(); }, dur);
+  }
+  function startPlay(){
+    if(curIndex >= STATES.length-1){ curIndex=0; show(0); }
+    playing = true; playBtn.textContent='❘❘ Pausar'; scheduleNext();
+  }
+  playBtn.addEventListener('click', function(){ stopCountdown(); playing?stopPlay():startPlay(); });
+  prevBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex=Math.max(0,curIndex-1); show(curIndex); });
+  nextBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex=Math.min(STATES.length-1,curIndex+1); show(curIndex); });
+  rewindBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex=0; show(0); });
+  speedBtns.forEach(function(b){ b.addEventListener('click', function(){ speedBtns.forEach(function(x){x.classList.remove('active');}); b.classList.add('active'); speed=parseFloat(b.getAttribute('data-speed')); }); });
+  delayPlayBtn.addEventListener('click', function(){
+    if(countdownTimer){ stopCountdown(); return; }
+    stopPlay();
+    var remaining=10; playBtn.disabled=true; delayPlayBtn.textContent='Empieza en '+remaining+'s…';
+    countdownTimer=setInterval(function(){
+      remaining--;
+      if(remaining<=0){ clearInterval(countdownTimer); countdownTimer=null; delayPlayBtn.textContent='▶ +10s'; playBtn.disabled=false; startPlay(); }
+      else{ delayPlayBtn.textContent='Empieza en '+remaining+'s…'; }
+    },1000);
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.target && (e.target.tagName==='INPUT' || e.target.tagName==='TEXTAREA' || e.target.isContentEditable)) return;
+    var advance = ['ArrowRight','ArrowDown','PageDown',' ','Spacebar'];
+    var back = ['ArrowLeft','ArrowUp','PageUp','Backspace'];
+    if(advance.indexOf(e.key)!==-1){ e.preventDefault(); nextBtn.click(); }
+    else if(back.indexOf(e.key)!==-1){ e.preventDefault(); prevBtn.click(); }
+  });
+  show(0);
+})();
+
+</script>

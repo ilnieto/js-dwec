@@ -1,0 +1,410 @@
+<title>Motor interno y memoria de JS</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+
+:root{
+  --bg:#0b0e12;
+  --panel:#11161d;
+  --panel-2:#161d26;
+  --line:#232b34;
+  --ink:#e5e9ed;
+  --muted:#e7ebef;
+  --accent:#4dd9c0;
+  --accent-2:#f2a154;
+  --violet:#a78bfa;
+  --good:#7cd992;
+  --danger:#e2725b;
+  --accent-dim:rgba(77,217,192,.12);
+  --accent2-dim:rgba(242,161,84,.12);
+  --fs:1.35;
+}
+*{box-sizing:border-box;}
+html,body{background:var(--bg);}
+body{
+  margin:0;
+  color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,sans-serif;
+  padding:10px 20px 140px;
+}
+.wrap{max-width:1400px;margin:0 auto;}
+.eyebrow{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11.5px);
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--muted);
+  text-align:center;
+  margin:0 0 12px;
+}
+h1{
+  text-align:center;
+  font-family:"IBM Plex Mono",monospace;
+  font-size:36px;
+  font-weight:600;
+  margin:0 0 10px;
+  text-wrap:balance;
+}
+.sub{
+  text-align:center;
+  color:var(--muted);
+  font-size:calc(var(--fs,1) * 14px);
+  max-width:1400px;
+  margin:0 auto 34px;
+  line-height:1.55;
+}
+.panel{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:10px;
+}
+.term-bar{display:flex;gap:5px;margin-bottom:10px;}
+.term-bar span{width:8px;height:8px;border-radius:50%;background:#2a323c;}
+.code{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:18px;
+  line-height:1.95;
+  color:#e2e7eb;
+  overflow-x:auto;
+}
+.code .ln{
+  display:block;
+  padding:1px 8px;
+  border-radius:5px;
+  border-left:2px solid transparent;
+  transition:background .25s, border-color .25s, color .25s;
+  white-space:pre;
+}
+.code .ln .k{color:#c99a5b;}
+.code .ln.active{color:var(--ink);background:var(--accent-dim);border-left-color:var(--accent);}
+.lbl{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 9.5px);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--muted);
+  display:block;
+  margin-bottom:7px;
+}
+.chip{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11.5px);
+  padding:5px 9px;
+  border-radius:6px;
+  background:var(--panel-2);
+  border:1px solid var(--accent);
+  color:var(--accent);
+  opacity:0;
+  transform:scale(.9);
+  animation:pop .22s ease forwards;
+  display:inline-block;
+}
+.chip.warn{border-color:var(--accent-2);color:var(--accent-2);}
+.chip.bad{border-color:var(--danger);color:var(--danger);}
+.chip.muted{border-color:var(--line);color:var(--muted);}
+@keyframes pop{from{opacity:0;transform:scale(.9);}to{opacity:1;transform:scale(1);}}
+.note{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:20px;
+  color:var(--muted);
+  text-align:center;
+  min-height:34px;
+  line-height:1.5;
+  padding:0 10px;
+}
+.timeline{max-width:920px;margin:22px auto 0;height:3px;background:var(--line);border-radius:2px;overflow:hidden;}
+.timeline-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent-2),var(--accent));transition:width .05s linear;}
+.verdict{
+  text-align:center;
+  margin:22px auto 0;
+  max-width:600px;
+  font-size:calc(var(--fs,1) * 14px);
+  color:var(--muted);
+  line-height:1.6;
+  min-height:30px;
+  opacity:0;
+  transition:opacity .4s;
+}
+.verdict.show{opacity:1;}
+.verdict b{color:var(--ink);font-weight:600;}
+.controls{
+  position:fixed;
+  left:50%;
+  bottom:16px;
+  transform:translateX(-50%);
+  width:calc(100% - 32px);
+  max-width:1200px;
+  margin:0;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:14px 18px;
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px 20px;
+  z-index:100;
+  box-shadow:0 12px 36px rgba(0,0,0,.5);
+}
+.ctrl-group{display:flex;align-items:center;gap:8px;}
+.ctrl-btn{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 12px);
+  letter-spacing:.03em;
+  color:var(--ink);
+  background:var(--panel-2);
+  border:1px solid var(--line);
+  border-radius:7px;
+  padding:8px 14px;
+  cursor:pointer;
+  transition:border-color .2s, color .2s;
+}
+.ctrl-btn:hover:not(:disabled){border-color:var(--ink);}
+.ctrl-btn:disabled{opacity:.35;cursor:default;}
+.ctrl-btn.play{min-width:132px;border-color:var(--accent);color:var(--accent);}
+.ctrl-btn.step{font-size:calc(var(--fs,1) * 14px);padding:8px 12px;}
+.ctrl-label{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 10px);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin-right:2px;
+}
+.speed-group{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;}
+.speed-btn{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11.5px);
+  color:var(--muted);
+  background:var(--panel-2);
+  border:none;
+  padding:7px 11px;
+  cursor:pointer;
+  border-right:1px solid var(--line);
+  transition:background .2s, color .2s;
+}
+.speed-btn:last-child{border-right:none;}
+.speed-btn.active{background:var(--accent-dim);color:var(--accent);}
+.step-counter{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:calc(var(--fs,1) * 11px);
+  color:var(--muted);
+  margin-left:auto;
+}
+@media (prefers-reduced-motion: reduce){
+  *{transition-duration:.001ms !important; animation-duration:.001ms !important;}
+}
+.stage-lr{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;}
+@media (max-width:760px){.stage-lr{grid-template-columns:1fr;}}
+.stage-lr .col-code{display:flex;flex-direction:column;}
+.stage-lr .col-code .panel.term{height:100%;}
+.stage-lr .col-out{display:flex;flex-direction:column;gap:14px;}
+
+
+.term{padding:16px 18px;}
+.stage-mem{display:flex;flex-direction:column;gap:14px;}
+.mem-col{padding:14px 16px;min-height:150px;display:flex;flex-direction:column;gap:10px;}
+.mem-col.stack-col{border-color:var(--accent);}
+.mem-col.heap-col{border-color:var(--accent-2);}
+.mem-col .lbl.stack{color:var(--accent);}
+.mem-col .lbl.heap{color:var(--accent-2);}
+.mem-col .lbl-sub{display:block;font-size:calc(var(--fs,1) * 11px);color:var(--muted);margin-top:2px;font-family:"IBM Plex Sans",sans-serif;letter-spacing:0;text-transform:none;}
+.frames{display:flex;flex-direction:column-reverse;gap:8px;margin-top:8px;}
+.frame{
+  border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--panel-2);
+  opacity:0;transform:translateY(6px);animation:pop .22s ease forwards;
+}
+.frame.popping{animation:popout .22s ease forwards;}
+.frame .fname{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 11.5px);color:var(--ink);font-weight:600;margin-bottom:5px;}
+.frame .frow{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 11.5px);color:var(--muted);padding:2px 0;display:flex;gap:6px;align-items:baseline;flex-wrap:wrap;}
+.frame .frow .prim{color:var(--good);}
+.frame .frow .ref{color:var(--violet);font-weight:600;}
+.heapobjs{display:flex;flex-direction:column;gap:8px;margin-top:8px;}
+.heapobj{
+  border:1px solid var(--violet);border-radius:8px;padding:8px 10px;background:var(--panel-2);
+  opacity:0;transform:scale(.94);animation:pop .22s ease forwards;
+}
+.heapobj.flash{box-shadow:0 0 0 1px var(--violet);}
+.heapobj .hid{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 10.5px);color:var(--violet);margin-bottom:4px;}
+.heapobj .hcontent{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 11.5px);color:var(--ink);}
+@keyframes popout{ to{ opacity:0; transform:translateY(-6px) scale(.9); } }
+
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">JavaScript · Motor y memoria</p>
+  <h1>Dónde vive cada cosa: pila y heap</h1>
+  <p class="sub">No todas las variables se guardan igual. Los primitivos viven dentro del marco de la pila donde se declaran; los objetos, arrays y funciones viven en el heap, y la variable solo guarda una referencia hacia ellos.</p>
+
+
+  <div class="stage-lr">
+    <div class="col-code">
+      <div class="panel term">
+        <div class="term-bar"><span></span><span></span><span></span></div>
+        <div class="code" id="code">
+          <span class="ln" data-i="0"><span class="k">function</span> crearUsuario(nombre) {</span>
+          <span class="ln" data-i="1">&nbsp;&nbsp;<span class="k">let</span> activo = <span class="k">true</span>;</span>
+          <span class="ln" data-i="2">&nbsp;&nbsp;<span class="k">let</span> datos = { nombre };</span>
+          <span class="ln" data-i="3">&nbsp;&nbsp;<span class="k">return</span> datos;</span>
+          <span class="ln" data-i="4">}</span>
+          <span class="ln" data-i="5">&nbsp;</span>
+          <span class="ln" data-i="6"><span class="k">let</span> usuario = crearUsuario(<span class="k">'Ana'</span>);</span>
+          <span class="ln" data-i="7">console.log(usuario);</span>
+        </div>
+      </div>
+    </div>
+    <div class="col-out">
+      <div class="stage-mem">
+        <div class="panel mem-col stack-col">
+          <span class="lbl stack">Pila (Stack)<span class="lbl-sub">un marco por cada llamada · primitivos y referencias</span></span>
+          <div class="frames" id="frames"></div>
+        </div>
+        <div class="panel mem-col heap-col">
+          <span class="lbl heap">Heap<span class="lbl-sub">objetos, arrays y funciones viven aquí</span></span>
+          <div class="heapobjs" id="heapobjs"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="note" id="noteBox"></p>
+
+
+  <div class="timeline"><div class="timeline-fill" id="fill"></div></div>
+  <p class="verdict" id="verdict"></p>
+  <div class="controls">
+    <div class="ctrl-group">
+      <button id="rewindBtn" class="ctrl-btn step" title="Rebobinar al principio">&#9198;</button>
+      <button id="prevBtn" class="ctrl-btn step" title="Paso anterior">&#9664;&#9664;</button>
+      <button id="playBtn" class="ctrl-btn play">&#9654; Reproducir</button>
+      <button id="nextBtn" class="ctrl-btn step" title="Paso siguiente">&#9654;&#9654;</button>
+      <button id="delayPlayBtn" class="ctrl-btn" title="Empezar tras una cuenta atrás de 10s">&#9654; +10s</button>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Velocidad</span>
+      <div class="speed-group">
+        <button class="speed-btn active" data-speed="0.25">0.25&times;</button>
+        <button class="speed-btn" data-speed="0.5">0.5&times;</button>
+      </div>
+    </div>
+    <span class="step-counter" id="stepCounter">Paso 1 / N</span>
+  </div>
+
+</div>
+
+<script>
+
+var codeLines = document.querySelectorAll('#code .ln');
+var framesEl = document.getElementById('frames');
+var heapEl = document.getElementById('heapobjs');
+var noteBox = document.getElementById('noteBox');
+
+var VERDICT = 'Los primitivos (números, strings, booleanos…) viven pegados a la variable, dentro del marco de la pila donde se declaran, y mueren con ese marco. Los objetos, arrays y funciones viven aparte, en el <b>heap</b>: la variable solo guarda una <b>referencia</b> hacia ellos. Por eso un objeto puede sobrevivir a la función que lo creó — mientras alguien lo siga referenciando, el recolector de basura no lo toca.';
+
+function rowHtml(v){
+  if(v.type === 'ref'){
+    return '<div class="frow"><span>'+v.k+':</span><span class="ref">→ '+v.heapId+'</span></div>';
+  }
+  return '<div class="frow"><span>'+v.k+':</span><span class="prim">'+v.v+'</span></div>';
+}
+function frameHtml(f, popping){
+  return '<div class="frame'+(popping?' popping':'')+'"><div class="fname">'+f.name+'</div>'+f.vars.map(rowHtml).join('')+'</div>';
+}
+function heapHtml(h, flashId){
+  return h.map(function(o){
+    return '<div class="heapobj'+(o.id===flashId?' flash':'')+'"><div class="hid">'+o.id+'</div><div class="hcontent">'+o.content+'</div></div>';
+  }).join('');
+}
+
+var STATES = [
+  {active:6, frames:[{name:'Global', vars:[]}], heap:[], flashHeap:null, note:'empieza el script, en el marco Global', verdict:null},
+  {active:0, frames:[{name:'Global', vars:[]}, {name:"crearUsuario('Ana')", vars:[{k:'nombre', type:'prim', v:"'Ana'"}]}], heap:[], flashHeap:null, note:'se llama a la función → se crea un NUEVO marco en la pila; el parámetro es un primitivo y vive dentro de él', verdict:null},
+  {active:1, frames:[{name:'Global', vars:[]}, {name:"crearUsuario('Ana')", vars:[{k:'nombre', type:'prim', v:"'Ana'"}, {k:'activo', type:'prim', v:'true'}]}], heap:[], flashHeap:null, note:"otro primitivo más: 'activo' también se guarda directamente en el marco", verdict:null},
+  {active:2, frames:[{name:'Global', vars:[]}, {name:"crearUsuario('Ana')", vars:[{k:'nombre', type:'prim', v:"'Ana'"}, {k:'activo', type:'prim', v:'true'}]}], heap:[], flashHeap:null, note:'ahora se crea un objeto {nombre}…', verdict:null},
+  {active:2, frames:[{name:'Global', vars:[]}, {name:"crearUsuario('Ana')", vars:[{k:'nombre', type:'prim', v:"'Ana'"}, {k:'activo', type:'prim', v:'true'}, {k:'datos', type:'ref', heapId:'#f3a1'}]}], heap:[{id:'#f3a1', content:"{ nombre: 'Ana' }"}], flashHeap:'#f3a1', note:"…y NO se guarda en la pila: nace en el heap. 'datos' solo guarda una referencia (una dirección) hacia él", verdict:null},
+  {active:3, frames:[{name:'Global', vars:[]}, {name:"crearUsuario('Ana')", vars:[{k:'nombre', type:'prim', v:"'Ana'"}, {k:'activo', type:'prim', v:'true'}, {k:'datos', type:'ref', heapId:'#f3a1'}]}], heap:[{id:'#f3a1', content:"{ nombre: 'Ana' }"}], flashHeap:null, note:'return datos; → la función termina, su marco está a punto de destruirse…', verdict:null},
+  {active:6, frames:[{name:'Global', vars:[{k:'usuario', type:'ref', heapId:'#f3a1'}]}], heap:[{id:'#f3a1', content:"{ nombre: 'Ana' }"}], flashHeap:'#f3a1', note:"…el marco de la función se destruye y desaparece de la pila, pero el objeto del heap SOBREVIVE: 'usuario' se queda con la misma referencia", verdict:null},
+  {active:7, frames:[{name:'Global', vars:[{k:'usuario', type:'ref', heapId:'#f3a1'}]}], heap:[{id:'#f3a1', content:"{ nombre: 'Ana' }"}], flashHeap:'#f3a1', note:"'usuario' apunta al mismo objeto que se creó dentro de la función — no es una copia, es la misma referencia", verdict:null},
+  {active:-1, frames:[{name:'Global', vars:[{k:'usuario', type:'ref', heapId:'#f3a1'}]}], heap:[{id:'#f3a1', content:"{ nombre: 'Ana' }"}], flashHeap:null, note:'', verdict:VERDICT}
+];
+
+var DURATIONS = [600, 700, 650, 550, 750, 650, 750, 700];
+
+function renderState(s){
+  codeLines.forEach(function(el){ el.classList.remove('active'); });
+  if(s.active >= 0){
+    codeLines.forEach(function(el){ if(parseInt(el.getAttribute('data-i'),10) === s.active) el.classList.add('active'); });
+  }
+  framesEl.innerHTML = s.frames.map(function(f){ return frameHtml(f, false); }).join('');
+  heapEl.innerHTML = heapHtml(s.heap, s.flashHeap);
+  noteBox.textContent = s.note || '';
+}
+
+</script>
+<script>
+
+(function(){
+  var playBtn = document.getElementById('playBtn');
+  var prevBtn = document.getElementById('prevBtn');
+  var nextBtn = document.getElementById('nextBtn');
+  var rewindBtn = document.getElementById('rewindBtn');
+  var delayPlayBtn = document.getElementById('delayPlayBtn');
+  var stepCounter = document.getElementById('stepCounter');
+  var fill = document.getElementById('fill');
+  var verdict = document.getElementById('verdict');
+  var speedBtns = document.querySelectorAll('.speed-btn');
+
+  var curIndex = 0, playing = false, speed = 0.25, playTimer = null, countdownTimer = null;
+
+  function stopCountdown(){
+    if(countdownTimer){ clearInterval(countdownTimer); countdownTimer = null; }
+    delayPlayBtn.textContent = '▶ +10s';
+    playBtn.disabled = false;
+  }
+  function show(i){
+    var s = STATES[i];
+    renderState(s, i);
+    if(verdict){
+      verdict.innerHTML = s.verdict || '';
+      verdict.classList.toggle('show', !!s.verdict);
+    }
+    if(fill) fill.style.width = (i/(STATES.length-1)*100) + '%';
+    stepCounter.textContent = 'Paso ' + (i+1) + ' / ' + STATES.length;
+    prevBtn.disabled = (i===0);
+    nextBtn.disabled = (i===STATES.length-1);
+  }
+  function stopPlay(){ playing=false; playBtn.textContent='▶ Reproducir'; clearTimeout(playTimer); }
+  function scheduleNext(){
+    if(curIndex >= STATES.length-1){ stopPlay(); return; }
+    var dur = DURATIONS[curIndex] / speed;
+    playTimer = setTimeout(function(){ curIndex++; show(curIndex); scheduleNext(); }, dur);
+  }
+  function startPlay(){
+    if(curIndex >= STATES.length-1){ curIndex=0; show(0); }
+    playing = true; playBtn.textContent='❘❘ Pausar'; scheduleNext();
+  }
+  playBtn.addEventListener('click', function(){ stopCountdown(); playing?stopPlay():startPlay(); });
+  prevBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex=Math.max(0,curIndex-1); show(curIndex); });
+  nextBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex=Math.min(STATES.length-1,curIndex+1); show(curIndex); });
+  rewindBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex=0; show(0); });
+  speedBtns.forEach(function(b){ b.addEventListener('click', function(){ speedBtns.forEach(function(x){x.classList.remove('active');}); b.classList.add('active'); speed=parseFloat(b.getAttribute('data-speed')); }); });
+  delayPlayBtn.addEventListener('click', function(){
+    if(countdownTimer){ stopCountdown(); return; }
+    stopPlay();
+    var remaining=10; playBtn.disabled=true; delayPlayBtn.textContent='Empieza en '+remaining+'s…';
+    countdownTimer=setInterval(function(){
+      remaining--;
+      if(remaining<=0){ clearInterval(countdownTimer); countdownTimer=null; delayPlayBtn.textContent='▶ +10s'; playBtn.disabled=false; startPlay(); }
+      else{ delayPlayBtn.textContent='Empieza en '+remaining+'s…'; }
+    },1000);
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.target && (e.target.tagName==='INPUT' || e.target.tagName==='TEXTAREA' || e.target.isContentEditable)) return;
+    var advance = ['ArrowRight','ArrowDown','PageDown',' ','Spacebar'];
+    var back = ['ArrowLeft','ArrowUp','PageUp','Backspace'];
+    if(advance.indexOf(e.key)!==-1){ e.preventDefault(); nextBtn.click(); }
+    else if(back.indexOf(e.key)!==-1){ e.preventDefault(); prevBtn.click(); }
+  });
+  show(0);
+})();
+
+</script>
