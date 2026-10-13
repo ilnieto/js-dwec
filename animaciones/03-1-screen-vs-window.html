@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>screen vs window</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --bg:#0b0e12;
+  --panel:#11161d;
+  --panel-2:#161d26;
+  --line:#232b34;
+  --ink:#e5e9ed;
+  --muted:#e7ebef;
+  --dim:#8a96a3;
+  --accent:#4dd9c0;
+  --accent-2:#f2a154;
+  --violet:#a78bfa;
+  --good:#7cd992;
+  --danger:#e2725b;
+  --accent-dim:rgba(77,217,192,.12);
+  --accent2-dim:rgba(242,161,84,.12);
+  --danger-dim:rgba(226,114,91,.12);
+  --violet-dim:rgba(167,139,250,.14);
+  --fs:1.35;
+}
+*{box-sizing:border-box;}
+html,body{background:var(--bg);}
+body{margin:0;color:var(--ink);font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,sans-serif;padding:10px 20px 140px;}
+.wrap{max-width:1400px;margin:0 auto;}
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 11.5px);letter-spacing:.16em;text-transform:uppercase;color:var(--muted);text-align:center;margin:0 0 12px;}
+h1{text-align:center;font-family:"IBM Plex Mono",monospace;font-size:36px;font-weight:600;margin:0 0 10px;text-wrap:balance;}
+.sub{text-align:center;color:var(--muted);font-size:calc(var(--fs,1) * 14px);max-width:1400px;margin:0 auto 34px;line-height:1.55;}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;}
+.term-bar{display:flex;gap:5px;margin-bottom:10px;}
+.term-bar span{width:8px;height:8px;border-radius:50%;background:#2a323c;}
+.code{font-family:"IBM Plex Mono",monospace;font-size:18px;line-height:1.95;color:#e2e7eb;overflow-x:auto;}
+.code .ln{display:block;padding:1px 8px;border-radius:5px;border-left:2px solid transparent;transition:background .25s,border-color .25s,color .25s;white-space:pre;}
+.code .ln .k{color:#c99a5b;}
+.code .ln .s{color:#7cd992;}
+.code .ln .c{color:#6b7785;font-style:italic;}
+.code .ln .n{color:#a78bfa;}
+.code .ln.active{color:var(--ink);background:var(--accent-dim);border-left-color:var(--accent);}
+.code .ln.error{background:var(--danger-dim);border-left-color:var(--danger);}
+.lbl{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 9.5px);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:7px;}
+.chip{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 11.5px);padding:5px 9px;border-radius:6px;background:var(--panel-2);border:1px solid var(--accent);color:var(--accent);display:inline-block;}
+.chip.warn{border-color:var(--accent-2);color:var(--accent-2);}
+.chip.bad{border-color:var(--danger);color:var(--danger);}
+.chip.muted{border-color:var(--line);color:var(--dim);}
+.chip.violet{border-color:var(--violet);color:var(--violet);}
+@keyframes pop{from{opacity:0;transform:scale(.9);}to{opacity:1;transform:scale(1);}}
+.pop{animation:pop .22s ease forwards;}
+.note{font-family:"IBM Plex Mono",monospace;font-size:20px;color:var(--muted);text-align:center;min-height:34px;line-height:1.5;padding:0 10px;margin-top:18px;}
+.timeline{max-width:920px;margin:22px auto 0;height:3px;background:var(--line);border-radius:2px;overflow:hidden;}
+.timeline-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent-2),var(--accent));transition:width .05s linear;}
+.verdict{text-align:center;margin:22px auto 0;max-width:760px;font-size:calc(var(--fs,1) * 14px);color:var(--muted);line-height:1.6;min-height:30px;opacity:0;transition:opacity .4s;}
+.verdict.show{opacity:1;}
+.verdict b{color:var(--ink);font-weight:600;}
+.controls{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);width:calc(100% - 32px);max-width:1200px;margin:0;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 18px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px 20px;z-index:100;box-shadow:0 12px 36px rgba(0,0,0,.5);}
+.ctrl-group{display:flex;align-items:center;gap:8px;}
+.ctrl-btn{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 12px);letter-spacing:.03em;color:var(--ink);background:var(--panel-2);border:1px solid var(--line);border-radius:7px;padding:8px 14px;cursor:pointer;transition:border-color .2s,color .2s;}
+.ctrl-btn:hover:not(:disabled){border-color:var(--ink);}
+.ctrl-btn:disabled{opacity:.35;cursor:default;}
+.ctrl-btn.play{min-width:132px;border-color:var(--accent);color:var(--accent);}
+.ctrl-btn.step{font-size:calc(var(--fs,1) * 14px);padding:8px 12px;}
+.ctrl-label{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 10px);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-right:2px;}
+.speed-group{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;}
+.speed-btn{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 11.5px);color:var(--muted);background:var(--panel-2);border:none;padding:7px 11px;cursor:pointer;border-right:1px solid var(--line);transition:background .2s,color .2s;}
+.speed-btn:last-child{border-right:none;}
+.speed-btn.active{background:var(--accent-dim);color:var(--accent);}
+.step-counter{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 11px);color:var(--muted);margin-left:auto;}
+@media (prefers-reduced-motion: reduce){*{transition-duration:.001ms !important;animation-duration:.001ms !important;}}
+.stage-lr{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;}
+@media (max-width:760px){.stage-lr{grid-template-columns:1fr;}}
+.stage-lr .col-code{display:flex;flex-direction:column;}
+.stage-lr .col-code .panel.term{height:100%;}
+.stage-lr .col-out{display:flex;flex-direction:column;gap:14px;}
+.tabbar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:16px;}
+.tab-btn{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 12px);color:var(--muted);background:var(--panel-2);border:1px solid var(--line);border-radius:20px;padding:7px 15px;cursor:pointer;transition:border-color .2s,color .2s,background .2s;}
+.tab-btn:hover{color:var(--ink);}
+.tab-btn.active{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+.term{padding:16px 18px;}
+.viz-panel{padding:20px 18px;min-height:260px;}
+.out-panel{padding:14px 16px;min-height:50px;}
+.out{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 13px);}
+.out span{display:inline-block;margin:2px 8px 2px 0;padding:2px 8px;border-radius:5px;background:var(--panel-2);border:1px solid var(--accent);color:var(--accent);}
+.out span.err{border-color:var(--danger);color:var(--danger);}
+.out span.new{animation:pop .22s ease forwards;}
+/* ---------- estilos propios de esta animación ---------- */
+.mon{position:relative;margin:4px auto 0;border:2px solid #2f3843;border-radius:6px;background:#0e1319;transition:border-color .3s, box-shadow .3s;}
+.mon.hl{border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-dim);}
+.taskbar{position:absolute;left:0;right:0;bottom:0;background:#2a323c;}
+.avail{position:absolute;left:0;right:0;top:0;border:2px dashed transparent;transition:all .3s;}
+.avail.hl{border-color:var(--accent-2);background:var(--accent2-dim);}
+.win{position:absolute;border:2px solid #3a4552;border-radius:5px;background:var(--panel-2);transition:all .45s ease;overflow:hidden;}
+.win.hl{border-color:var(--violet);box-shadow:0 0 0 4px var(--violet-dim);}
+.win .tb{background:#232b34;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:4px;padding:0 6px;font-family:"IBM Plex Mono",monospace;font-size:9px;color:var(--dim);white-space:nowrap;}
+.win .tb i{width:6px;height:6px;border-radius:50%;background:#3a4552;display:inline-block;}
+.win .tb span{margin-left:6px;overflow:hidden;}
+.win .vp{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--dim);transition:all .3s;}
+.win .vp.hl{background:var(--accent-dim);color:var(--accent);outline:2px solid var(--accent);outline-offset:-2px;}
+.dims{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:18px;}
+.dims .chip b{font-weight:600;}
+.chip.on-screen{border-color:var(--accent);color:var(--accent);}
+.chip.on-avail{border-color:var(--accent-2);color:var(--accent-2);}
+.chip.on-outer{border-color:var(--violet);color:var(--violet);}
+.chip.on-inner{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);}
+.cond-wrap{display:flex;justify-content:center;margin-top:14px;}
+.cond-line{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 13px);color:var(--muted);border:1px solid var(--line);border-radius:20px;padding:5px 14px;min-width:120px;text-align:center;}
+.cond-line.pass{border-color:var(--good);color:var(--good);}
+.cond-line.fail{border-color:var(--danger);color:var(--danger);}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">JavaScript · BOM · UP3</p>
+  <h1>screen vs window</h1>
+  <p class="sub">screen mide el monitor; window.outer* la ventana del navegador; window.inner* el área de la página. Mismo navegador, cuatro medidas distintas.</p>
+
+  <div class="tabbar" id="tabbar"></div>
+  <div class="stage" id="stage"></div>
+
+  <p class="note" id="note"></p>
+  <div class="timeline"><div class="timeline-fill" id="fill"></div></div>
+  <p class="verdict" id="verdict"></p>
+
+  <div class="controls">
+    <div class="ctrl-group">
+      <button id="rewindBtn" class="ctrl-btn step" title="Rebobinar al principio">&#9198;</button>
+      <button id="prevBtn" class="ctrl-btn step" title="Paso anterior">&#9664;&#9664;</button>
+      <button id="playBtn" class="ctrl-btn play">&#9654; Reproducir</button>
+      <button id="nextBtn" class="ctrl-btn step" title="Paso siguiente">&#9654;&#9654;</button>
+      <button id="delayPlayBtn" class="ctrl-btn" title="Empezar tras una cuenta atrás de 10s">&#9654; +10s</button>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Velocidad</span>
+      <div class="speed-group">
+        <button class="speed-btn active" data-speed="0.25">0.25&times;</button>
+        <button class="speed-btn" data-speed="0.5">0.5&times;</button>
+        <button class="speed-btn" data-speed="1">1&times;</button>
+      </div>
+    </div>
+    <span class="step-counter" id="stepCounter">Paso 1 / N</span>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   Contenido de esta animación (pestañas, código y pasos)
+   ========================================================= */
+var MON = { w: 1920, h: 1080, task: 40 }, SC = 0.25, TB = 85;
+var W0 = { x: 200, y: 100, w: 1200, h: 800 };
+
+var TABS = [
+  { key: 'screen', label: 'screen', vizLabel: 'Monitor 1920 × 1080',
+    code: [
+      ['a', "console.log(screen.width, screen.height);"],
+      ['b', "console.log(screen.availWidth, screen.availHeight);"]
+    ],
+    steps: [
+      { win: W0, hl: null, cond: null, note: 'Un monitor de 1920 × 1080 con el navegador abierto' },
+      { active: 'a', hl: 'screen', note: 'screen describe el MONITOR completo' },
+      { active: 'a', hl: 'screen', log: '1920 1080', note: 'console.log → 1920 1080' },
+      { active: 'b', hl: 'avail', note: 'availWidth / availHeight: el monitor MENOS la barra de tareas' },
+      { active: 'b', hl: 'avail', log: '1920 1040', note: 'la barra de tareas del sistema ocupa 40 px' },
+      { hl: null, verdict: '<b>screen</b> mide el monitor, no el navegador. <b>avail*</b> descuenta lo que reserva el sistema operativo (barra de tareas, dock).' }
+    ] },
+  { key: 'window', label: 'outer vs inner', vizLabel: 'Monitor 1920 × 1080',
+    code: [
+      ['a', "console.log(outerWidth, outerHeight);"],
+      ['b', "console.log(innerWidth, innerHeight);"]
+    ],
+    steps: [
+      { win: W0, hl: null, cond: null, note: 'La ventana del navegador mide 1200 × 800' },
+      { active: 'a', hl: 'outer', note: 'outer = la ventana ENTERA: pestañas, barra de direcciones y bordes' },
+      { active: 'a', hl: 'outer', log: '1200 800', note: 'console.log → 1200 800' },
+      { active: 'b', hl: 'inner', note: 'inner = solo el área donde se pinta la página (viewport)' },
+      { active: 'b', hl: 'inner', log: '1200 715', note: '800 − 85 px de barras del navegador = 715' },
+      { hl: null, verdict: '<b>outer*</b> incluye la interfaz del navegador; <b>inner*</b> es el viewport, el espacio real que tiene tu HTML y el que usan las media queries.' }
+    ] },
+  { key: 'resize', label: 'redimensionar', vizLabel: 'Monitor 1920 × 1080',
+    code: [
+      ['a', "window.addEventListener('resize', () => {"],
+      ['b', "  console.log(innerWidth, screen.width);"],
+      ['c', "});"]
+    ],
+    steps: [
+      { win: W0, hl: 'inner', cond: null, note: 'Página abierta a 1200 px de ancho' },
+      { active: ['a', 'c'], note: 'registramos un listener que salta al redimensionar' },
+      { win: { x: 200, y: 100, w: 900, h: 800 }, note: 'el usuario estrecha la ventana…' },
+      { active: 'b', log: '900 1920', note: 'innerWidth cambia → 900 · screen.width sigue en 1920' },
+      { win: { x: 200, y: 100, w: 600, h: 800 }, note: '…y la estrecha todavía más' },
+      { active: 'b', log: '600 1920', note: 'innerWidth → 600 · screen.width → 1920 (no cambia)' },
+      { hl: null, verdict: 'Al redimensionar cambian <b>inner*</b> y <b>outer*</b>. <b>screen.*</b> no cambia nunca: el monitor sigue siendo el mismo.' }
+    ] },
+  { key: 'responsive', label: 'responsive', vizLabel: 'Monitor 1920 × 1080',
+    code: [
+      ['a', "// ❌ mide el monitor"],
+      ['b', "const movil1 = screen.width < 768;"],
+      ['c', "// ✅ mide el viewport"],
+      ['d', "const movil2 = matchMedia('(max-width: 767px)').matches;"]
+    ],
+    steps: [
+      { win: { x: 200, y: 100, w: 600, h: 800 }, hl: 'inner', cond: null, note: 'Ventana estrecha (600 px) en un monitor de escritorio' },
+      { active: 'b', hl: 'screen', cond: { t: '1920 < 768 → false', st: 'fail' }, note: 'screen.width vale 1920…' },
+      { active: 'b', hl: 'screen', log: 'movil1 = false', note: '…así que dice que NO es móvil, aunque la página mida 600 px' },
+      { active: 'd', hl: 'inner', cond: { t: '600 ≤ 767 → true', st: 'pass' }, note: 'matchMedia evalúa la media query sobre el viewport' },
+      { active: 'd', hl: 'inner', log: 'movil2 = true', note: 'resultado correcto: hay que usar el diseño estrecho' },
+      { cond: null, verdict: 'Para responsive desde JS usa <b>matchMedia()</b> (o innerWidth), igual que en CSS. <b>screen.width</b> solo sirve para saber qué monitor tiene el usuario.' }
+    ] }
+];
+
+var RENDER = {
+  main: function (viz, s) {
+    var w = s.win, inner = { w: w.w, h: w.h - TB };
+    var avail = { w: MON.w, h: MON.h - MON.task };
+    var px = function (v) { return Math.round(v * SC) + 'px'; };
+    var chip = function (key, label, val) {
+      return '<span class="chip ' + (s.hl === key ? 'on-' + key : 'muted') + '">' + label + ' <b>' + val + '</b></span>';
+    };
+    viz.innerHTML =
+      '<div class="mon ' + (s.hl === 'screen' ? 'hl' : '') + '" style="width:' + px(MON.w) + ';height:' + px(MON.h) + '">' +
+        '<div class="avail ' + (s.hl === 'avail' ? 'hl' : '') + '" style="bottom:' + px(MON.task) + '"></div>' +
+        '<div class="taskbar" style="height:' + px(MON.task) + '"></div>' +
+        '<div class="win ' + (s.hl === 'outer' ? 'hl' : '') + '" style="left:' + px(w.x) + ';top:' + px(w.y) + ';width:' + px(w.w) + ';height:' + px(w.h) + '">' +
+          '<div class="tb" style="height:' + px(TB) + '"><i></i><i></i><i></i><span>pestañas · barra de direcciones</span></div>' +
+          '<div class="vp ' + (s.hl === 'inner' ? 'hl' : '') + '" style="top:' + px(TB) + '">' + inner.w + ' × ' + inner.h + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="dims">' +
+        chip('screen', 'screen', MON.w + '×' + MON.h) +
+        chip('avail', 'avail', avail.w + '×' + avail.h) +
+        chip('outer', 'outer', w.w + '×' + w.h) +
+        chip('inner', 'inner', inner.w + '×' + inner.h) +
+      '</div>' +
+      (s.cond ? '<div class="cond-wrap"><div class="cond-line ' + s.cond.st + '">' + s.cond.t + '</div></div>' : '');
+  }
+};
+
+
+/* =========================================================
+   Motor común de animaciones paso a paso
+   ========================================================= */
+var STEP_MS = 550;
+var KEYWORDS = /\b(const|let|var|function|if|else|return|new|true|false|null|undefined|while|do|for|of|in|break|typeof|try|catch)\b/;
+
+function esc(t){ return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function hl(src){
+  var re = /(\/\/.*$)|('[^']*'|"[^"]*"|`[^`]*`)|\b(const|let|var|function|if|else|return|new|true|false|null|undefined|while|do|for|of|in|break|typeof|try|catch)\b|(\b\d+\b)/g;
+  var out = '', last = 0, m;
+  while((m = re.exec(src)) !== null){
+    out += esc(src.slice(last, m.index));
+    var cls = m[1] ? 'c' : m[2] ? 's' : m[3] ? 'k' : 'n';
+    out += '<span class="'+cls+'">'+esc(m[0])+'</span>';
+    last = re.lastIndex;
+  }
+  return out + esc(src.slice(last));
+}
+
+var VOLATILE = ['note','verdict','active','log','error','errLog'];
+function buildStates(steps){
+  var states = [], prev = { out: [] };
+  steps.forEach(function(p){
+    var s = Object.assign({}, prev);
+    VOLATILE.forEach(function(k){ delete s[k]; });
+    Object.assign(s, p);
+    s.out = p.clearOut ? [] : prev.out.slice();
+    s.newOut = 0;
+    if(p.log !== undefined){ [].concat(p.log).forEach(function(v){ s.out.push({t:v}); s.newOut++; }); }
+    if(p.errLog !== undefined){ [].concat(p.errLog).forEach(function(v){ s.out.push({t:v, err:true}); s.newOut++; }); }
+    prev = s; states.push(s);
+  });
+  return states;
+}
+
+var TAB_ORDER = TABS.map(function(t){ return t.key; });
+var DATA = {};
+TABS.forEach(function(t){ DATA[t.key] = t; t.states = buildStates(t.steps); });
+var currentTab = TAB_ORDER[0];
+
+(function buildDom(){
+  var bar = document.getElementById('tabbar'), stage = document.getElementById('stage');
+  TABS.forEach(function(t, i){
+    var b = document.createElement('button');
+    b.className = 'tab-btn' + (i === 0 ? ' active' : '');
+    b.dataset.tab = t.key; b.textContent = t.label; bar.appendChild(b);
+    var lines = t.code.map(function(l){ return '<span class="ln" data-i="'+l[0]+'">'+(l[1] === '' ? ' ' : hl(l[1]))+'</span>'; }).join('');
+    var p = document.createElement('div');
+    p.className = 'tab-panel' + (i === 0 ? ' active' : '');
+    p.dataset.tab = t.key;
+    p.innerHTML =
+      '<div class="stage-lr">' +
+        '<div class="col-code"><div class="panel term"><div class="term-bar"><span></span><span></span><span></span></div>' +
+          (t.file ? '<span class="lbl">'+esc(t.file)+'</span>' : '') +
+          '<div class="code">'+lines+'</div></div></div>' +
+        '<div class="col-out">' +
+          '<div class="panel viz-panel"><span class="lbl">'+esc(t.vizLabel || 'Navegador')+'</span><div class="viz"></div></div>' +
+          '<div class="panel out-panel"><span class="lbl">Consola</span><div class="out"></div></div>' +
+        '</div>' +
+      '</div>';
+    stage.appendChild(p);
+  });
+})();
+
+var playBtn = document.getElementById('playBtn');
+var prevBtn = document.getElementById('prevBtn');
+var nextBtn = document.getElementById('nextBtn');
+var rewindBtn = document.getElementById('rewindBtn');
+var delayPlayBtn = document.getElementById('delayPlayBtn');
+var stepCounter = document.getElementById('stepCounter');
+var fill = document.getElementById('fill');
+var verdict = document.getElementById('verdict');
+var note = document.getElementById('note');
+var speedBtns = document.querySelectorAll('.speed-btn');
+var tabBtns = document.querySelectorAll('.tab-btn');
+var curIndex = 0, playing = false, speed = 0.25, playTimer = null, countdownTimer = null;
+
+function renderVisual(tabKey, s){
+  var root = document.querySelector('.tab-panel[data-tab="'+tabKey+'"]');
+  var active = [].concat(s.active || []);
+  root.querySelectorAll('.code .ln').forEach(function(el){
+    var id = el.getAttribute('data-i');
+    el.classList.toggle('active', active.indexOf(id) !== -1 && s.error !== id);
+    el.classList.toggle('error', s.error === id);
+  });
+  RENDER[DATA[tabKey].render || 'main'](root.querySelector('.viz'), s, tabKey);
+  var n = s.out.length;
+  root.querySelector('.out').innerHTML = s.out.map(function(o, i){
+    return '<span class="'+(o.err ? 'err ' : '')+(i >= n - s.newOut ? 'new' : '')+'">'+esc(o.t)+'</span>';
+  }).join('');
+}
+
+function show(i){
+  var data = DATA[currentTab], s = data.states[i];
+  renderVisual(currentTab, s);
+  note.textContent = s.note || '';
+  verdict.innerHTML = s.verdict || '';
+  verdict.classList.toggle('show', !!s.verdict);
+  fill.style.width = (data.states.length > 1 ? i / (data.states.length - 1) * 100 : 100) + '%';
+  stepCounter.textContent = 'Paso ' + (i+1) + ' / ' + data.states.length;
+  prevBtn.disabled = (i === 0);
+  nextBtn.disabled = (i === data.states.length - 1);
+}
+
+function stopCountdown(){
+  if(countdownTimer){ clearInterval(countdownTimer); countdownTimer = null; }
+  delayPlayBtn.textContent = '▶ +10s';
+  playBtn.disabled = false;
+}
+function stopPlay(){ playing = false; playBtn.textContent = '▶ Reproducir'; clearTimeout(playTimer); }
+function scheduleNext(){
+  var data = DATA[currentTab];
+  if(curIndex >= data.states.length - 1){ stopPlay(); return; }
+  var dur = (data.states[curIndex].ms || STEP_MS) / speed;
+  playTimer = setTimeout(function(){ curIndex++; show(curIndex); scheduleNext(); }, dur);
+}
+function startPlay(){
+  var data = DATA[currentTab];
+  if(curIndex >= data.states.length - 1){ curIndex = 0; show(0); }
+  playing = true; playBtn.textContent = '❘❘ Pausar'; scheduleNext();
+}
+
+playBtn.addEventListener('click', function(){ stopCountdown(); playing ? stopPlay() : startPlay(); });
+prevBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex = Math.max(0, curIndex - 1); show(curIndex); });
+nextBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); var d = DATA[currentTab]; curIndex = Math.min(d.states.length - 1, curIndex + 1); show(curIndex); });
+rewindBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex = 0; show(0); });
+speedBtns.forEach(function(b){ b.addEventListener('click', function(){ speedBtns.forEach(function(x){ x.classList.remove('active'); }); b.classList.add('active'); speed = parseFloat(b.getAttribute('data-speed')); }); });
+delayPlayBtn.addEventListener('click', function(){
+  if(countdownTimer){ stopCountdown(); return; }
+  stopPlay();
+  var remaining = 10; playBtn.disabled = true; delayPlayBtn.textContent = 'Empieza en ' + remaining + 's…';
+  countdownTimer = setInterval(function(){
+    remaining--;
+    if(remaining <= 0){ clearInterval(countdownTimer); countdownTimer = null; delayPlayBtn.textContent = '▶ +10s'; playBtn.disabled = false; startPlay(); }
+    else { delayPlayBtn.textContent = 'Empieza en ' + remaining + 's…'; }
+  }, 1000);
+});
+tabBtns.forEach(function(b){
+  b.addEventListener('click', function(){
+    stopCountdown(); stopPlay();
+    currentTab = b.getAttribute('data-tab');
+    tabBtns.forEach(function(x){ x.classList.remove('active'); });
+    b.classList.add('active');
+    document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.toggle('active', p.getAttribute('data-tab') === currentTab); });
+    curIndex = 0; show(0);
+  });
+});
+document.addEventListener('keydown', function(e){
+  if(e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable)) return;
+  var advance = ['ArrowRight','ArrowDown','PageDown',' ','Spacebar'];
+  var back = ['ArrowLeft','ArrowUp','PageUp','Backspace'];
+  if(advance.indexOf(e.key) !== -1){ e.preventDefault(); nextBtn.click(); }
+  else if(back.indexOf(e.key) !== -1){ e.preventDefault(); prevBtn.click(); }
+});
+show(0);
+</script>
+</body>
+</html>
