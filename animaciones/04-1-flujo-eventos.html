@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flujo de eventos</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --bg:#0b0e12;
+  --panel:#11161d;
+  --panel-2:#161d26;
+  --line:#232b34;
+  --ink:#e5e9ed;
+  --muted:#e7ebef;
+  --dim:#8a96a3;
+  --accent:#4dd9c0;
+  --accent-2:#f2a154;
+  --violet:#a78bfa;
+  --good:#7cd992;
+  --danger:#e2725b;
+  --accent-dim:rgba(77,217,192,.12);
+  --accent2-dim:rgba(242,161,84,.12);
+  --danger-dim:rgba(226,114,91,.12);
+  --violet-dim:rgba(167,139,250,.14);
+  --fs:1.35;
+}
+*{box-sizing:border-box;}
+html,body{background:var(--bg);}
+body{margin:0;color:var(--ink);font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,sans-serif;padding:10px 20px 140px;}
+.wrap{max-width:1400px;margin:0 auto;}
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 11.5px);letter-spacing:.16em;text-transform:uppercase;color:var(--muted);text-align:center;margin:0 0 12px;}
+h1{text-align:center;font-family:"IBM Plex Mono",monospace;font-size:36px;font-weight:600;margin:0 0 10px;text-wrap:balance;}
+.sub{text-align:center;color:var(--muted);font-size:calc(var(--fs,1) * 14px);max-width:1400px;margin:0 auto 34px;line-height:1.55;}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;}
+.term-bar{display:flex;gap:5px;margin-bottom:10px;}
+.term-bar span{width:8px;height:8px;border-radius:50%;background:#2a323c;}
+.code{font-family:"IBM Plex Mono",monospace;font-size:18px;line-height:1.95;color:#e2e7eb;overflow-x:auto;}
+.code .ln{display:block;padding:1px 8px;border-radius:5px;border-left:2px solid transparent;transition:background .25s,border-color .25s,color .25s;white-space:pre;}
+.code .ln .k{color:#c99a5b;}
+.code .ln .s{color:#7cd992;}
+.code .ln .c{color:#6b7785;font-style:italic;}
+.code .ln .n{color:#a78bfa;}
+.code .ln.active{color:var(--ink);background:var(--accent-dim);border-left-color:var(--accent);}
+.code .ln.error{background:var(--danger-dim);border-left-color:var(--danger);}
+.lbl{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 9.5px);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:7px;}
+.chip{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 11.5px);padding:5px 9px;border-radius:6px;background:var(--panel-2);border:1px solid var(--accent);color:var(--accent);display:inline-block;}
+.chip.warn{border-color:var(--accent-2);color:var(--accent-2);}
+.chip.bad{border-color:var(--danger);color:var(--danger);}
+.chip.muted{border-color:var(--line);color:var(--dim);}
+.chip.violet{border-color:var(--violet);color:var(--violet);}
+@keyframes pop{from{opacity:0;transform:scale(.9);}to{opacity:1;transform:scale(1);}}
+.pop{animation:pop .22s ease forwards;}
+.note{font-family:"IBM Plex Mono",monospace;font-size:20px;color:var(--muted);text-align:center;min-height:34px;line-height:1.5;padding:0 10px;margin-top:18px;}
+.timeline{max-width:920px;margin:22px auto 0;height:3px;background:var(--line);border-radius:2px;overflow:hidden;}
+.timeline-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent-2),var(--accent));transition:width .05s linear;}
+.verdict{text-align:center;margin:22px auto 0;max-width:760px;font-size:calc(var(--fs,1) * 14px);color:var(--muted);line-height:1.6;min-height:30px;opacity:0;transition:opacity .4s;}
+.verdict.show{opacity:1;}
+.verdict b{color:var(--ink);font-weight:600;}
+.controls{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);width:calc(100% - 32px);max-width:1200px;margin:0;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 18px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px 20px;z-index:100;box-shadow:0 12px 36px rgba(0,0,0,.5);}
+.ctrl-group{display:flex;align-items:center;gap:8px;}
+.ctrl-btn{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 12px);letter-spacing:.03em;color:var(--ink);background:var(--panel-2);border:1px solid var(--line);border-radius:7px;padding:8px 14px;cursor:pointer;transition:border-color .2s,color .2s;}
+.ctrl-btn:hover:not(:disabled){border-color:var(--ink);}
+.ctrl-btn:disabled{opacity:.35;cursor:default;}
+.ctrl-btn.play{min-width:132px;border-color:var(--accent);color:var(--accent);}
+.ctrl-btn.step{font-size:calc(var(--fs,1) * 14px);padding:8px 12px;}
+.ctrl-label{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 10px);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-right:2px;}
+.speed-group{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;}
+.speed-btn{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 11.5px);color:var(--muted);background:var(--panel-2);border:none;padding:7px 11px;cursor:pointer;border-right:1px solid var(--line);transition:background .2s,color .2s;}
+.speed-btn:last-child{border-right:none;}
+.speed-btn.active{background:var(--accent-dim);color:var(--accent);}
+.step-counter{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 11px);color:var(--muted);margin-left:auto;}
+@media (prefers-reduced-motion: reduce){*{transition-duration:.001ms !important;animation-duration:.001ms !important;}}
+.stage-lr{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;}
+@media (max-width:760px){.stage-lr{grid-template-columns:1fr;}}
+.stage-lr .col-code{display:flex;flex-direction:column;}
+.stage-lr .col-code .panel.term{height:100%;}
+.stage-lr .col-out{display:flex;flex-direction:column;gap:14px;}
+.tabbar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:16px;}
+.tab-btn{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 12px);color:var(--muted);background:var(--panel-2);border:1px solid var(--line);border-radius:20px;padding:7px 15px;cursor:pointer;transition:border-color .2s,color .2s,background .2s;}
+.tab-btn:hover{color:var(--ink);}
+.tab-btn.active{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+.term{padding:16px 18px;}
+.viz-panel{padding:20px 18px;min-height:260px;}
+.out-panel{padding:14px 16px;min-height:50px;}
+.out{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 13px);}
+.out span{display:inline-block;margin:2px 8px 2px 0;padding:2px 8px;border-radius:5px;background:var(--panel-2);border:1px solid var(--accent);color:var(--accent);}
+.out span.err{border-color:var(--danger);color:var(--danger);}
+.out span.new{animation:pop .22s ease forwards;}
+/* ---------- estilos propios de esta animación ---------- */
+.fase{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 12px);margin-bottom:10px;min-height:28px;display:flex;gap:10px;align-items:center;}
+.fase b{padding:2px 10px;border-radius:12px;border:1px solid var(--line);}
+.fase b.captura{color:var(--accent-2);border-color:var(--accent-2);}
+.fase b.diana{color:var(--violet);border-color:var(--violet);}
+.fase b.burbuja{color:var(--accent);border-color:var(--accent);}
+.arbol .nodo{border:1px solid #2f3843;border-radius:8px;padding:8px 10px 10px;margin-top:6px;background:rgba(255,255,255,.015);transition:border-color .25s, background .25s, box-shadow .25s;}
+.arbol > .nodo{margin-top:0;}
+.nodo .nl{display:block;font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 11px);color:var(--dim);margin-bottom:2px;}
+.nodo.cur{background:rgba(255,255,255,.03);}
+.nodo.cur.captura{border-color:var(--accent-2);box-shadow:inset 0 0 0 1px var(--accent-2);}
+.nodo.cur.captura > .nl{color:var(--accent-2);}
+.nodo.cur.diana{border-color:var(--violet);box-shadow:inset 0 0 0 1px var(--violet);}
+.nodo.cur.diana > .nl{color:var(--violet);}
+.nodo.cur.burbuja{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);}
+.nodo.cur.burbuja > .nl{color:var(--accent);}
+.nodo.blocked{border-color:var(--danger) !important;box-shadow:inset 0 0 0 1px var(--danger) !important;}
+.nodo.blocked > .nl{color:var(--danger) !important;}
+.nodo .dir{font-size:16px;margin-left:6px;}
+.nodo em{font-style:normal;font-size:11px;padding:1px 6px;border-radius:8px;border:1px solid var(--violet);color:var(--violet);margin-left:6px;}
+.nodo em.c{border-color:var(--accent);color:var(--accent);}
+.row{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;min-height:30px;}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">JavaScript · Eventos · UP4</p>
+  <h1>Flujo de un evento</h1>
+  <p class="sub">Un clic no ocurre solo en el botón: el evento baja por el árbol (captura), llega a su destino (diana) y vuelve a subir (burbuja). Mira dónde actúa cada listener.</p>
+
+  <div class="tabbar" id="tabbar"></div>
+  <div class="stage" id="stage"></div>
+
+  <p class="note" id="note"></p>
+  <div class="timeline"><div class="timeline-fill" id="fill"></div></div>
+  <p class="verdict" id="verdict"></p>
+
+  <div class="controls">
+    <div class="ctrl-group">
+      <button id="rewindBtn" class="ctrl-btn step" title="Rebobinar al principio">&#9198;</button>
+      <button id="prevBtn" class="ctrl-btn step" title="Paso anterior">&#9664;&#9664;</button>
+      <button id="playBtn" class="ctrl-btn play">&#9654; Reproducir</button>
+      <button id="nextBtn" class="ctrl-btn step" title="Paso siguiente">&#9654;&#9654;</button>
+      <button id="delayPlayBtn" class="ctrl-btn" title="Empezar tras una cuenta atrás de 10s">&#9654; +10s</button>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Velocidad</span>
+      <div class="speed-group">
+        <button class="speed-btn active" data-speed="0.25">0.25&times;</button>
+        <button class="speed-btn" data-speed="0.5">0.5&times;</button>
+        <button class="speed-btn" data-speed="1">1&times;</button>
+      </div>
+    </div>
+    <span class="step-counter" id="stepCounter">Paso 1 / N</span>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   Contenido de esta animación (pestañas, código y pasos)
+   ========================================================= */
+// Ruta del evento: window → document → body → div#contenedor → button
+var NODOS = ['window', 'document', 'body', 'div#contenedor', 'button'];
+
+var TABS = [
+  { key: 'fases', label: 'captura y burbuja',
+    code: [
+      ['a', "contenedor.addEventListener('click', () => {"],
+      ['b', "  console.log('contenedor · captura');"],
+      ['c', "}, { capture: true });"],
+      ['d', ""],
+      ['e', "boton.addEventListener('click', () => {"],
+      ['f', "  console.log('botón · diana');"],
+      ['g', "});"],
+      ['h', ""],
+      ['i', "contenedor.addEventListener('click', () => {"],
+      ['j', "  console.log('contenedor · burbuja');"],
+      ['k', "});"]
+    ],
+    steps: [
+      { cur: null, phase: null, stopped: false, nav: null, dir: null, note: 'El usuario hace clic en el botón' },
+      { cur: 0, phase: 'captura', dir: '↓', note: 'Fase de CAPTURA: el evento baja desde window…' },
+      { cur: 1, note: '…pasa por document…' },
+      { cur: 2, note: '…por body…' },
+      { cur: 3, active: ['a', 'b', 'c'], log: 'contenedor · captura', note: 'el contenedor tiene un listener con capture: true → se ejecuta AL BAJAR' },
+      { cur: 4, phase: 'diana', dir: '●', active: ['e', 'f', 'g'], log: 'botón · diana', note: 'Fase DIANA: el evento llega al elemento pulsado (event.target)' },
+      { cur: 3, phase: 'burbuja', dir: '↑', active: ['i', 'j', 'k'], log: 'contenedor · burbuja', note: 'Fase de BURBUJA: el evento sube… y salta el listener normal del contenedor' },
+      { cur: 2, note: 'sigue subiendo por body…' },
+      { cur: 1, note: '…document…' },
+      { cur: 0, note: '…hasta window' },
+      { cur: null, phase: null, dir: null, verdict: 'Un evento recorre 3 fases: <b>captura</b> (baja), <b>diana</b> y <b>burbuja</b> (sube). Por defecto los listeners actúan en la burbuja; con <b>{ capture: true }</b>, en la captura.' }
+    ] },
+  { key: 'stop', label: 'stopPropagation',
+    code: [
+      ['a', "boton.addEventListener('click', (e) => {"],
+      ['b', "  console.log('botón');"],
+      ['c', "  e.stopPropagation();"],
+      ['d', "});"],
+      ['e', ""],
+      ['f', "contenedor.addEventListener('click', () => {"],
+      ['g', "  console.log('contenedor');   // ¿se ejecuta?"],
+      ['h', "});"]
+    ],
+    steps: [
+      { cur: null, phase: null, stopped: false, nav: null, dir: null, note: 'Clic en el botón' },
+      { cur: 4, phase: 'diana', dir: '●', active: ['a', 'b'], log: 'botón', note: 'se ejecuta el listener del botón' },
+      { cur: 4, active: 'c', stopped: true, note: 'stopPropagation() corta el recorrido del evento' },
+      { cur: 3, phase: 'burbuja', dir: '✕', active: ['f', 'g', 'h'], note: 'el evento ya no sube: el contenedor NO se entera' },
+      { cur: null, phase: null, dir: null, verdict: '<b>stopPropagation()</b> detiene la propagación hacia los demás nodos. No cancela la acción por defecto del navegador: eso lo hace preventDefault().' }
+    ] },
+  { key: 'prevent', label: 'preventDefault',
+    code: [
+      ['a', "enlace.addEventListener('click', (e) => {"],
+      ['b', "  e.preventDefault();"],
+      ['c', "  console.log('sin navegar');"],
+      ['d', "});"],
+      ['e', ""],
+      ['f', "form.addEventListener('submit', (e) => {"],
+      ['g', "  e.preventDefault();   // validar antes de enviar"],
+      ['h', "});"]
+    ],
+    steps: [
+      { cur: null, phase: null, stopped: false, nav: null, dir: null, mode: 'enlace', note: 'Clic en un enlace <a href="…">' },
+      { cur: 4, phase: 'diana', dir: '●', active: 'a', nav: 'pendiente', note: 'acción por defecto del navegador: navegar a href' },
+      { cur: 4, active: 'b', nav: 'cancelada', note: 'preventDefault() cancela esa acción…' },
+      { cur: 3, phase: 'burbuja', dir: '↑', active: 'c', log: 'sin navegar', note: '…pero el evento SIGUE propagándose (burbuja)' },
+      { cur: null, phase: null, dir: null, mode: 'form', nav: 'pendiente-form', active: ['f', 'g', 'h'], note: 'En un formulario, la acción por defecto de submit es ENVIAR los datos' },
+      { nav: 'cancelada-form', note: 'preventDefault() en submit: primero validamos con JS' },
+      { verdict: '<b>preventDefault()</b> cancela la acción del navegador (navegar, enviar, menú contextual…) pero <b>no</b> la propagación. <b>stopPropagation()</b> hace lo contrario.' }
+    ] },
+  { key: 'target', label: 'target vs currentTarget',
+    code: [
+      ['a', "contenedor.addEventListener('click', (e) => {"],
+      ['b', "  console.log(e.target);        // ¿quién?"],
+      ['c', "  console.log(e.currentTarget); // ¿quién?"],
+      ['d', "});"]
+    ],
+    steps: [
+      { cur: null, phase: null, stopped: false, nav: null, dir: null, mode: null, note: 'Hay UN listener, en el contenedor. El usuario pulsa el botón' },
+      { cur: 4, phase: 'diana', dir: '●', tgt: 4, note: 'event.target = el elemento donde se originó el clic' },
+      { cur: 3, phase: 'burbuja', dir: '↑', active: ['a', 'b'], log: 'target → <button>', note: 'el listener del contenedor se ejecuta en la burbuja' },
+      { cur: 3, active: 'c', ctg: 3, log: 'currentTarget → <div#contenedor>', note: 'event.currentTarget = el elemento que TIENE el listener' },
+      { verdict: '<b>target</b>: dónde empezó el evento. <b>currentTarget</b>: dónde está el listener que se está ejecutando. Esta diferencia es la base de la <b>delegación de eventos</b>.' }
+    ] }
+];
+
+var RENDER = {
+  main: function (viz, s) {
+    var html = '', depth = NODOS.length;
+    // cajas anidadas de fuera a dentro
+    for (var i = 0; i < depth; i++) {
+      var cls = 'nodo' + (s.cur === i ? ' cur ' + s.phase : '') + (s.tgt === i ? ' tgt' : '') + (s.ctg === i ? ' ctg' : '');
+      if (s.stopped && i < 4 && s.phase === 'burbuja' && s.cur === i) cls += ' blocked';
+      html += '<div class="' + cls + '"><span class="nl">' + NODOS[i] +
+        (s.tgt === i ? ' <em>target</em>' : '') + (s.ctg === i ? ' <em class="c">currentTarget</em>' : '') +
+        (s.cur === i && s.dir ? ' <b class="dir">' + s.dir + '</b>' : '') + '</span>';
+    }
+    for (var j = 0; j < depth; j++) html += '</div>';
+    var nav = '';
+    if (s.nav === 'pendiente') nav = '<span class="chip warn">acción por defecto: navegar a href</span>';
+    if (s.nav === 'cancelada') nav = '<span class="chip">✓ navegación cancelada</span>';
+    if (s.nav === 'pendiente-form') nav = '<span class="chip warn">acción por defecto: enviar el formulario</span>';
+    if (s.nav === 'cancelada-form') nav = '<span class="chip">✓ envío cancelado: validamos con JS</span>';
+    viz.innerHTML =
+      '<div class="fase">' + (s.phase ? 'Fase: <b class="' + s.phase + '">' + s.phase + '</b>' : '&nbsp;') + (s.stopped ? ' <span class="chip bad">propagación detenida</span>' : '') + '</div>' +
+      '<div class="arbol">' + html + '</div>' +
+      '<div class="row">' + nav + '</div>';
+  }
+};
+
+
+/* =========================================================
+   Motor común de animaciones paso a paso
+   ========================================================= */
+var STEP_MS = 550;
+var KEYWORDS = /\b(const|let|var|function|if|else|return|new|true|false|null|undefined|while|do|for|of|in|break|typeof|try|catch)\b/;
+
+function esc(t){ return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function hl(src){
+  var re = /(\/\/.*$)|('[^']*'|"[^"]*"|`[^`]*`)|\b(const|let|var|function|if|else|return|new|true|false|null|undefined|while|do|for|of|in|break|typeof|try|catch)\b|(\b\d+\b)/g;
+  var out = '', last = 0, m;
+  while((m = re.exec(src)) !== null){
+    out += esc(src.slice(last, m.index));
+    var cls = m[1] ? 'c' : m[2] ? 's' : m[3] ? 'k' : 'n';
+    out += '<span class="'+cls+'">'+esc(m[0])+'</span>';
+    last = re.lastIndex;
+  }
+  return out + esc(src.slice(last));
+}
+
+var VOLATILE = ['note','verdict','active','log','error','errLog'];
+function buildStates(steps){
+  var states = [], prev = { out: [] };
+  steps.forEach(function(p){
+    var s = Object.assign({}, prev);
+    VOLATILE.forEach(function(k){ delete s[k]; });
+    Object.assign(s, p);
+    s.out = p.clearOut ? [] : prev.out.slice();
+    s.newOut = 0;
+    if(p.log !== undefined){ [].concat(p.log).forEach(function(v){ s.out.push({t:v}); s.newOut++; }); }
+    if(p.errLog !== undefined){ [].concat(p.errLog).forEach(function(v){ s.out.push({t:v, err:true}); s.newOut++; }); }
+    prev = s; states.push(s);
+  });
+  return states;
+}
+
+var TAB_ORDER = TABS.map(function(t){ return t.key; });
+var DATA = {};
+TABS.forEach(function(t){ DATA[t.key] = t; t.states = buildStates(t.steps); });
+var currentTab = TAB_ORDER[0];
+
+(function buildDom(){
+  var bar = document.getElementById('tabbar'), stage = document.getElementById('stage');
+  TABS.forEach(function(t, i){
+    var b = document.createElement('button');
+    b.className = 'tab-btn' + (i === 0 ? ' active' : '');
+    b.dataset.tab = t.key; b.textContent = t.label; bar.appendChild(b);
+    var lines = t.code.map(function(l){ return '<span class="ln" data-i="'+l[0]+'">'+(l[1] === '' ? ' ' : hl(l[1]))+'</span>'; }).join('');
+    var p = document.createElement('div');
+    p.className = 'tab-panel' + (i === 0 ? ' active' : '');
+    p.dataset.tab = t.key;
+    p.innerHTML =
+      '<div class="stage-lr">' +
+        '<div class="col-code"><div class="panel term"><div class="term-bar"><span></span><span></span><span></span></div>' +
+          (t.file ? '<span class="lbl">'+esc(t.file)+'</span>' : '') +
+          '<div class="code">'+lines+'</div></div></div>' +
+        '<div class="col-out">' +
+          '<div class="panel viz-panel"><span class="lbl">'+esc(t.vizLabel || 'Navegador')+'</span><div class="viz"></div></div>' +
+          '<div class="panel out-panel"><span class="lbl">Consola</span><div class="out"></div></div>' +
+        '</div>' +
+      '</div>';
+    stage.appendChild(p);
+  });
+})();
+
+var playBtn = document.getElementById('playBtn');
+var prevBtn = document.getElementById('prevBtn');
+var nextBtn = document.getElementById('nextBtn');
+var rewindBtn = document.getElementById('rewindBtn');
+var delayPlayBtn = document.getElementById('delayPlayBtn');
+var stepCounter = document.getElementById('stepCounter');
+var fill = document.getElementById('fill');
+var verdict = document.getElementById('verdict');
+var note = document.getElementById('note');
+var speedBtns = document.querySelectorAll('.speed-btn');
+var tabBtns = document.querySelectorAll('.tab-btn');
+var curIndex = 0, playing = false, speed = 0.25, playTimer = null, countdownTimer = null;
+
+function renderVisual(tabKey, s){
+  var root = document.querySelector('.tab-panel[data-tab="'+tabKey+'"]');
+  var active = [].concat(s.active || []);
+  root.querySelectorAll('.code .ln').forEach(function(el){
+    var id = el.getAttribute('data-i');
+    el.classList.toggle('active', active.indexOf(id) !== -1 && s.error !== id);
+    el.classList.toggle('error', s.error === id);
+  });
+  RENDER[DATA[tabKey].render || 'main'](root.querySelector('.viz'), s, tabKey);
+  var n = s.out.length;
+  root.querySelector('.out').innerHTML = s.out.map(function(o, i){
+    return '<span class="'+(o.err ? 'err ' : '')+(i >= n - s.newOut ? 'new' : '')+'">'+esc(o.t)+'</span>';
+  }).join('');
+}
+
+function show(i){
+  var data = DATA[currentTab], s = data.states[i];
+  renderVisual(currentTab, s);
+  note.textContent = s.note || '';
+  verdict.innerHTML = s.verdict || '';
+  verdict.classList.toggle('show', !!s.verdict);
+  fill.style.width = (data.states.length > 1 ? i / (data.states.length - 1) * 100 : 100) + '%';
+  stepCounter.textContent = 'Paso ' + (i+1) + ' / ' + data.states.length;
+  prevBtn.disabled = (i === 0);
+  nextBtn.disabled = (i === data.states.length - 1);
+}
+
+function stopCountdown(){
+  if(countdownTimer){ clearInterval(countdownTimer); countdownTimer = null; }
+  delayPlayBtn.textContent = '▶ +10s';
+  playBtn.disabled = false;
+}
+function stopPlay(){ playing = false; playBtn.textContent = '▶ Reproducir'; clearTimeout(playTimer); }
+function scheduleNext(){
+  var data = DATA[currentTab];
+  if(curIndex >= data.states.length - 1){ stopPlay(); return; }
+  var dur = (data.states[curIndex].ms || STEP_MS) / speed;
+  playTimer = setTimeout(function(){ curIndex++; show(curIndex); scheduleNext(); }, dur);
+}
+function startPlay(){
+  var data = DATA[currentTab];
+  if(curIndex >= data.states.length - 1){ curIndex = 0; show(0); }
+  playing = true; playBtn.textContent = '❘❘ Pausar'; scheduleNext();
+}
+
+playBtn.addEventListener('click', function(){ stopCountdown(); playing ? stopPlay() : startPlay(); });
+prevBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex = Math.max(0, curIndex - 1); show(curIndex); });
+nextBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); var d = DATA[currentTab]; curIndex = Math.min(d.states.length - 1, curIndex + 1); show(curIndex); });
+rewindBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex = 0; show(0); });
+speedBtns.forEach(function(b){ b.addEventListener('click', function(){ speedBtns.forEach(function(x){ x.classList.remove('active'); }); b.classList.add('active'); speed = parseFloat(b.getAttribute('data-speed')); }); });
+delayPlayBtn.addEventListener('click', function(){
+  if(countdownTimer){ stopCountdown(); return; }
+  stopPlay();
+  var remaining = 10; playBtn.disabled = true; delayPlayBtn.textContent = 'Empieza en ' + remaining + 's…';
+  countdownTimer = setInterval(function(){
+    remaining--;
+    if(remaining <= 0){ clearInterval(countdownTimer); countdownTimer = null; delayPlayBtn.textContent = '▶ +10s'; playBtn.disabled = false; startPlay(); }
+    else { delayPlayBtn.textContent = 'Empieza en ' + remaining + 's…'; }
+  }, 1000);
+});
+tabBtns.forEach(function(b){
+  b.addEventListener('click', function(){
+    stopCountdown(); stopPlay();
+    currentTab = b.getAttribute('data-tab');
+    tabBtns.forEach(function(x){ x.classList.remove('active'); });
+    b.classList.add('active');
+    document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.toggle('active', p.getAttribute('data-tab') === currentTab); });
+    curIndex = 0; show(0);
+  });
+});
+document.addEventListener('keydown', function(e){
+  if(e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable)) return;
+  var advance = ['ArrowRight','ArrowDown','PageDown',' ','Spacebar'];
+  var back = ['ArrowLeft','ArrowUp','PageUp','Backspace'];
+  if(advance.indexOf(e.key) !== -1){ e.preventDefault(); nextBtn.click(); }
+  else if(back.indexOf(e.key) !== -1){ e.preventDefault(); prevBtn.click(); }
+});
+show(0);
+</script>
+</body>
+</html>

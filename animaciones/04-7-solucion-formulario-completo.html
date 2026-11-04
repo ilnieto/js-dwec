@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Solución UP4_A4 · Formulario</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --bg:#0b0e12;--panel:#11161d;--panel-2:#161d26;--line:#232b34;--ink:#e5e9ed;--muted:#e7ebef;--dim:#8a96a3;
+  --accent:#4dd9c0;--accent-2:#f2a154;--violet:#a78bfa;--good:#7cd992;--danger:#e2725b;
+  --accent-dim:rgba(77,217,192,.12);--danger-dim:rgba(226,114,91,.12);
+  --fs:1.35;
+}
+*{box-sizing:border-box;}
+html,body{background:var(--bg);}
+body{margin:0;color:var(--ink);font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,sans-serif;padding:10px 16px 150px;}
+.wrap{max-width:1400px;margin:0 auto;}
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 11.5px);letter-spacing:.16em;text-transform:uppercase;color:var(--muted);text-align:center;margin:0 0 12px;}
+h1{text-align:center;font-family:"IBM Plex Mono",monospace;font-size:34px;font-weight:600;margin:0 0 10px;text-wrap:balance;}
+.sub{text-align:center;color:var(--muted);font-size:calc(var(--fs,1) * 14px);max-width:1000px;margin:0 auto 30px;line-height:1.55;}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;}
+.term-bar{display:flex;gap:5px;margin-bottom:10px;}
+.term-bar span{width:8px;height:8px;border-radius:50%;background:#2a323c;}
+.code{font-family:"IBM Plex Mono",monospace;font-size:16px;line-height:1.9;color:#e2e7eb;overflow-x:auto;}
+.code .ln{display:block;padding:1px 8px;border-radius:5px;border-left:2px solid transparent;transition:background .25s,border-color .25s;white-space:pre;}
+.code .ln .k{color:#c99a5b;}
+.code .ln .s{color:#7cd992;}
+.code .ln .c{color:#6b7785;font-style:italic;}
+.code .ln .n{color:#a78bfa;}
+.code .ln.active{color:var(--ink);background:var(--accent-dim);border-left-color:var(--accent);}
+.lbl{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 9.5px);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:7px;}
+.chip{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 11.5px);padding:5px 9px;border-radius:6px;background:var(--panel-2);border:1px solid var(--accent);color:var(--accent);display:inline-block;}
+.chip.warn{border-color:var(--accent-2);color:var(--accent-2);}
+.chip.bad{border-color:var(--danger);color:var(--danger);}
+.note{font-family:"IBM Plex Mono",monospace;font-size:18px;color:var(--muted);text-align:center;min-height:34px;line-height:1.5;padding:0 10px;margin-top:18px;}
+.timeline{max-width:920px;margin:22px auto 0;height:3px;background:var(--line);border-radius:2px;overflow:hidden;}
+.timeline-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent-2),var(--accent));transition:width .05s linear;}
+.verdict{text-align:center;margin:22px auto 0;max-width:820px;font-size:calc(var(--fs,1) * 14px);color:var(--muted);line-height:1.6;min-height:30px;opacity:0;transition:opacity .4s;}
+.verdict.show{opacity:1;}
+.verdict b{color:var(--ink);font-weight:600;}
+.controls{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);width:calc(100% - 32px);max-width:1200px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 18px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px 20px;z-index:100;box-shadow:0 12px 36px rgba(0,0,0,.5);}
+.ctrl-group{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.ctrl-btn{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 12px);color:var(--ink);background:var(--panel-2);border:1px solid var(--line);border-radius:7px;padding:8px 14px;cursor:pointer;transition:border-color .2s;}
+.ctrl-btn:hover:not(:disabled){border-color:var(--ink);}
+.ctrl-btn:disabled{opacity:.35;cursor:default;}
+.ctrl-btn.play{min-width:132px;border-color:var(--accent);color:var(--accent);}
+.ctrl-btn.step{font-size:calc(var(--fs,1) * 14px);padding:8px 12px;}
+.ctrl-label{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 10px);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+.speed-group{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;}
+.speed-btn{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 11.5px);color:var(--muted);background:var(--panel-2);border:none;padding:7px 11px;cursor:pointer;border-right:1px solid var(--line);}
+.speed-btn:last-child{border-right:none;}
+.speed-btn.active{background:var(--accent-dim);color:var(--accent);}
+.step-counter{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 11px);color:var(--muted);margin-left:auto;}
+@media (prefers-reduced-motion: reduce){*{transition-duration:.001ms !important;animation-duration:.001ms !important;}}
+.stage-lr{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start;}
+.stage-lr > *{min-width:0;}
+@media (max-width:860px){.stage-lr{grid-template-columns:minmax(0,1fr);}}
+.col-out{display:flex;flex-direction:column;gap:14px;}
+.tabbar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:16px;}
+.tab-btn{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 12px);color:var(--muted);background:var(--panel-2);border:1px solid var(--line);border-radius:20px;padding:7px 15px;cursor:pointer;transition:border-color .2s,color .2s,background .2s;}
+.tab-btn:hover{color:var(--ink);}
+.tab-btn.active{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+.term{padding:16px 18px;}
+.viz-panel{padding:20px 18px;min-height:260px;}
+.out-panel{padding:14px 16px;min-height:50px;}
+.out{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 13px);}
+.out span{display:inline-block;margin:2px 8px 2px 0;padding:2px 8px;border-radius:5px;background:var(--panel-2);border:1px solid var(--accent);color:var(--accent);}
+.out span.err{border-color:var(--danger);color:var(--danger);}
+.out span.new{animation:pop .22s ease forwards;}
+@keyframes pop{from{opacity:0;transform:scale(.9);}to{opacity:1;transform:scale(1);}}
+/* ---- formulario simulado ---- */
+.frow{display:grid;grid-template-columns:120px 1fr;gap:4px 10px;align-items:center;margin-bottom:10px;}
+.frow > label{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 11px);color:var(--dim);}
+.campo{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 13px);padding:6px 11px;border:1px solid #3a4552;border-radius:7px;background:var(--panel-2);transition:all .25s;min-height:34px;word-break:break-all;}
+.campo i{color:var(--dim);}
+.campo.ok{border-color:var(--good);box-shadow:0 0 0 3px rgba(124,217,146,.12);}
+.campo.bad{border-color:var(--danger);box-shadow:0 0 0 3px var(--danger-dim);}
+.fb{grid-column:2;font-size:13px;min-height:1.1em;}
+.fb.ok{color:var(--good);}
+.fb.bad{color:var(--danger);}
+.vgrid{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;margin-top:12px;}
+.vgrid .lbl{grid-column:1 / -1;}
+.vrow{display:flex;justify-content:space-between;padding:4px 10px;border-radius:5px;border:1px solid var(--line);font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 10.5px);color:var(--dim);transition:all .25s;}
+.vrow.bad{color:var(--danger);border-color:rgba(226,114,91,.4);}
+.vrow.ok{color:var(--good);border-color:rgba(124,217,146,.4);}
+.vrow.hl{box-shadow:0 0 0 2px currentColor;background:rgba(255,255,255,.03);}
+.selrow{margin-bottom:12px;}
+.selrow .campo{margin-bottom:6px;}
+.opts{display:flex;flex-wrap:wrap;gap:5px;}
+.opts span{font-family:"IBM Plex Mono",monospace;font-size:11px;padding:2px 7px;border:1px solid var(--line);border-radius:5px;color:var(--dim);}
+.grupo{margin-bottom:12px;}
+.grupo > label{display:block;font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 11px);color:var(--dim);margin-bottom:6px;}
+.items{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:14px;}
+.items .on{color:var(--good);}
+.tab{width:100%;border-collapse:collapse;font-family:"IBM Plex Mono",monospace;font-size:11px;margin-top:10px;}
+.tab th,.tab td{border:1px solid var(--line);padding:4px 6px;text-align:left;color:var(--muted);}
+.tab th{color:var(--accent);font-weight:500;}
+.row{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;}
+.box{margin-top:12px;padding:10px 12px;border-radius:7px;border:1px solid var(--line);background:var(--panel-2);font-size:14px;line-height:1.5;color:var(--muted);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">JavaScript · Formularios · UP4_A4 · Solución</p>
+  <h1>Formulario completo, paso a paso</h1>
+  <p class="sub">Selects dependientes, validaciones con expresiones regulares, grupos de radios y checkboxes, validación cruzada, envío con tabla creada con el DOM y reinicio.</p>
+
+  <div class="tabbar" id="tabbar"></div>
+  <div class="stage" id="stage"></div>
+
+  <p class="note" id="note"></p>
+  <div class="timeline"><div class="timeline-fill" id="fill"></div></div>
+  <p class="verdict" id="verdict"></p>
+
+  <div class="controls">
+    <div class="ctrl-group">
+      <button id="rewindBtn" class="ctrl-btn step" title="Rebobinar al principio">&#9198;</button>
+      <button id="prevBtn" class="ctrl-btn step" title="Paso anterior">&#9664;&#9664;</button>
+      <button id="playBtn" class="ctrl-btn play">&#9654; Reproducir</button>
+      <button id="nextBtn" class="ctrl-btn step" title="Paso siguiente">&#9654;&#9654;</button>
+      <button id="delayPlayBtn" class="ctrl-btn" title="Empezar tras una cuenta atrás de 10s">&#9654; +10s</button>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Velocidad</span>
+      <div class="speed-group">
+        <button class="speed-btn active" data-speed="0.25">0.25&times;</button>
+        <button class="speed-btn" data-speed="0.5">0.5&times;</button>
+        <button class="speed-btn" data-speed="1">1&times;</button>
+      </div>
+    </div>
+    <span class="step-counter" id="stepCounter">Paso 1 / N</span>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   Contenido: pestañas, código de la solución y pasos
+   ========================================================= */
+var KEYS = ['valueMissing','tooShort','typeMismatch','patternMismatch','rangeUnderflow','customError','valid'];
+function V(o){ var r = {}; KEYS.forEach(function(k){ r[k] = !!o[k]; }); r.valid = !KEYS.slice(0,6).some(function(k){ return o[k]; }); return r; }
+function F(name, label, value, state, msg){ return { name:name, label:label, value:value, state:state||'', msg:msg||'' }; }
+/* Grupo de radios (tipo 'radio') o checkboxes (tipo 'check'). items = [[texto, marcado]] */
+function G(label, tipo, items, state, msg){ return { label:label, tipo:tipo, items:items, state:state||'', msg:msg||'' }; }
+/* Tres selects dependientes */
+function SEL(c, p, m){ return { comunidad:c, provincia:p, municipio:m }; }
+
+var ALICANTE = ['Adsubia','Agost','Agres','…','141 municipios en total'];
+var ANDALUCIA = ['Almería','Cádiz','Córdoba','Granada','Huelva','Jaen','…'];
+var VALENCIA = ['Alicante/Alacant','Castellón/Castelló','Valencia/València'];
+var INTERESES = [['Fútbol',false],['Tenis',false],['Béisbol',false],['Hockey',false],['Voleibol',false],['Bádminton',false],['Golf',false]];
+function marcar(lista, nombres){ return lista.map(function(it){ return [it[0], nombres.indexOf(it[0]) !== -1]; }); }
+
+var TABS = [
+  /* ---------- 1. Selects dependientes ---------- */
+  { key:'selects', label:'1 · Selects dependientes',
+    code:[
+      ['a', 'function rellenarSelect(select, datos) {'],
+      ['b', "  select.replaceChildren(new Option('', ''), ...datos.map(d => new Option(d.nombre, d.codigo)));"],
+      ['c', '}'],
+      ['d', "comunidad.addEventListener('change', () => {"],
+      ['e', '  rellenarSelect(provincia, provincias.filter(p => p.comunidad === comunidad.value));'],
+      ['f', '  rellenarSelect(municipio, []);   // al cambiar de comunidad se vacían los municipios'],
+      ['g', '});'],
+      ['h', "provincia.addEventListener('change', () => {"],
+      ['i', '  rellenarSelect(municipio, municipios.filter(m => m.provincia === provincia.value));'],
+      ['j', '});']
+    ],
+    steps: [
+      { sel:SEL({v:'', opts:['17 comunidades autónomas']}, {v:'', opts:[]}, {v:'', opts:[]}), active:[],
+        note:'Al cargar la página: solo se rellena la comunidad. Provincia y municipio están vacíos' },
+      { sel:SEL({v:'Comunitat Valenciana', opts:['17 comunidades autónomas']}, {v:'', opts:VALENCIA}, {v:'', opts:[]}), active:['d','e'],
+        note:'comunidad.change → provincias con comunidad "10": son tres' },
+      { sel:SEL({v:'Comunitat Valenciana', opts:['17 comunidades autónomas']}, {v:'Alicante/Alacant', opts:VALENCIA}, {v:'', opts:ALICANTE}), active:['h','i'],
+        note:'provincia.change → municipios con provincia "03" (Alicante)' },
+      { sel:SEL({v:'Comunitat Valenciana', opts:['17 comunidades autónomas']}, {v:'Alicante/Alacant', opts:VALENCIA}, {v:'Agost (0020)', opts:ALICANTE}), active:[],
+        note:'El select guarda el código (0020). Lo que se ve es el nombre, pero el valor es el código' },
+      { sel:SEL({v:'Andalucia', opts:['17 comunidades autónomas']}, {v:'', opts:ANDALUCIA}, {v:'', opts:[]}), active:['d','e','f'],
+        note:'Cambiar de comunidad recarga las provincias y VACÍA los municipios' },
+      { verdict:'Los dos selects dependientes siempre se generan desde los datos del módulo: nunca se escriben a mano en el HTML (capa de contenido separada del comportamiento, 6h).' }
+    ] },
+
+  /* ---------- 2. Texto con expresiones regulares ---------- */
+  { key:'validar', label:'2 · Texto y regex',
+    code:[
+      ['a', 'const RE = {'],
+      ['b', '  nombre: /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+(?: [A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+){1,4}$/,'],
+      ['c', '  usuario: /^[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?$/,'],
+      ['d', '  dni: /^\\d{8}-[A-Za-z]$/,'],
+      ['e', '};'],
+      ['f', 'function validar(nombreCampo) {'],
+      ['g', "  if (RE[nombreCampo] && valor && !RE[nombreCampo].test(valor)) error = 'formato';"],
+      ['h', "  campo.setCustomValidity(error);"],
+      ['i', '  const ok = campo.checkValidity();'],
+      ['j', "  spanError(campo).textContent = ok ? '' : mensajeDe(nombreCampo, campo.validity);"],
+      ['k', '}']
+    ],
+    steps: [
+      { f:[F('nombre','Nombre y apellidos','Ana','bad','Mínimo 4 caracteres')], vf:'nombre', v:V({tooShort:1}), hl:'tooShort', active:[],
+        note:'minlength="4" en el HTML: el navegador marca tooShort antes de que actúe el JS' },
+      { f:[F('nombre','Nombre y apellidos','Ana García Pérez Ruiz Soto Vidal','bad','Entre 2 y 5 palabras, solo letras y sin espacios sobrantes')], vf:'nombre', v:V({customError:1}), hl:'customError', active:['b','g','h'],
+        note:'Seis palabras: RE.nombre no lo acepta → error = "formato" → customError' },
+      { f:[F('nombre','Nombre y apellidos','Ana García Pérez','ok','✓')], vf:'nombre', v:V({}), hl:'valid', active:['b','g'],
+        note:'Entre 2 y 5 palabras, solo letras, un espacio entre palabras → válido' },
+      { f:[F('usuario','Nombre de usuario','ana.','bad','Letras, números y - . _ ; empieza y acaba en letra o número')], vf:'usuario', v:V({customError:1}), hl:'customError', active:['c','g'],
+        note:'Termina en punto: la regla exige acabar en letra o número' },
+      { f:[F('dni','DNI','12345678A','bad','Formato 12345678-X')], vf:'dni', v:V({customError:1}), hl:'customError', active:['d','g'],
+        note:'Falta el guion entre el número y la letra' },
+      { f:[F('dni','DNI','12345678-a','ok','✓')], vf:'dni', v:V({}), hl:'valid', active:['d','g'],
+        note:'La letra puede ser minúscula ([A-Za-z]). Al enviar se guarda en mayúsculas: toUpperCase()' },
+      { verdict:'Cada campo tiene su regla en <b>RE</b> y el mismo código para todos: <b>validar(nombreCampo)</b>. El mensaje sale del diccionario MENSAJES según el tipo de error.' }
+    ] },
+
+  /* ---------- 3. Radios y checkboxes ---------- */
+  { key:'grupos', label:'3 · Radios y checkboxes',
+    code:[
+      ['a', 'const genero = campos.genero;        // RadioNodeList'],
+      ['b', 'const intereses = campos.intereses;  // RadioNodeList de checkboxes'],
+      ['c', 'function spanError(campo) {'],
+      ['d', "  if (campo.name === 'genero' || campo.name === 'intereses') {"],
+      ['e', "    return campo.closest('.grupo, fieldset').querySelector(':scope > .error-text');"],
+      ['f', '  }'],
+      ['g', "  return campo.parentElement.querySelector('.error-text');"],
+      ['h', '}'],
+      ['i', "if (nombreCampo === 'intereses' && Array.from(intereses).filter(c => c.checked).length < 3) error = 'pocos';"]
+    ],
+    steps: [
+      { grupo:G('Género*','radio', [['Masculino',false],['Femenino',false],['Prefiero no decirlo',false]], 'bad','Elige una opción'), active:['a','c','d','e'],
+        note:'genero[0] lleva el required: el grupo entero está vacío → error en el span del bloque' },
+      { grupo:G('Género*','radio', [['Masculino',false],['Femenino',false],['Prefiero no decirlo',true]], 'ok','✓'), active:['a','c','d'],
+        note:'Al elegir una opción, todo el grupo es válido' },
+      { grupo:G('Intereses* (mínimo 3)','check', marcar(INTERESES, ['Fútbol','Tenis']), 'bad','Elige al menos 3 intereses'), active:['b','i'],
+        note:'Dos marcados: 2 < 3 → error = "pocos" → customError en intereses[0]' },
+      { grupo:G('Intereses* (mínimo 3)','check', marcar(INTERESES, ['Fútbol','Tenis','Golf']), 'ok','✓'), active:['b','i'],
+        note:'Con tres marcados, válido. El mensaje se busca con :scope > .error-text: el span de ESTE grupo' },
+      { verdict:'En un grupo, la validación se hace sobre su <b>primer elemento</b> (genero[0]) y el mensaje va al span del bloque. <b>:scope &gt; .error-text</b> evita coger el span de otro campo.' }
+    ] },
+
+  /* ---------- 4. Validación cruzada y paste ---------- */
+  { key:'cruzada', label:'4 · Cruzada y paste',
+    code:[
+      ['a', "email.addEventListener('input', () => { validar('email'); if (email2.value) validar('email2'); });"],
+      ['b', "email2.addEventListener('input', () => validar('email2'));"],
+      ['c', "email2.addEventListener('paste', (e) => e.preventDefault());"],
+      ['d', "dni.addEventListener('change', () => validar('dni'));"]
+    ],
+    steps: [
+      { f:[F('email','Correo electrónico','ana@mail.com','ok','✓'), F('email2','Repetir correo','','','')], active:[],
+        note:'Estado inicial: el correo está bien y la repetición vacía' },
+      { f:[F('email','Correo electrónico','ana@mail.com','ok','✓'), F('email2','Repetir correo','ana@mail.co','bad','Los correos no coinciden')], vf:'email2', v:V({customError:1}), hl:'customError', active:['b'],
+        note:'input en "Repetir" → validar("email2") → distintos → customError' },
+      { f:[F('email','Correo electrónico','ana@mail.co','ok','✓'), F('email2','Repetir correo','ana@mail.co','ok','✓')], vf:'email2', v:V({}), hl:'valid', active:['a'],
+        note:'Cambiar el correo revalida la repetición (validación cruzada). Sin esa línea, "Repetir" seguiría en rojo' },
+      { f:[F('email','Correo electrónico','ana@mail.co','ok','✓'), F('email2','Repetir correo','','','')], active:['c'], log:'evento paste → preventDefault()',
+        chip:'<span class="chip warn">Ctrl + V sin efecto</span>',
+        note:'Pegar en "Repetir correo" queda bloqueado: el campo sigue vacío' },
+      { verdict:'Aquí la validación es en <b>input</b>, desde el primer carácter, sin esperar al blur. El paste se bloquea para practicar el evento; en una web real empeora la accesibilidad.' }
+    ] },
+
+  /* ---------- 5. Envío y tabla ---------- */
+  { key:'envio', label:'5 · Envío y tabla',
+    code:[
+      ['a', "form.addEventListener('submit', (e) => {"],
+      ['b', '  e.preventDefault();'],
+      ['c', '  const resultados = A_VALIDAR.map(validar);   // validar TODO'],
+      ['d', '  if (!resultados.every(Boolean)) return;'],
+      ['e', '  const nuevo = { nombre: nombre.value, dni: dni.value.toUpperCase(), comunidad: comunidad.value, /* … */ };'],
+      ['f', '  usuarios.push(nuevo);'],
+      ['g', '  añadirFila(nuevo);      // una fila creada con el DOM'],
+      ['h', '  form.reset();'],
+      ['i', '});']
+    ],
+    steps: [
+      { f:[F('nombre','Nombre y apellidos','Ana García Pérez','ok','✓'), F('dni','DNI','','bad','Obligatorio')],
+        grupo:G('Género*','radio',[['Masculino',false],['Femenino',false],['Prefiero no decirlo',false]],'bad','Elige una opción'),
+        active:[], note:'Formulario con dos errores: DNI vacío y género sin elegir' },
+      { active:['a','b'], chip:'<span class="chip warn">envío cancelado (preventDefault)</span>',
+        note:'Clic en Enviar → submit → preventDefault(): no se envía nada todavía' },
+      { active:['c','d'], log:'resultados.every(Boolean) → false', chip:'<span class="chip bad">return: no se guarda</span>',
+        note:'Se validan TODOS los campos, pero hay errores: la función sale sin guardar' },
+      { f:[F('nombre','Nombre y apellidos','Ana García Pérez','ok','✓'), F('dni','DNI','12345678-a','ok','✓')],
+        grupo:G('Género*','radio',[['Masculino',true],['Femenino',false],['Prefiero no decirlo',false]],'ok','✓'),
+        active:['c','d','e','f','g'], log:'usuarios.length → 1', chip:'<span class="chip">✓ alta guardada</span>',
+        tabla:[['Nombre','DNI','Usuario','Email','CA / Prov. / Mun.','Intereses'], ['Ana García Pérez','12345678-A','ana.g','ana@mail.com','10 / 03 / 0020','Fútbol, Golf']],
+        note:'Todo válido: el DNI se guarda en mayúsculas, la alta va al array y se añade una fila a la tabla' },
+      { f:[F('nombre','Nombre y apellidos','','',''), F('dni','DNI','','','')],
+        grupo:G('Género*','radio',[['Masculino',false],['Femenino',false],['Prefiero no decirlo',false]],'',''),
+        active:['h'], chip:'<span class="chip">form.reset()</span>',
+        note:'El formulario se vacía, pero la tabla y el array de usuarios se conservan' },
+      { verdict:'La validación se ejecuta <b>entera</b> antes de decidir. Si hay errores, la función sale sin guardar nada. Ojo: esta solución no lleva el foco al primer error, a diferencia de la de A3.' }
+    ] },
+
+  /* ---------- 6. Reinicio ---------- */
+  { key:'reset', label:'6 · Reinicio',
+    code:[
+      ['a', "form.addEventListener('reset', () => {"],
+      ['b', '  for (const campo of form.elements) {'],
+      ['c', "    if (campo.setCustomValidity) campo.setCustomValidity('');"],
+      ['d', "    campo.classList.remove('error');"],
+      ['e', '  }'],
+      ['f', "  form.querySelectorAll('.error-text').forEach(s => { s.textContent = ''; });"],
+      ['g', '  rellenarSelect(provincia, []);'],
+      ['h', '  rellenarSelect(municipio, []);'],
+      ['i', '});']
+    ],
+    steps: [
+      { f:[F('nombre','Nombre y apellidos','A','bad','Mínimo 4 caracteres')], sel:SEL({v:'Comunitat Valenciana', opts:['17 comunidades autónomas']}, {v:'Alicante/Alacant', opts:VALENCIA}, {v:'Agost (0020)', opts:ALICANTE}),
+        active:[], note:'Formulario con datos, selects dependientes y un error' },
+      { active:['a'], note:'Clic en Reiniciar → se dispara el evento reset ANTES de vaciar los campos' },
+      { f:[F('nombre','Nombre y apellidos','A','','')], active:['b','c','d'], note:'Se quitan las validaciones personalizadas y las clases de error. Los valores siguen visibles' },
+      { f:[F('nombre','Nombre y apellidos','A','','')], active:['f'], note:'Se borran los mensajes de error' },
+      { sel:SEL({v:'Comunitat Valenciana', opts:['17 comunidades autónomas']}, {v:'', opts:[]}, {v:'', opts:[]}), active:['g','h'],
+        note:'Provincia y municipio se rellenan vacíos. La comunidad la vacía el propio navegador al terminar' },
+      { f:[F('nombre','Nombre y apellidos','','','')], sel:SEL({v:'', opts:['17 comunidades autónomas']}, {v:'', opts:[]}, {v:'', opts:[]}), active:[],
+        chip:'<span class="chip">reset terminado: todos los campos vacíos</span>', note:'Estado final: como al cargar la página' },
+      { verdict:'El orden importa: el evento <b>reset</b> llega antes de vaciar. Por eso el código solo limpia lo que el navegador no limpia: los errores y los selects dependientes.' }
+    ] }
+];
+
+/* =========================================================
+   Motor común de animaciones paso a paso
+   ========================================================= */
+var STEP_MS = 550;
+var VOLATILE = ['note','verdict','active','log','errLog','hl','chip','extra'];
+
+function esc(t){ return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function hl(src){
+  var re = /(\/\/.*$)|('[^']*'|"[^"]*"|`[^`]*`)|\b(const|let|var|function|if|else|return|new|true|false|null|undefined|while|do|for|of|in|break|typeof|try|catch|class)\b|(\b\d+\b)/g;
+  var out = '', last = 0, m;
+  while((m = re.exec(src)) !== null){
+    out += esc(src.slice(last, m.index));
+    var cls = m[1] ? 'c' : m[2] ? 's' : m[3] ? 'k' : 'n';
+    out += '<span class="'+cls+'">'+esc(m[0])+'</span>';
+    last = re.lastIndex;
+  }
+  return out + esc(src.slice(last));
+}
+
+function buildStates(steps){
+  var states = [], prev = { out: [], f: [], sel: null, grupo: null, tabla: null };
+  steps.forEach(function(p){
+    var s = Object.assign({}, prev);
+    VOLATILE.forEach(function(k){ delete s[k]; });
+    Object.assign(s, p);
+    s.out = prev.out.slice();
+    s.newOut = 0;
+    if(p.log !== undefined){ s.out.push({t:p.log}); s.newOut++; }
+    if(p.errLog !== undefined){ s.out.push({t:p.errLog, err:true}); s.newOut++; }
+    prev = s; states.push(s);
+  });
+  return states;
+}
+
+var TAB_ORDER = TABS.map(function(t){ return t.key; });
+var DATA = {};
+TABS.forEach(function(t){ DATA[t.key] = t; t.states = buildStates(t.steps); });
+var currentTab = TAB_ORDER[0];
+
+/* Pinta la vista: selects, campos, grupos, validity, tabla y extras */
+function renderViz(viz, s){
+  var h = '';
+  if(s.sel){
+    [['comunidad','Comunidad'],['provincia','Provincia'],['municipio','Municipio']].forEach(function(par){
+      var d = s.sel[par[0]];
+      h += '<div class="selrow"><label class="lbl">'+par[1]+'</label>' +
+           '<div class="campo">'+(d.v ? esc(d.v) : '<i>— elige —</i>')+'</div>' +
+           '<div class="opts">'+(d.opts.length ? d.opts.map(function(o){ return '<span>'+esc(o)+'</span>'; }).join('') : '<i>sin opciones</i>')+'</div></div>';
+    });
+  }
+  (s.f || []).forEach(function(f){
+    var st = f.state ? ' ' + f.state : '';
+    h += '<div class="frow"><label>'+esc(f.label)+'</label>' +
+         '<div class="campo'+st+'">'+(f.value === '' ? '<i>vacío</i>' : esc(f.value))+'</div>' +
+         '<div class="fb'+st+'">'+esc(f.msg)+'</div></div>';
+  });
+  if(s.grupo){
+    var g = s.grupo;
+    var items = g.items.map(function(it){
+      var on = it[1];
+      var sym = g.tipo === 'radio' ? (on ? '◉' : '○') : (on ? '☑' : '☐');
+      return '<span class="'+(on ? 'on' : '')+'">'+sym+' '+esc(it[0])+'</span>';
+    }).join('');
+    h += '<div class="grupo"><label>'+esc(g.label)+'</label><div class="items">'+items+'</div>' +
+         '<div class="fb'+(g.state ? ' '+g.state : '')+'">'+esc(g.msg)+'</div></div>';
+  }
+  if(s.vf && s.v){
+    var rows = KEYS.map(function(k){
+      var on = s.v[k];
+      return '<div class="vrow '+(on ? (k === 'valid' ? 'ok' : 'bad') : '')+(s.hl === k ? ' hl' : '')+'"><span>'+k+'</span><b>'+on+'</b></div>';
+    }).join('');
+    h += '<div class="vgrid"><span class="lbl">'+esc(s.vf)+'.validity</span>'+rows+'</div>';
+  }
+  if(s.tabla){
+    h += '<table class="tab">' +
+         '<tr>'+s.tabla[0].map(function(c){ return '<th>'+esc(c)+'</th>'; }).join('')+'</tr>' +
+         s.tabla.slice(1).map(function(r){ return '<tr>'+r.map(function(c){ return '<td>'+esc(c)+'</td>'; }).join('')+'</tr>'; }).join('') +
+         '</table>';
+  }
+  if(s.extra) h += s.extra;
+  if(s.chip) h += '<div class="row">'+s.chip+'</div>';
+  viz.innerHTML = h;
+}
+
+(function buildDom(){
+  var bar = document.getElementById('tabbar'), stage = document.getElementById('stage');
+  TABS.forEach(function(t, i){
+    var b = document.createElement('button');
+    b.className = 'tab-btn' + (i === 0 ? ' active' : '');
+    b.dataset.tab = t.key; b.textContent = t.label; bar.appendChild(b);
+    var lines = t.code.map(function(l){ return '<span class="ln" data-i="'+l[0]+'">'+hl(l[1])+'</span>'; }).join('');
+    var p = document.createElement('div');
+    p.className = 'tab-panel' + (i === 0 ? ' active' : '');
+    p.dataset.tab = t.key;
+    p.innerHTML =
+      '<div class="stage-lr">' +
+        '<div class="panel term"><div class="term-bar"><span></span><span></span><span></span></div>' +
+          '<span class="lbl">Código de la solución (UP4A4.js)</span>' +
+          '<div class="code">'+lines+'</div></div>' +
+        '<div class="col-out">' +
+          '<div class="panel viz-panel"><span class="lbl">Formulario en el navegador</span><div class="viz"></div></div>' +
+          '<div class="panel out-panel"><span class="lbl">Consola</span><div class="out"></div></div>' +
+        '</div>' +
+      '</div>';
+    stage.appendChild(p);
+  });
+})();
+
+var playBtn = document.getElementById('playBtn');
+var prevBtn = document.getElementById('prevBtn');
+var nextBtn = document.getElementById('nextBtn');
+var rewindBtn = document.getElementById('rewindBtn');
+var delayPlayBtn = document.getElementById('delayPlayBtn');
+var stepCounter = document.getElementById('stepCounter');
+var fill = document.getElementById('fill');
+var verdict = document.getElementById('verdict');
+var note = document.getElementById('note');
+var speedBtns = document.querySelectorAll('.speed-btn');
+var tabBtns = document.querySelectorAll('.tab-btn');
+var curIndex = 0, playing = false, speed = 0.25, playTimer = null, countdownTimer = null;
+
+function renderVisual(tabKey, s){
+  var root = document.querySelector('.tab-panel[data-tab="'+tabKey+'"]');
+  var active = [].concat(s.active || []);
+  root.querySelectorAll('.code .ln').forEach(function(el){
+    el.classList.toggle('active', active.indexOf(el.getAttribute('data-i')) !== -1);
+  });
+  renderViz(root.querySelector('.viz'), s);
+  var n = s.out.length;
+  root.querySelector('.out').innerHTML = s.out.map(function(o, i){
+    return '<span class="'+(o.err ? 'err ' : '')+(i >= n - s.newOut ? 'new' : '')+'">'+esc(o.t)+'</span>';
+  }).join('');
+}
+
+function show(i){
+  var data = DATA[currentTab], s = data.states[i];
+  renderVisual(currentTab, s);
+  note.textContent = s.note || '';
+  verdict.innerHTML = s.verdict || '';
+  verdict.classList.toggle('show', !!s.verdict);
+  fill.style.width = (data.states.length > 1 ? i / (data.states.length - 1) * 100 : 100) + '%';
+  stepCounter.textContent = 'Paso ' + (i+1) + ' / ' + data.states.length;
+  prevBtn.disabled = (i === 0);
+  nextBtn.disabled = (i === data.states.length - 1);
+}
+
+function stopCountdown(){
+  if(countdownTimer){ clearInterval(countdownTimer); countdownTimer = null; }
+  delayPlayBtn.textContent = '▶ +10s';
+  playBtn.disabled = false;
+}
+function stopPlay(){ playing = false; playBtn.textContent = '▶ Reproducir'; clearTimeout(playTimer); }
+function scheduleNext(){
+  var data = DATA[currentTab];
+  if(curIndex >= data.states.length - 1){ stopPlay(); return; }
+  var dur = STEP_MS / speed;
+  playTimer = setTimeout(function(){ curIndex++; show(curIndex); scheduleNext(); }, dur);
+}
+function startPlay(){
+  var data = DATA[currentTab];
+  if(curIndex >= data.states.length - 1){ curIndex = 0; show(0); }
+  playing = true; playBtn.textContent = '❘❘ Pausar'; scheduleNext();
+}
+
+playBtn.addEventListener('click', function(){ stopCountdown(); playing ? stopPlay() : startPlay(); });
+prevBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex = Math.max(0, curIndex - 1); show(curIndex); });
+nextBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); var d = DATA[currentTab]; curIndex = Math.min(d.states.length - 1, curIndex + 1); show(curIndex); });
+rewindBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex = 0; show(0); });
+speedBtns.forEach(function(b){ b.addEventListener('click', function(){ speedBtns.forEach(function(x){ x.classList.remove('active'); }); b.classList.add('active'); speed = parseFloat(b.getAttribute('data-speed')); }); });
+delayPlayBtn.addEventListener('click', function(){
+  if(countdownTimer){ stopCountdown(); return; }
+  stopPlay();
+  var remaining = 10; playBtn.disabled = true; delayPlayBtn.textContent = 'Empieza en ' + remaining + 's…';
+  countdownTimer = setInterval(function(){
+    remaining--;
+    if(remaining <= 0){ clearInterval(countdownTimer); countdownTimer = null; delayPlayBtn.textContent = '▶ +10s'; playBtn.disabled = false; startPlay(); }
+    else { delayPlayBtn.textContent = 'Empieza en ' + remaining + 's…'; }
+  }, 1000);
+});
+tabBtns.forEach(function(b){
+  b.addEventListener('click', function(){
+    stopCountdown(); stopPlay();
+    currentTab = b.getAttribute('data-tab');
+    tabBtns.forEach(function(x){ x.classList.remove('active'); });
+    b.classList.add('active');
+    document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.toggle('active', p.getAttribute('data-tab') === currentTab); });
+    curIndex = 0; show(0);
+  });
+});
+document.addEventListener('keydown', function(e){
+  if(e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable)) return;
+  var advance = ['ArrowRight','ArrowDown','PageDown',' ','Spacebar'];
+  var back = ['ArrowLeft','ArrowUp','PageUp','Backspace'];
+  if(advance.indexOf(e.key) !== -1){ e.preventDefault(); nextBtn.click(); }
+  else if(back.indexOf(e.key) !== -1){ e.preventDefault(); prevBtn.click(); }
+});
+show(0);
+</script>
+</body>
+</html>

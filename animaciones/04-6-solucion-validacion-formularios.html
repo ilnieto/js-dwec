@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Solución UP4_A3 · Validación</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --bg:#0b0e12;--panel:#11161d;--panel-2:#161d26;--line:#232b34;--ink:#e5e9ed;--muted:#e7ebef;--dim:#8a96a3;
+  --accent:#4dd9c0;--accent-2:#f2a154;--violet:#a78bfa;--good:#7cd992;--danger:#e2725b;
+  --accent-dim:rgba(77,217,192,.12);--danger-dim:rgba(226,114,91,.12);
+  --fs:1.35;
+}
+*{box-sizing:border-box;}
+html,body{background:var(--bg);}
+body{margin:0;color:var(--ink);font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,sans-serif;padding:10px 16px 150px;}
+.wrap{max-width:1400px;margin:0 auto;}
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 11.5px);letter-spacing:.16em;text-transform:uppercase;color:var(--muted);text-align:center;margin:0 0 12px;}
+h1{text-align:center;font-family:"IBM Plex Mono",monospace;font-size:34px;font-weight:600;margin:0 0 10px;text-wrap:balance;}
+.sub{text-align:center;color:var(--muted);font-size:calc(var(--fs,1) * 14px);max-width:1000px;margin:0 auto 30px;line-height:1.55;}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;}
+.term-bar{display:flex;gap:5px;margin-bottom:10px;}
+.term-bar span{width:8px;height:8px;border-radius:50%;background:#2a323c;}
+.code{font-family:"IBM Plex Mono",monospace;font-size:16px;line-height:1.9;color:#e2e7eb;overflow-x:auto;}
+.code .ln{display:block;padding:1px 8px;border-radius:5px;border-left:2px solid transparent;transition:background .25s,border-color .25s;white-space:pre;}
+.code .ln .k{color:#c99a5b;}
+.code .ln .s{color:#7cd992;}
+.code .ln .c{color:#6b7785;font-style:italic;}
+.code .ln .n{color:#a78bfa;}
+.code .ln.active{color:var(--ink);background:var(--accent-dim);border-left-color:var(--accent);}
+.lbl{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 9.5px);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:7px;}
+.chip{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 11.5px);padding:5px 9px;border-radius:6px;background:var(--panel-2);border:1px solid var(--accent);color:var(--accent);display:inline-block;}
+.chip.warn{border-color:var(--accent-2);color:var(--accent-2);}
+.chip.bad{border-color:var(--danger);color:var(--danger);}
+.note{font-family:"IBM Plex Mono",monospace;font-size:18px;color:var(--muted);text-align:center;min-height:34px;line-height:1.5;padding:0 10px;margin-top:18px;}
+.timeline{max-width:920px;margin:22px auto 0;height:3px;background:var(--line);border-radius:2px;overflow:hidden;}
+.timeline-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent-2),var(--accent));transition:width .05s linear;}
+.verdict{text-align:center;margin:22px auto 0;max-width:820px;font-size:calc(var(--fs,1) * 14px);color:var(--muted);line-height:1.6;min-height:30px;opacity:0;transition:opacity .4s;}
+.verdict.show{opacity:1;}
+.verdict b{color:var(--ink);font-weight:600;}
+.controls{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);width:calc(100% - 32px);max-width:1200px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 18px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px 20px;z-index:100;box-shadow:0 12px 36px rgba(0,0,0,.5);}
+.ctrl-group{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.ctrl-btn{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 12px);color:var(--ink);background:var(--panel-2);border:1px solid var(--line);border-radius:7px;padding:8px 14px;cursor:pointer;transition:border-color .2s;}
+.ctrl-btn:hover:not(:disabled){border-color:var(--ink);}
+.ctrl-btn:disabled{opacity:.35;cursor:default;}
+.ctrl-btn.play{min-width:132px;border-color:var(--accent);color:var(--accent);}
+.ctrl-btn.step{font-size:calc(var(--fs,1) * 14px);padding:8px 12px;}
+.ctrl-label{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 10px);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+.speed-group{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;}
+.speed-btn{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 11.5px);color:var(--muted);background:var(--panel-2);border:none;padding:7px 11px;cursor:pointer;border-right:1px solid var(--line);}
+.speed-btn:last-child{border-right:none;}
+.speed-btn.active{background:var(--accent-dim);color:var(--accent);}
+.step-counter{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 11px);color:var(--muted);margin-left:auto;}
+@media (prefers-reduced-motion: reduce){*{transition-duration:.001ms !important;animation-duration:.001ms !important;}}
+.stage-lr{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;}
+@media (max-width:860px){.stage-lr{grid-template-columns:1fr;}}
+.col-out{display:flex;flex-direction:column;gap:14px;}
+.tabbar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:16px;}
+.tab-btn{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 12px);color:var(--muted);background:var(--panel-2);border:1px solid var(--line);border-radius:20px;padding:7px 15px;cursor:pointer;transition:border-color .2s,color .2s,background .2s;}
+.tab-btn:hover{color:var(--ink);}
+.tab-btn.active{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+.term{padding:16px 18px;}
+.viz-panel{padding:20px 18px;min-height:260px;}
+.out-panel{padding:14px 16px;min-height:50px;}
+.out{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 13px);}
+.out span{display:inline-block;margin:2px 8px 2px 0;padding:2px 8px;border-radius:5px;background:var(--panel-2);border:1px solid var(--accent);color:var(--accent);}
+.out span.err{border-color:var(--danger);color:var(--danger);}
+.out span.new{animation:pop .22s ease forwards;}
+@keyframes pop{from{opacity:0;transform:scale(.9);}to{opacity:1;transform:scale(1);}}
+/* ---- formulario simulado ---- */
+.frow{display:grid;grid-template-columns:130px 1fr;gap:4px 10px;align-items:center;margin-bottom:10px;}
+.frow > label{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 11px);color:var(--dim);}
+.campo{font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 13px);padding:6px 11px;border:1px solid #3a4552;border-radius:7px;background:var(--panel-2);transition:all .25s;min-height:34px;word-break:break-all;}
+.campo i{color:var(--dim);}
+.campo.ok{border-color:var(--good);box-shadow:0 0 0 3px rgba(124,217,146,.12);}
+.campo.bad{border-color:var(--danger);box-shadow:0 0 0 3px var(--danger-dim);}
+.campo.foco{outline:2px solid var(--accent-2);outline-offset:2px;}
+.fb{grid-column:2;font-family:"IBM Plex Sans",sans-serif;font-size:13px;min-height:1.1em;}
+.fb.ok{color:var(--good);}
+.fb.bad{color:var(--danger);}
+.aria{grid-column:2;font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--dim);}
+.vgrid{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;margin-top:12px;}
+.vgrid .lbl{grid-column:1 / -1;}
+.vrow{display:flex;justify-content:space-between;padding:4px 10px;border-radius:5px;border:1px solid var(--line);font-family:"IBM Plex Mono",monospace;font-size:calc(var(--fs,1) * 10.5px);color:var(--dim);transition:all .25s;}
+.vrow.bad{color:var(--danger);border-color:rgba(226,114,91,.4);}
+.vrow.ok{color:var(--good);border-color:rgba(124,217,146,.4);}
+.vrow.hl{box-shadow:0 0 0 2px currentColor;background:rgba(255,255,255,.03);}
+.row{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;}
+.box{margin-top:12px;padding:10px 12px;border-radius:7px;border:1px solid var(--line);background:var(--panel-2);font-size:14px;line-height:1.5;color:var(--muted);}
+.box.ok{border-color:rgba(124,217,146,.5);color:var(--good);}
+.box code{font-family:"IBM Plex Mono",monospace;font-size:12.5px;color:var(--accent-2);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">JavaScript · Formularios · UP4_A3 · Solución</p>
+  <h1>Validación de formularios, paso a paso</h1>
+  <p class="sub">Así se resuelve la práctica: primero los atributos HTML, después las expresiones regulares, la validación con <b>setCustomValidity</b>, la validación cruzada, el envío y, por último, los mensajes y el feedback visual.</p>
+
+  <div class="tabbar" id="tabbar"></div>
+  <div class="stage" id="stage"></div>
+
+  <p class="note" id="note"></p>
+  <div class="timeline"><div class="timeline-fill" id="fill"></div></div>
+  <p class="verdict" id="verdict"></p>
+
+  <div class="controls">
+    <div class="ctrl-group">
+      <button id="rewindBtn" class="ctrl-btn step" title="Rebobinar al principio">&#9198;</button>
+      <button id="prevBtn" class="ctrl-btn step" title="Paso anterior">&#9664;&#9664;</button>
+      <button id="playBtn" class="ctrl-btn play">&#9654; Reproducir</button>
+      <button id="nextBtn" class="ctrl-btn step" title="Paso siguiente">&#9654;&#9654;</button>
+      <button id="delayPlayBtn" class="ctrl-btn" title="Empezar tras una cuenta atrás de 10s">&#9654; +10s</button>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Velocidad</span>
+      <div class="speed-group">
+        <button class="speed-btn active" data-speed="0.25">0.25&times;</button>
+        <button class="speed-btn" data-speed="0.5">0.5&times;</button>
+        <button class="speed-btn" data-speed="1">1&times;</button>
+      </div>
+    </div>
+    <span class="step-counter" id="stepCounter">Paso 1 / N</span>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   Contenido: pestañas, código de la solución y pasos
+   ========================================================= */
+var KEYS = ['valueMissing','tooShort','typeMismatch','patternMismatch','rangeUnderflow','customError','valid'];
+function V(o){ var r = {}; KEYS.forEach(function(k){ r[k] = !!o[k]; }); r.valid = !KEYS.slice(0,6).some(function(k){ return o[k]; }); return r; }
+function F(name, label, value, state, msg){ return { name:name, label:label, value:value, state:state||'', msg:msg||'' }; }
+/* Los 5 campos del formulario; o = { campo: {v, s, m} } sobrescribe lo necesario */
+function campos(o){
+  var base = { nombre:['Nombre',''], email:['Correo electrónico',''], edad:['Edad',''], password:['Contraseña',''], password2:['Repetir contraseña',''] };
+  return Object.keys(base).map(function(k){
+    var d = o[k] || {};
+    return F(k, base[k][0], d.v !== undefined ? d.v : base[k][1], d.s || '', d.m || '');
+  });
+}
+
+var TABS = [
+  /* ---------- 1. Ejercicio 1: atributos HTML ---------- */
+  { key:'html', label:'1 · Atributos HTML',
+    code:[
+      ['a', '<input id="nombre" type="text" required minlength="3" maxlength="40">'],
+      ['b', '<input id="edad" type="number" required min="14" max="120" step="1">'],
+      ['c', '<input id="password" type="password" required minlength="8"'],
+      ['d', '      pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{8,}">']
+    ],
+    steps: [
+      { f:[F('nombre','Nombre','','bad','Rellena este campo.')], vf:'nombre', v:V({valueMissing:1}), hl:'valueMissing', active:['a'],
+        note:'Campo vacío y obligatorio: el navegador lo marca con valueMissing' },
+      { f:[F('nombre','Nombre','An','bad','Usa 3 caracteres como mínimo (actualmente, 2).')], vf:'nombre', v:V({tooShort:1}), hl:'tooShort', active:['a'],
+        note:'minlength="3": con "An" → tooShort = true' },
+      { f:[F('nombre','Nombre','Ana','ok','✓')], vf:'nombre', v:V({}), hl:'valid', active:['a'],
+        note:'"Ana" cumple todo → valid = true' },
+      { f:[F('nombre','Nombre','Ana','ok','✓'), F('edad','Edad','12','bad','El valor debe ser superior o igual a 14.')], vf:'edad', v:V({rangeUnderflow:1}), hl:'rangeUnderflow', active:['b'],
+        note:'min="14" es la forma entera de «mayor de 13»: con 12 → rangeUnderflow' },
+      { verdict:'Con atributos, el navegador valida y bloquea el envío (ejercicio 1). Pero el texto del mensaje lo decide el navegador y su idioma: por eso la solución usa un diccionario propio <b>MENSAJES</b> (ejercicio 4).' }
+    ] },
+
+  /* ---------- 2. Ejercicio 2: expresiones regulares ---------- */
+  { key:'regex', label:'2 · Expresiones regulares',
+    code:[
+      ['a', 'const RE_NOMBRE = /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+(?: [A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+)*$/;'],
+      ['b', 'const RE_EMAIL = /^[^\\s@]+@[^\\s@]+\\.[a-z]{2,}$/i;'],
+      ['c', 'const RE_PASSWORD = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{8,}$/;'],
+      ['d', 'RE_NOMBRE.test(nombre.value); // true o false']
+    ],
+    steps: [
+      { f:[F('nombre','Nombre','José Ñúñez','ok','✓')], active:['a'],
+        note:'RE_NOMBRE: letras con tildes y ñ, espacios simples entre palabras' },
+      { f:[F('nombre','Nombre','José Ñúñez','ok','✓')], active:['d'], log:'true',
+        note:'"José Ñúñez" → true' },
+      { f:[F('nombre','Nombre','Ana3','bad','Solo letras y un espacio entre palabras')], active:['d'], errLog:'false',
+        note:'"Ana3": el 3 no es letra → false' },
+      { f:[F('nombre','Nombre',' Ana','bad','Solo letras y un espacio entre palabras')], active:['d'], errLog:'false',
+        note:'" Ana": espacio al principio → false (el ^ exige empezar por una letra)' },
+      { f:[F('nombre','Nombre','Ana  López','bad','Solo letras y un espacio entre palabras')], active:['d'], errLog:'false',
+        note:'"Ana  López": dos espacios seguidos → false' },
+      { f:[F('nombre','Nombre','Ana López','ok','✓')], active:['d'], log:'true',
+        note:'"Ana López" cumple: letras, un solo espacio y nada al principio ni al final' },
+      { verdict:'Las anclas <b>^</b> y <b>$</b> obligan a que <b>toda</b> la cadena cumpla el patrón. Sin ellas, "xx Ana" pasaría la prueba solo porque contiene "Ana".' }
+    ] },
+
+  /* ---------- 3. validarCampo + setCustomValidity ---------- */
+  { key:'validar', label:'3 · validarCampo',
+    code:[
+      ['a', "function validarCampo(campo) {"],
+      ['b', "  const valor = campo.value;"],
+      ['c', "  let error = '';"],
+      ['d', "  if (campo === email && valor && !RE_EMAIL.test(valor)) error = 'formato';"],
+      ['e', "  campo.setCustomValidity(error);   // '' = sin error personalizado"],
+      ['f', "  pintar(campo);"],
+      ['g', "  return campo.validity.valid;"],
+      ['h', "}"]
+    ],
+    steps: [
+      { f:[F('email','Correo electrónico','')], vf:null, active:['a'],
+        note:'validarCampo recibe el campo y aplica las reglas que HTML no puede expresar' },
+      { f:[F('email','Correo electrónico','ana@mail','bad','Falta el dominio (ej.: ana@mail.com)')], vf:'email', v:V({customError:1}), hl:'customError', active:['d','e'],
+        note:'type="email" acepta "ana@mail", pero RE_EMAIL exige un punto → error = "formato" → customError = true' },
+      { f:[F('email','Correo electrónico','ana@mail.com','ok','✓')], vf:'email', v:V({}), hl:'valid', active:['e'],
+        note:'La regla se cumple → setCustomValidity("") limpia el error' },
+      { verdict:'Ojo: <b>setCustomValidity(texto)</b> no se borra solo. Si la regla se cumple y no se llama a <b>setCustomValidity("")</b>, el campo se queda inválido para siempre (primer punto de atasco de la práctica).' }
+    ] },
+
+  /* ---------- 4. Validación cruzada ---------- */
+  { key:'cruzada', label:'4 · Validación cruzada',
+    code:[
+      ['a', "function validarPasswords() {"],
+      ['b', "  validarCampo(password);"],
+      ['c', "  if (password2.value || password2.classList.contains('invalido')) validarCampo(password2);"],
+      ['d', "}"],
+      ['e', "password.addEventListener('input', validarPasswords);"],
+      ['f', "password2.addEventListener('input', () => validarCampo(password2));"]
+    ],
+    steps: [
+      { f:[F('password','Contraseña','Abcdef12','ok','✓'), F('password2','Repetir contraseña','Abcdef12','ok','✓')], vf:null,
+        note:'Las dos contraseñas coinciden: ambas en verde' },
+      { f:[F('password','Contraseña','Abcdef13','ok','✓'), F('password2','Repetir contraseña','Abcdef12','ok','✓')], vf:null, active:['e'],
+        note:'Sin validación cruzada, "Repetir" seguiría en verde aunque ya no coincide con la contraseña' },
+      { f:[F('password','Contraseña','Abcdef13','ok','✓'), F('password2','Repetir contraseña','Abcdef12','bad','Las contraseñas no coinciden')], vf:'password2', v:V({customError:1}), hl:'customError', active:['a','b','c'],
+        note:'validarPasswords revalida también la repetición → customError → "distintas"' },
+      { f:[F('password','Contraseña','Abcdef13','ok','✓'), F('password2','Repetir contraseña','Abcdef13','ok','✓')], vf:'password2', v:V({}), hl:'valid', active:['f'],
+        note:'El usuario escribe la misma contraseña en "Repetir" → vuelve a verde' },
+      { verdict:'Validación <b>cruzada</b>: un campo depende de otro. Por eso, al cambiar la contraseña hay que <b>revalidar también la repetición</b>.' }
+    ] },
+
+  /* ---------- 5. Submit ---------- */
+  { key:'submit', label:'5 · Envío y foco',
+    code:[
+      ['a', "form.addEventListener('submit', (e) => {"],
+      ['b', "  e.preventDefault();                       // nunca enviar sin validar"],
+      ['c', "  const todos = [nombre, email, edad, password, password2];"],
+      ['d', "  const validos = todos.map(validarCampo);  // validar TODOS"],
+      ['e', "  if (validos.every(Boolean)) {"],
+      ['f', "    confirmacion.textContent = `✔ ${nombre.value}, tu cuenta…`; form.reset();"],
+      ['g', "  } else {"],
+      ['h', "    todos[validos.indexOf(false)].focus();  // foco al primer error"],
+      ['i', "  }"],
+      ['j', "});"]
+    ],
+    steps: [
+      { f:campos({}), active:[],
+        note:'Formulario con todos los campos vacíos' },
+      { f:campos({}), active:['a','b'], chip:'<span class="chip warn">envío cancelado (preventDefault)</span>',
+        note:'Clic en Enviar → submit → preventDefault(): el navegador no envía nada' },
+      { f:campos({nombre:{s:'bad',m:'El nombre es obligatorio'}, email:{s:'bad',m:'El correo es obligatorio'}, edad:{s:'bad',m:'La edad es obligatoria'}, password:{s:'bad',m:'La contraseña es obligatoria'}, password2:{s:'bad',m:'Repite la contraseña'}}),
+        active:['c','d'], log:'validos → [false, false, false, false, false]',
+        note:'Se validan TODOS los campos, para mostrar todos los errores a la vez' },
+      { f:campos({nombre:{s:'bad',m:'El nombre es obligatorio'}, email:{s:'bad',m:'El correo es obligatorio'}, edad:{s:'bad',m:'La edad es obligatoria'}, password:{s:'bad',m:'La contraseña es obligatoria'}, password2:{s:'bad',m:'Repite la contraseña'}}),
+        focus:'nombre', active:['h'], chip:'<span class="chip bad">validos.indexOf(false) = 0 → foco en «Nombre»</span>',
+        note:'El foco va al primer error: el usuario ve de inmediato qué corregir' },
+      { f:campos({nombre:{v:'Ana López',s:'ok',m:'✓'}, email:{v:'ana@mail.com',s:'ok',m:'✓'}, edad:{v:'20',s:'ok',m:'✓'}, password:{v:'Abcdef12',s:'ok',m:'✓'}, password2:{v:'Abcdef12',s:'ok',m:'✓'}}),
+        active:['e','f'], extra:'<div class="box ok">✔ Ana López, tu cuenta (ana@mail.com) se ha creado correctamente.</div>',
+        chip:'<span class="chip">todo válido → se guarda</span>',
+        note:'Todos los campos válidos: se muestra la confirmación y se llama a form.reset()' },
+      { f:campos({}), active:[], chip:'<span class="chip">reset: se borran mensajes, clases y aria-invalid</span>',
+        note:'El evento reset limpia el formulario y los mensajes de validación' },
+      { verdict:'<b>form.submit()</b> envía sin validar y sin disparar el evento submit. Para enviar validando, el botón de enviar dispara <b>submit</b>, y en él se usa <b>preventDefault()</b>.' }
+    ] },
+
+  /* ---------- 6. pintar, blur e input ---------- */
+  { key:'pintar', label:'6 · Feedback y eventos',
+    code:[
+      ['a', "function pintar(campo) {"],
+      ['b', "  const ok = campo.validity.valid;"],
+      ['c', "  campo.classList.toggle('valido', ok);"],
+      ['d', "  campo.classList.toggle('invalido', !ok);"],
+      ['e', "  campo.setAttribute('aria-invalid', String(!ok));"],
+      ['f', "  campo.nextElementSibling.textContent = ok ? '✓' : mensajeDe(campo);"],
+      ['g', "}"],
+      ['h', "campo.addEventListener('blur', () => validarCampo(campo));"],
+      ['i', "campo.addEventListener('input', () => { if (campo.classList.length) validarCampo(campo); });"]
+    ],
+    steps: [
+      { f:[F('nombre','Nombre','A','','')], vf:null, active:['i'],
+        note:'Escribiendo, sin haber salido del campo: no hay error todavía' },
+      { f:[F('nombre','Nombre','A','bad','Mínimo 3 caracteres')], vf:'nombre', v:V({tooShort:1}), hl:'tooShort', active:['h','a','d','e','f'],
+        note:'blur: el usuario sale del campo → pintar: clase invalido, aria-invalid="true" y mensaje' },
+      { f:[F('nombre','Nombre','An','bad','Mínimo 3 caracteres')], vf:'nombre', v:V({tooShort:1}), hl:'tooShort', active:['i'],
+        note:'input: como el campo ya tiene clases, valida en cada tecla' },
+      { f:[F('nombre','Nombre','Ana','ok','✓')], vf:'nombre', v:V({}), hl:'valid', active:['i','c','e'],
+        note:'Al cumplir la regla pasa a verde: clase valido y aria-invalid="false"' },
+      { verdict:'Primero <b>blur</b> (no molestar antes de tiempo) y después <b>input</b> (feedback en vivo). Validar al cargar la página pondría en rojo campos que el usuario aún no ha tocado.' }
+    ] },
+
+  /* ---------- 7. MENSAJES y mensajeDe ---------- */
+  { key:'mensajes', label:'7 · Mensajes propios',
+    code:[
+      ['a', "const MENSAJES = {"],
+      ['b', "  email: { valueMissing: 'El correo es obligatorio', typeMismatch: 'Formato de correo no válido', customError: 'Falta el dominio (ej.: ana@mail.com)' },"],
+      ['c', "};"],
+      ['d', "function mensajeDe(campo) {"],
+      ['e', "  for (const error in MENSAJES[campo.name]) {"],
+      ['f', "    if (campo.validity[error]) return MENSAJES[campo.name][error];"],
+      ['g', "  }"],
+      ['h', "  return campo.validationMessage;   // respaldo: texto del navegador"],
+      ['i', "}"]
+    ],
+    steps: [
+      { f:[F('email','Correo electrónico','','bad','Rellena este campo.')], vf:'email', v:V({valueMissing:1}), hl:'valueMissing', active:['h'],
+        note:'Sin MENSAJES, el texto depende del navegador y del idioma (en inglés: "Please fill out this field.")' },
+      { f:[F('email','Correo electrónico','','bad','El correo es obligatorio')], vf:'email', v:V({valueMissing:1}), hl:'valueMissing', active:['e','f'],
+        note:'mensajeDe recorre las claves de MENSAJES.email en orden: valueMissing es true → devuelve su texto' },
+      { f:[F('email','Correo electrónico','ana','bad','Formato de correo no válido')], vf:'email', v:V({typeMismatch:1}), hl:'typeMismatch', active:['e','f'],
+        note:'"ana": typeMismatch = true → «Formato de correo no válido»' },
+      { f:[F('email','Correo electrónico','ana@mail','bad','Falta el dominio (ej.: ana@mail.com)')], vf:'email', v:V({customError:1}), hl:'customError', active:['e','f'],
+        note:'"ana@mail" pasa el type="email" pero no RE_EMAIL → customError → nuestro texto' },
+      { verdict:'Así el mismo mensaje sale en cualquier navegador e idioma: el navegador ya no decide el texto. Es la respuesta a <b>RESPUESTAS Ej. 4</b>.' }
+    ] }
+];
+
+/* =========================================================
+   Motor común de animaciones paso a paso
+   ========================================================= */
+var STEP_MS = 550;
+var VOLATILE = ['note','verdict','active','log','errLog','hl','chip','focus','extra'];
+
+function esc(t){ return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function hl(src){
+  var re = /(\/\/.*$)|('[^']*'|"[^"]*"|`[^`]*`)|\b(const|let|var|function|if|else|return|new|true|false|null|undefined|while|do|for|of|in|break|typeof|try|catch|class)\b|(\b\d+\b)/g;
+  var out = '', last = 0, m;
+  while((m = re.exec(src)) !== null){
+    out += esc(src.slice(last, m.index));
+    var cls = m[1] ? 'c' : m[2] ? 's' : m[3] ? 'k' : 'n';
+    out += '<span class="'+cls+'">'+esc(m[0])+'</span>';
+    last = re.lastIndex;
+  }
+  return out + esc(src.slice(last));
+}
+
+function buildStates(steps){
+  var states = [], prev = { out: [], f: [] };
+  steps.forEach(function(p){
+    var s = Object.assign({}, prev);
+    VOLATILE.forEach(function(k){ delete s[k]; });
+    Object.assign(s, p);
+    s.out = p.clearOut ? [] : prev.out.slice();
+    s.newOut = 0;
+    if(p.log !== undefined){ s.out.push({t:p.log}); s.newOut++; }
+    if(p.errLog !== undefined){ s.out.push({t:p.errLog, err:true}); s.newOut++; }
+    prev = s; states.push(s);
+  });
+  return states;
+}
+
+var TAB_ORDER = TABS.map(function(t){ return t.key; });
+var DATA = {};
+TABS.forEach(function(t){ DATA[t.key] = t; t.states = buildStates(t.steps); });
+var currentTab = TAB_ORDER[0];
+
+/* Pinta el formulario simulado, el validity y el resto de la vista */
+function renderViz(viz, s){
+  var h = '';
+  (s.f || []).forEach(function(f){
+    var st = f.state ? ' ' + f.state : '';
+    var foco = (s.focus === f.name) ? ' foco' : '';
+    h += '<div class="frow"><label>'+esc(f.label)+'</label>' +
+         '<div class="campo'+st+foco+'">'+(f.value === '' ? '<i>vacío</i>' : esc(f.value))+'</div>' +
+         '<div class="fb'+st+'">'+esc(f.msg)+'</div>' +
+         (f.state ? '<div class="aria">aria-invalid="'+(f.state === 'bad')+'"</div>' : '') +
+         '</div>';
+  });
+  if(s.vf && s.v){
+    var rows = KEYS.map(function(k){
+      var on = s.v[k];
+      return '<div class="vrow '+(on ? (k === 'valid' ? 'ok' : 'bad') : '')+(s.hl === k ? ' hl' : '')+'"><span>'+k+'</span><b>'+on+'</b></div>';
+    }).join('');
+    h += '<div class="vgrid"><span class="lbl">'+esc(s.vf)+'.validity</span>'+rows+'</div>';
+  }
+  if(s.extra) h += s.extra;
+  if(s.chip) h += '<div class="row">'+s.chip+'</div>';
+  viz.innerHTML = h;
+}
+
+(function buildDom(){
+  var bar = document.getElementById('tabbar'), stage = document.getElementById('stage');
+  TABS.forEach(function(t, i){
+    var b = document.createElement('button');
+    b.className = 'tab-btn' + (i === 0 ? ' active' : '');
+    b.dataset.tab = t.key; b.textContent = t.label; bar.appendChild(b);
+    var lines = t.code.map(function(l){ return '<span class="ln" data-i="'+l[0]+'">'+hl(l[1])+'</span>'; }).join('');
+    var p = document.createElement('div');
+    p.className = 'tab-panel' + (i === 0 ? ' active' : '');
+    p.dataset.tab = t.key;
+    p.innerHTML =
+      '<div class="stage-lr">' +
+        '<div class="panel term"><div class="term-bar"><span></span><span></span><span></span></div>' +
+          '<span class="lbl">Código de la solución (app.js)</span>' +
+          '<div class="code">'+lines+'</div></div>' +
+        '<div class="col-out">' +
+          '<div class="panel viz-panel"><span class="lbl">Formulario en el navegador</span><div class="viz"></div></div>' +
+          '<div class="panel out-panel"><span class="lbl">Consola</span><div class="out"></div></div>' +
+        '</div>' +
+      '</div>';
+    stage.appendChild(p);
+  });
+})();
+
+var playBtn = document.getElementById('playBtn');
+var prevBtn = document.getElementById('prevBtn');
+var nextBtn = document.getElementById('nextBtn');
+var rewindBtn = document.getElementById('rewindBtn');
+var delayPlayBtn = document.getElementById('delayPlayBtn');
+var stepCounter = document.getElementById('stepCounter');
+var fill = document.getElementById('fill');
+var verdict = document.getElementById('verdict');
+var note = document.getElementById('note');
+var speedBtns = document.querySelectorAll('.speed-btn');
+var tabBtns = document.querySelectorAll('.tab-btn');
+var curIndex = 0, playing = false, speed = 0.25, playTimer = null, countdownTimer = null;
+
+function renderVisual(tabKey, s){
+  var root = document.querySelector('.tab-panel[data-tab="'+tabKey+'"]');
+  var active = [].concat(s.active || []);
+  root.querySelectorAll('.code .ln').forEach(function(el){
+    el.classList.toggle('active', active.indexOf(el.getAttribute('data-i')) !== -1);
+  });
+  renderViz(root.querySelector('.viz'), s);
+  var n = s.out.length;
+  root.querySelector('.out').innerHTML = s.out.map(function(o, i){
+    return '<span class="'+(o.err ? 'err ' : '')+(i >= n - s.newOut ? 'new' : '')+'">'+esc(o.t)+'</span>';
+  }).join('');
+}
+
+function show(i){
+  var data = DATA[currentTab], s = data.states[i];
+  renderVisual(currentTab, s);
+  note.textContent = s.note || '';
+  verdict.innerHTML = s.verdict || '';
+  verdict.classList.toggle('show', !!s.verdict);
+  fill.style.width = (data.states.length > 1 ? i / (data.states.length - 1) * 100 : 100) + '%';
+  stepCounter.textContent = 'Paso ' + (i+1) + ' / ' + data.states.length;
+  prevBtn.disabled = (i === 0);
+  nextBtn.disabled = (i === data.states.length - 1);
+}
+
+function stopCountdown(){
+  if(countdownTimer){ clearInterval(countdownTimer); countdownTimer = null; }
+  delayPlayBtn.textContent = '▶ +10s';
+  playBtn.disabled = false;
+}
+function stopPlay(){ playing = false; playBtn.textContent = '▶ Reproducir'; clearTimeout(playTimer); }
+function scheduleNext(){
+  var data = DATA[currentTab];
+  if(curIndex >= data.states.length - 1){ stopPlay(); return; }
+  var dur = STEP_MS / speed;
+  playTimer = setTimeout(function(){ curIndex++; show(curIndex); scheduleNext(); }, dur);
+}
+function startPlay(){
+  var data = DATA[currentTab];
+  if(curIndex >= data.states.length - 1){ curIndex = 0; show(0); }
+  playing = true; playBtn.textContent = '❘❘ Pausar'; scheduleNext();
+}
+
+playBtn.addEventListener('click', function(){ stopCountdown(); playing ? stopPlay() : startPlay(); });
+prevBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex = Math.max(0, curIndex - 1); show(curIndex); });
+nextBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); var d = DATA[currentTab]; curIndex = Math.min(d.states.length - 1, curIndex + 1); show(curIndex); });
+rewindBtn.addEventListener('click', function(){ stopCountdown(); stopPlay(); curIndex = 0; show(0); });
+speedBtns.forEach(function(b){ b.addEventListener('click', function(){ speedBtns.forEach(function(x){ x.classList.remove('active'); }); b.classList.add('active'); speed = parseFloat(b.getAttribute('data-speed')); }); });
+delayPlayBtn.addEventListener('click', function(){
+  if(countdownTimer){ stopCountdown(); return; }
+  stopPlay();
+  var remaining = 10; playBtn.disabled = true; delayPlayBtn.textContent = 'Empieza en ' + remaining + 's…';
+  countdownTimer = setInterval(function(){
+    remaining--;
+    if(remaining <= 0){ clearInterval(countdownTimer); countdownTimer = null; delayPlayBtn.textContent = '▶ +10s'; playBtn.disabled = false; startPlay(); }
+    else { delayPlayBtn.textContent = 'Empieza en ' + remaining + 's…'; }
+  }, 1000);
+});
+tabBtns.forEach(function(b){
+  b.addEventListener('click', function(){
+    stopCountdown(); stopPlay();
+    currentTab = b.getAttribute('data-tab');
+    tabBtns.forEach(function(x){ x.classList.remove('active'); });
+    b.classList.add('active');
+    document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.toggle('active', p.getAttribute('data-tab') === currentTab); });
+    curIndex = 0; show(0);
+  });
+});
+document.addEventListener('keydown', function(e){
+  if(e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable)) return;
+  var advance = ['ArrowRight','ArrowDown','PageDown',' ','Spacebar'];
+  var back = ['ArrowLeft','ArrowUp','PageUp','Backspace'];
+  if(advance.indexOf(e.key) !== -1){ e.preventDefault(); nextBtn.click(); }
+  else if(back.indexOf(e.key) !== -1){ e.preventDefault(); prevBtn.click(); }
+});
+show(0);
+</script>
+</body>
+</html>
