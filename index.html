@@ -85,6 +85,19 @@ h1{margin-bottom:10px;}
   font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--muted);
   min-width:24px;
 }
+.card.solucion{
+  border-color:color-mix(in srgb, var(--accent-2) 45%, var(--line));
+  border-left:4px solid var(--accent-2);
+  background:color-mix(in srgb, var(--accent-2) 7%, var(--panel));
+}
+.card.solucion:hover{border-color:var(--accent-2);background:color-mix(in srgb, var(--accent-2) 12%, var(--panel-2));}
+.card.solucion .num{color:var(--accent-2);}
+.tag{
+  margin-left:auto;flex-shrink:0;
+  font-family:"IBM Plex Mono",monospace;font-size:10px;font-weight:600;
+  letter-spacing:.1em;text-transform:uppercase;
+  color:var(--bg);background:var(--accent-2);padding:3px 7px;border-radius:5px;
+}
 .vacio{
   padding:14px 16px;border-radius:10px;border:1px dashed var(--line);
   color:var(--muted);font-size:14px;
@@ -195,10 +208,13 @@ indice.innerHTML = UNIDADES.map(u => `
     ${u.bloques.map(b => `
       <div class="bloque">
         <h3>${esc(b.titulo)}</h3>
-        ${b.items.length ? `<div class="grid">${b.items.map(([f, t], i) => `
-          <a class="card" href="animaciones/${encodeURIComponent(f)}" data-q="${esc((t + " " + b.titulo).toLowerCase())}">
-            <span class="num">${String(i + 1).padStart(2, "0")}</span><span>${esc(t)}</span>
-          </a>`).join("")}</div>`
+        ${b.items.length ? `<div class="grid">${b.items.map(([f, t], i) => {
+          const sol = f.includes("solucion");
+          return `
+          <a class="card${sol ? " solucion" : ""}" href="animaciones/${encodeURIComponent(f)}" data-q="${esc((t + " " + b.titulo + (sol ? " solución solucion" : "")).toLowerCase())}">
+            <span class="num">${String(i + 1).padStart(2, "0")}</span><span>${esc(t)}</span>${sol ? `<span class="tag">Solución</span>` : ""}
+          </a>`;
+        }).join("")}</div>`
         : `<div class="vacio">Próximamente</div>`}
       </div>`).join("")}
   </section>`).join("");
