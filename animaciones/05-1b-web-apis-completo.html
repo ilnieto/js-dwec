@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UP5 · Las cuatro Web APIs y el bucle de eventos</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+  :root { --bg:#0b0e12; --panel:#11161d; --panel-2:#161d26; --line:#232b34; --ink:#e5e9ed; --muted:#c9d1d9;
+          --dim:#8a96a3; --accent:#4dd9c0; --accent-2:#f2a154; --violet:#a78bfa; --good:#7cd992;
+          --accent-dim:rgba(77,217,192,.12);
+          --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+          --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace; }
+  * { box-sizing: border-box; }
+  html, body { background: var(--bg); }
+  body { margin: 0; min-height: 100vh; color: var(--ink); font-family: var(--sans); padding-bottom: 130px; }
+  main { max-width: 1500px; margin: 0 auto; padding: 16px 20px 20px; }
+  h1 { margin: 0 0 12px; font-size: clamp(1.4rem, 2.4vw, 2.1rem); font-weight: 700; letter-spacing: -.01em; }
+
+  /* ---------- franja superior: código + leyenda ---------- */
+  .arriba { display: grid; grid-template-columns: 1fr 340px; gap: 14px; margin-bottom: 14px; }
+  @media (max-width: 1000px) { .arriba { grid-template-columns: 1fr; } }
+  .tarjeta { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+  .lbl { display: block; margin: 0 0 6px; font: 500 10px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  #codigo { font: 14px/1.85 var(--mono); overflow-x: auto; }
+  .linea { white-space: pre; padding: 0 8px 0 0; border-left: 2px solid transparent; border-radius: 4px; color: #cfd6dd; transition: background .25s; }
+  .linea::before { content: attr(data-n); display: inline-block; width: 22px; margin-right: 10px; text-align: right; color: var(--dim); }
+  .linea.activa { background: var(--accent-dim); border-left-color: var(--accent); color: var(--ink); }
+  .cbcode { border-radius: 3px; transition: background .25s; }
+  .cbcode.activa { background: rgba(242, 161, 84, .22); outline: 1px solid var(--accent-2); }
+  .pista { margin: 0 0 10px; font-size: .98rem; color: var(--ink); line-height: 1.45; }
+  .leyenda { display: grid; gap: 5px; font-size: .82rem; color: var(--muted); }
+  .leyenda span.p { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 8px; vertical-align: -1px; }
+  .ayuda { margin: 10px 0 0; font: 400 11px var(--mono); color: var(--dim); }
+
+  /* ---------- escena ---------- */
+  #escena { width: 100%; height: auto; display: block; }
+  #caption { margin: 10px 3.2% 0; background: var(--panel); border: 1px solid var(--line); color: #fff; border-radius: 10px;
+             padding: 14px 20px; min-height: 4.4em; display: flex; align-items: center; justify-content: center;
+             text-align: center; font-size: clamp(15px, 1.4vw, 21px); line-height: 1.4; }
+
+  .panel { fill: url(#gPanel); stroke: var(--line); stroke-width: 1.5; }
+  .titulo-panel { fill: var(--ink); font: 600 21px var(--sans); text-anchor: middle; }
+  .rotulo { fill: #fff; font: 700 17px var(--sans); text-anchor: middle; }
+  .rotulo2 { fill: #fff; font: 600 14px var(--sans); text-anchor: middle; }
+  .rotulo3 { fill: #fff; font: 600 13px var(--sans); text-anchor: middle; }
+  .caja-api { stroke-width: 1.5; transition: stroke .3s, stroke-width .3s; }
+  .caja-api.uso { stroke: #fff !important; stroke-width: 3; }
+  .api-txt { fill: #fff; font: 700 17px var(--sans); }
+  .pila-caja { fill: var(--panel-2); stroke: var(--line); stroke-width: 1.5; }
+  .actual rect { fill: var(--bg); stroke: var(--accent); stroke-width: 1.2; }
+  .actual text { fill: var(--ink); font: 500 13px var(--mono); text-anchor: middle; }
+  #actual { transition: opacity .4s; }
+
+  .consola-caja { fill: var(--bg); stroke: var(--line); stroke-width: 1.5; }
+  .consola-tit { fill: var(--muted); font: 500 12px var(--mono); }
+  .salida { fill: var(--ink); font: 600 13px var(--mono); }
+  .salida.nuevo { animation: destello 1.4s ease-out; }
+  @keyframes destello { from { fill: #f2a154; } to { fill: #e5e9ed; } }
+
+  .pildora { fill: var(--bg); stroke: var(--line); stroke-width: 1.2; transition: stroke .3s; }
+  .pildora.uso { stroke: #fff; }
+  .dom-et { fill: var(--dim); font: 500 12px var(--mono); }
+  .dom-val { fill: var(--ink); font: 600 13px var(--mono); }
+  .cola-caja { fill: var(--panel-2); stroke: var(--line); stroke-width: 1.5; }
+  .cola-hueco { fill: var(--bg); stroke: #2f3b47; stroke-width: 1.2; }
+  #dedo { font-size: 26px; opacity: 0; transition: opacity .3s; text-anchor: middle; }
+  #dedo.on { opacity: 1; animation: pulso .8s ease-in-out infinite; }
+  @keyframes pulso { 50% { transform: translateY(-6px); } }
+
+  /* piezas que viajan */
+  .chip { transition: transform .85s cubic-bezier(.5, .05, .2, 1), opacity .5s ease; pointer-events: none; }
+  .inicial .chip { transition: none; }
+  .chip rect { width: 132px; height: 26px; rx: 5; }
+  .chip text { font: 600 11.5px var(--mono); text-anchor: middle; }
+  .chip.azul rect { fill: var(--accent); stroke: #a6f0e2; }
+  .chip.azul text { fill: #06231e; }
+  .chip.verde rect { fill: var(--good); stroke: #bdf0c9; }
+  .chip.verde text { fill: #0a2a14; }
+  .chip.violeta rect { fill: var(--violet); stroke: #d3c8fd; }
+  .chip.violeta text { fill: #1b1236; }
+  .chip.main rect { fill: #3a4654; stroke: #6b7a8c; }
+  .chip.main text { fill: #fff; }
+  .chip.cb rect { fill: var(--panel-2); stroke: var(--accent-2); stroke-width: 2; }
+  .chip.cb text { fill: var(--ink); }
+  .chip.lis rect { stroke-dasharray: 5 3; }
+
+  /* flechas */
+  .flecha { opacity: .2; transition: opacity .4s; }
+  .flecha.on { opacity: 1; }
+  .flecha path.l { fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 8 6; }
+  .flecha.on path.l { animation: flujo .7s linear infinite; }
+  @keyframes flujo { to { stroke-dashoffset: -14; } }
+  .etq { font: 600 11px var(--sans); text-anchor: middle; opacity: 0; transition: opacity .4s; }
+  .etq.on { opacity: 1; }
+
+  /* bucle de eventos */
+  #bucle rect { stroke: var(--accent); stroke-width: 1.5; transition: stroke .3s; }
+  #bucle.activo { filter: drop-shadow(0 0 10px rgba(77, 217, 192, .75)); }
+  #bucle.activo rect { stroke: #c4f6ec; }
+  .girar { animation: girar 6s linear infinite; }
+  #bucle.activo .girar { animation-duration: 1.1s; }
+  @keyframes girar { to { transform: rotate(360deg); } }
+
+  /* ---------- barra de controles ---------- */
+  .controls { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); width: calc(100% - 24px); max-width: 1100px;
+              background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; display: flex;
+              flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; z-index: 100;
+              box-shadow: 0 12px 36px rgba(0, 0, 0, .5); }
+  .ctrl-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .ctrl-btn { font: 500 12px var(--mono); color: var(--ink); background: var(--panel-2); border: 1px solid var(--line);
+              border-radius: 7px; padding: 8px 12px; cursor: pointer; }
+  .ctrl-btn:hover:not(:disabled) { border-color: var(--ink); }
+  .ctrl-btn:disabled { opacity: .35; cursor: default; }
+  .ctrl-btn.play { min-width: 124px; border-color: var(--accent); color: var(--accent); }
+  .ctrl-btn.next { border-color: var(--accent); color: var(--accent); }
+  .speed-group { display: flex; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; }
+  .speed-btn { font: 500 11px var(--mono); color: var(--muted); background: var(--panel-2); border: none; padding: 7px 10px;
+               cursor: pointer; border-right: 1px solid var(--line); }
+  .speed-btn:last-child { border-right: none; }
+  .speed-btn.active { background: var(--accent-dim); color: var(--accent); }
+  .step-counter { font: 500 11px var(--mono); color: var(--muted); }
+  @media (prefers-reduced-motion: reduce) { * { transition-duration: .001ms !important; } }
+</style>
+</head>
+<body class="inicial">
+<main>
+  <h1>Las cuatro Web APIs en acción: DOM, Fetch, temporizadores y eventos</h1>
+
+  <div class="arriba">
+    <div class="tarjeta">
+      <span class="lbl">Código</span>
+      <div id="codigo">
+        <div class="linea" data-n="1">btn.addEventListener('click', <span class="cbcode" id="cbC">() =&gt; console.log('clic')</span>);</div>
+        <div class="linea" data-n="2">setTimeout(<span class="cbcode" id="cbT">() =&gt; console.log('timeout')</span>, 0);</div>
+        <div class="linea" data-n="3">fetch('/datos').then(<span class="cbcode" id="cbF">() =&gt; estado.textContent = 'Listo'</span>);</div>
+        <div class="linea" data-n="4">estado.textContent = 'Cargando…';</div>
+        <div class="linea" data-n="5">console.log('fin');</div>
+      </div>
+    </div>
+    <div class="tarjeta">
+      <p class="pista">🤔 ¿En qué orden saldrán <b>fin</b>, <b>timeout</b> y <b>clic</b>? ¿Y cuándo cambia el texto de <b>#estado</b>?</p>
+      <div class="leyenda">
+        <div><span class="p" style="background:#3a4654"></span>script: el programa que se está ejecutando</div>
+        <div><span class="p" style="background:var(--accent)"></span>DOM y consola</div>
+        <div><span class="p" style="background:var(--good)"></span>temporizadores</div>
+        <div><span class="p" style="background:var(--violet)"></span>eventos y red</div>
+        <div><span class="p" style="background:var(--panel-2);border:2px solid var(--accent-2)"></span>callback que espera su turno</div>
+      </div>
+      <p class="ayuda">Teclado: → o AvPág avanza · ← o RePág retrocede.</p>
+    </div>
+  </div>
+
+  <svg id="escena" viewBox="0 0 1100 382" role="img"
+       aria-label="Diagrama animado: pila de llamadas, las cuatro Web APIs, cola de tareas y bucle de eventos">
+    <defs>
+      <linearGradient id="gPanel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#141b23"/><stop offset="1" stop-color="#10161d"/></linearGradient>
+      <linearGradient id="gTeal" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#238f80"/><stop offset="1" stop-color="#1a6e63"/></linearGradient>
+      <linearGradient id="gMorado" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6a5aa8"/><stop offset="1" stop-color="#51447f"/></linearGradient>
+      <linearGradient id="gVerde" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#46a062"/><stop offset="1" stop-color="#34794a"/></linearGradient>
+      <linearGradient id="gBucle" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2fb7a4"/><stop offset="1" stop-color="#1b7d71"/></linearGradient>
+      <marker id="m-azul" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="3.6" markerHeight="3.6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#4dd9c0"/></marker>
+      <marker id="m-verde" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="3.6" markerHeight="3.6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#7cd992"/></marker>
+      <marker id="m-violeta" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="3.6" markerHeight="3.6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#a78bfa"/></marker>
+      <marker id="m-rojo" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="3.6" markerHeight="3.6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#f2a154"/></marker>
+    </defs>
+
+    <!-- Paneles -->
+    <rect class="panel" x="35" y="8" width="425" height="373" rx="14"/>
+    <rect class="panel" x="497" y="8" width="568" height="373" rx="14"/>
+    <text class="titulo-panel" x="247.5" y="38">Motor de JavaScript</text>
+    <text class="titulo-panel" x="781" y="36">Entorno del navegador (Web APIs)</text>
+
+    <!-- Pila -->
+    <rect class="pila-caja" x="62" y="64" width="150" height="226" rx="8"/>
+    <text class="rotulo" x="310" y="84">Pila de llamadas</text>
+    <text class="rotulo2" x="310" y="106">(Call Stack)</text>
+    <g class="actual" id="actual">
+      <rect x="226" y="124" width="196" height="26" rx="5"/>
+      <text id="actualTxt" x="324" y="141.5"></text>
+    </g>
+
+    <!-- Consola -->
+    <rect class="consola-caja" x="60" y="298" width="145" height="72" rx="6"/>
+    <circle cx="72" cy="311" r="4" fill="#f2a154"/>
+    <text class="consola-tit" x="82" y="315">Consola</text>
+    <text class="salida" id="s0" x="72" y="333"></text>
+    <text class="salida" id="s1" x="72" y="347"></text>
+    <text class="salida" id="s2" x="72" y="361"></text>
+
+    <!-- Bucle de eventos -->
+    <g id="bucle">
+      <rect x="225" y="256" width="187" height="115" rx="20" fill="url(#gBucle)"/>
+      <text class="rotulo" x="318.5" y="294">Bucle de eventos</text>
+      <text class="rotulo2" x="318.5" y="316">(Event Loop)</text>
+      <g transform="translate(318.5 345)">
+        <g class="girar" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round">
+          <path d="M-12 0 A12 12 0 0 1 6 -10.4"/>
+          <path d="M12 0 A12 12 0 0 1 -6 10.4"/>
+          <polygon points="4,-6.9 8,-13.9 10.3,-7.9" fill="#fff" stroke="none"/>
+          <polygon points="-4,6.9 -8,13.9 -10.3,7.9" fill="#fff" stroke="none"/>
+        </g>
+      </g>
+    </g>
+
+    <!-- Las cuatro Web APIs -->
+    <rect class="caja-api" id="b-dom" x="519" y="52" width="524" height="48" rx="7" fill="url(#gTeal)" stroke="#4dd9c0"/>
+    <text class="api-txt" x="535" y="82">API DOM</text>
+    <rect class="pildora" id="p-dom" x="700" y="60" width="327" height="32" rx="5"/>
+    <text class="dom-et" x="712" y="81">#estado</text>
+    <text class="dom-val" id="domVal" x="780" y="81"></text>
+
+    <rect class="caja-api" id="b-temp" x="519" y="134" width="164" height="82" rx="7" fill="url(#gVerde)" stroke="#7cd992"/>
+    <text class="rotulo" x="601" y="154">Temporizadores</text>
+    <text class="rotulo2" x="601" y="171">(setTimeout)</text>
+    <rect class="caja-api" id="b-fetch" x="699" y="134" width="164" height="82" rx="7" fill="url(#gMorado)" stroke="#a78bfa"/>
+    <text class="rotulo" x="781" y="154">API Fetch/Red</text>
+    <text class="rotulo2" x="781" y="171">(fetch)</text>
+    <rect class="caja-api" id="b-ev" x="879" y="134" width="164" height="82" rx="7" fill="url(#gMorado)" stroke="#a78bfa"/>
+    <text class="rotulo" x="961" y="154">Eventos del DOM</text>
+    <text class="rotulo3" x="961" y="171">(addEventListener)</text>
+    <text id="dedo" x="1018" y="244">👆</text>
+
+    <!-- Cola de tareas -->
+    <rect class="cola-caja" x="519" y="262" width="524" height="106" rx="8"/>
+    <text class="rotulo" x="781" y="283">Cola de tareas (Task Queue)</text>
+    <rect class="cola-hueco" x="529" y="296" width="504" height="60" rx="6"/>
+
+    <!-- Flechas: del motor a las cuatro cajas -->
+    <g class="flecha" id="f-pila"><path class="l" stroke="#4dd9c0" marker-end="url(#m-azul)" d="M137 256 V 148 Q 137 137 148 137 H 222"/></g>
+    <g class="flecha" id="f-feed"><path class="l" stroke="#4dd9c0" d="M424 137 H 436 Q 446 137 446 127 Q 446 117 456 117 H 961"/></g>
+    <g class="flecha" id="f-dom"><path class="l" stroke="#4dd9c0" marker-end="url(#m-azul)" d="M691 117 V 103"/></g>
+    <g class="flecha" id="f-temp"><path class="l" stroke="#7cd992" marker-end="url(#m-verde)" d="M601 117 V 131"/></g>
+    <g class="flecha" id="f-fetch"><path class="l" stroke="#a78bfa" marker-end="url(#m-violeta)" d="M781 117 V 131"/></g>
+    <g class="flecha" id="f-ev"><path class="l" stroke="#a78bfa" marker-end="url(#m-violeta)" d="M961 117 V 131"/></g>
+    <!-- Flechas: de las cajas a la cola -->
+    <g class="flecha" id="f-tcola"><path class="l" stroke="#7cd992" marker-end="url(#m-verde)" d="M601 218 V 259"/></g>
+    <g class="flecha" id="f-fcola"><path class="l" stroke="#a78bfa" marker-end="url(#m-violeta)" d="M781 218 V 259"/></g>
+    <g class="flecha" id="f-ecola"><path class="l" stroke="#a78bfa" marker-end="url(#m-violeta)" d="M961 218 V 259"/></g>
+    <!-- Flechas: bucle de eventos -->
+    <g class="flecha" id="f-rojo"><path class="l" stroke="#f2a154" marker-end="url(#m-rojo)" d="M519 290 H 422"/></g>
+    <g class="flecha" id="f-azul"><path class="l" stroke="#4dd9c0" marker-end="url(#m-azul)" d="M519 334 H 422"/></g>
+    <text class="etq" id="l-rojo" x="470" y="282" fill="#f2a154">pila ocupada</text>
+    <text class="etq" id="l-azul" x="470" y="326" fill="#4dd9c0">pila libre</text>
+  </svg>
+  <div id="caption"></div>
+</main>
+
+<div class="controls">
+  <div class="ctrl-row">
+    <button class="ctrl-btn" id="rebobinar">⏮ Rebobinar</button>
+    <button class="ctrl-btn" id="anterior">◀ Anterior</button>
+    <button class="ctrl-btn play" id="ejecutar">▶ Reproducir</button>
+    <button class="ctrl-btn next" id="siguiente">Siguiente ▶</button>
+  </div>
+  <div class="ctrl-row">
+    <div class="speed-group">
+      <button class="speed-btn" data-s="0.5">0,5×</button>
+      <button class="speed-btn active" data-s="1">1×</button>
+      <button class="speed-btn" data-s="2">2×</button>
+    </div>
+    <span class="step-counter" id="contador"></span>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+/* ---------- Piezas que se mueven ----------
+   t = texto en la pieza · largo = texto en el recuadro «en ejecución» · cls = color
+   origen = de dónde aparece · fin = hacia dónde desaparece (por defecto, el origen) */
+const S0 = { x: 71, y: 258 };                 // hueco 0 de la pila
+const S1 = { x: 71, y: 226 };                 // hueco 1 de la pila
+const ARRIBA = { x: 71, y: 196 };             // por encima del hueco 1
+const CHIPS = {
+  fMain: { t: 'script (global)',  largo: 'script (global)',          cls: 'main',    origen: { x: 71, y: 228 } },
+  fL1:   { t: 'addEventListener', largo: "addEventListener(…)",       cls: 'violeta', origen: ARRIBA },
+  fT:    { t: 'setTimeout(…)',    largo: 'setTimeout(cb, 0)',         cls: 'verde',   origen: ARRIBA },
+  fF:    { t: 'fetch(…)',         largo: "fetch('/datos')",           cls: 'violeta', origen: ARRIBA },
+  fD1:   { t: 'textContent = …',  largo: 'estado.textContent = …',    cls: 'azul',    origen: ARRIBA },
+  fFin:  { t: "log('fin')",       largo: "console.log('fin')",        cls: 'azul',    origen: ARRIBA },
+  cbT:   { t: 'cb timeout',       largo: 'callback timeout',          cls: 'cb',      origen: S1, fin: S0 },
+  fLT:   { t: "log('timeout')",   largo: "console.log('timeout')",    cls: 'azul',    origen: ARRIBA },
+  cbF:   { t: 'cb fetch',         largo: 'callback fetch (then)',     cls: 'cb',      origen: S1, fin: S0 },
+  fD2:   { t: 'textContent = …',  largo: 'estado.textContent = …',    cls: 'azul',    origen: ARRIBA },
+  lis:   { t: 'listener clic',    largo: 'listener clic',             cls: 'cb lis',  origen: S1 },
+  cbC:   { t: 'cb clic',          largo: 'callback clic',             cls: 'cb',      origen: { x: 895, y: 180 }, fin: S0 },
+  fLC:   { t: "log('clic')",      largo: "console.log('clic')",       cls: 'azul',    origen: ARRIBA }
+};
+const SALIDAS = ['fin', 'timeout', 'clic'];
+const DOM_TXT = { vacio: '(sin texto)', cargando: 'Cargando…', listo: 'Listo' };
+const FRASE = 'Lo asíncrono se entrega al navegador, vuelve a una cola y espera a que la pila quede vacía.';
+const BASE = 2600;
+
+/* ---------- El guion: un estado por cada paso ---------- */
+const base = { linea: 0, parte: null, pila: [], api: {}, cola: [], consola: 0, dom: 'vacio', flechas: [], bucle: false, dedo: false };
+const E = (texto, cambios) => Object.assign({}, base, { texto }, cambios);
+const M = 'fMain';
+const L = { lis: 'ev' };                       // el listener, ya registrado
+
+const ESTADOS = [
+  /* 0 */ E(FRASE, {}),
+  /* 1 */ E('Arranca el script: entra en la pila como un bloque y va ejecutando sus líneas de una en una.',
+            { pila: [M], flechas: ['pila'] }),
+  /* 2 */ E('Línea 1: addEventListener entra en la pila.',
+            { linea: 1, pila: [M, 'fL1'], flechas: ['pila'] }),
+  /* 3 */ E('Eventos del DOM: el navegador guarda el callback del clic. Se queda ahí, esperando a que alguien haga clic.',
+            { linea: 1, pila: [M, 'fL1'], api: L, flechas: ['pila', 'ev'] }),
+  /* 4 */ E('addEventListener sale de la pila. El listener sigue registrado: no se ejecuta nada hasta que haya un clic.',
+            { linea: 1, pila: [M], api: L, flechas: ['pila'] }),
+  /* 5 */ E('Línea 2: setTimeout(…, 0) entra en la pila.',
+            { linea: 2, pila: [M, 'fT'], api: L, flechas: ['pila'] }),
+  /* 6 */ E('Temporizadores: setTimeout no espera, entrega el temporizador de 0 ms y su callback al navegador.',
+            { linea: 2, pila: [M, 'fT'], api: { lis: 'ev', cbT: 'temp' }, flechas: ['pila', 'temp'] }),
+  /* 7 */ E('setTimeout sale de la pila. Vence el temporizador (0 ms) y el callback pasa a la cola; la pila sigue ocupada por el script, así que espera.',
+            { linea: 2, pila: [M], api: L, cola: ['cbT'], flechas: ['pila', 'tcola', 'rojo'], bucle: true }),
+  /* 8 */ E('Línea 3: fetch(…) entra en la pila. El callback del timeout sigue esperando en la cola.',
+            { linea: 3, pila: [M, 'fF'], api: L, cola: ['cbT'], flechas: ['pila', 'rojo'], bucle: true }),
+  /* 9 */ E('API Fetch/Red: fetch no espera, entrega la petición a la red junto con su callback .then. JavaScript sigue a lo suyo.',
+            { linea: 3, pila: [M, 'fF'], api: { lis: 'ev', cbF: 'fetch' }, cola: ['cbT'], flechas: ['pila', 'fetch', 'rojo'], bucle: true }),
+  /* 10 */ E('fetch sale de la pila. La petición viaja por la red mientras el script continúa.',
+            { linea: 3, pila: [M], api: { lis: 'ev', cbF: 'fetch' }, cola: ['cbT'], flechas: ['pila', 'rojo'], bucle: true }),
+  /* 11 */ E("Línea 4: estado.textContent = 'Cargando…' entra en la pila.",
+            { linea: 4, pila: [M, 'fD1'], api: { lis: 'ev', cbF: 'fetch' }, cola: ['cbT'], flechas: ['pila', 'rojo'], bucle: true }),
+  /* 12 */ E('API DOM: la llamada se ejecuta al instante y la página muestra «Cargando…». Sale de la pila.',
+            { linea: 4, pila: [M], api: { lis: 'ev', cbF: 'fetch' }, cola: ['cbT'], dom: 'cargando', flechas: ['pila', 'dom', 'rojo'], bucle: true }),
+  /* 13 */ E("Línea 5: console.log('fin') entra en la pila.",
+            { linea: 5, pila: [M, 'fFin'], api: { lis: 'ev', cbF: 'fetch' }, cola: ['cbT'], dom: 'cargando', flechas: ['pila', 'rojo'], bucle: true }),
+  /* 14 */ E('Imprime fin y sale de la pila. Era la última línea del script.',
+            { linea: 5, pila: [M], api: { lis: 'ev', cbF: 'fetch' }, cola: ['cbT'], consola: 1, dom: 'cargando', flechas: ['pila', 'rojo'], bucle: true }),
+  /* 15 */ E('El script termina y sale de la pila: la pila queda vacía. La petición sigue en la red y el listener sigue esperando.',
+            { api: { lis: 'ev', cbF: 'fetch' }, cola: ['cbT'], consola: 1, dom: 'cargando', flechas: ['azul'], bucle: true }),
+  /* 16 */ E('El bucle de eventos coge el primer callback de la cola (timeout) y lo empuja a la pila.',
+            { parte: 'T', pila: ['cbT'], api: { lis: 'ev', cbF: 'fetch' }, consola: 1, dom: 'cargando', flechas: ['pila', 'azul'], bucle: true }),
+  /* 17 */ E("El callback llama a console.log('timeout'), que entra en la pila.",
+            { parte: 'T', pila: ['cbT', 'fLT'], api: { lis: 'ev', cbF: 'fetch' }, consola: 1, dom: 'cargando', flechas: ['pila'] }),
+  /* 18 */ E('Mientras la pila está ocupada, llega la respuesta de la red: el callback del .then pasa a la cola y tiene que esperar.',
+            { parte: 'T', pila: ['cbT', 'fLT'], api: L, cola: ['cbF'], consola: 1, dom: 'cargando', flechas: ['pila', 'fcola', 'rojo'], bucle: true }),
+  /* 19 */ E('Y el usuario hace clic: el navegador encola otro callback (el listener sigue registrado). La cola ya tiene dos tareas: sale primero la que llegó antes.',
+            { parte: 'T', pila: ['cbT', 'fLT'], api: L, cola: ['cbF', 'cbC'], consola: 1, dom: 'cargando', flechas: ['pila', 'ecola', 'rojo'], bucle: true, dedo: true }),
+  /* 20 */ E('Imprime timeout y el callback termina: la pila queda vacía y el bucle puede atender la cola.',
+            { api: L, cola: ['cbF', 'cbC'], consola: 2, dom: 'cargando', flechas: ['azul'], bucle: true }),
+  /* 21 */ E('El bucle de eventos coge la primera tarea de la cola: el callback del fetch.',
+            { parte: 'F', pila: ['cbF'], api: L, cola: ['cbC'], consola: 2, dom: 'cargando', flechas: ['pila', 'azul'], bucle: true }),
+  /* 22 */ E("El callback llama a la API DOM: estado.textContent = 'Listo' entra en la pila.",
+            { parte: 'F', pila: ['cbF', 'fD2'], api: L, cola: ['cbC'], consola: 2, dom: 'cargando', flechas: ['pila', 'dom', 'rojo'], bucle: true }),
+  /* 23 */ E('La página pasa a mostrar «Listo». El callback termina y sale: pila vacía.',
+            { api: L, cola: ['cbC'], consola: 2, dom: 'listo', flechas: ['dom', 'azul'], bucle: true }),
+  /* 24 */ E('El bucle de eventos coge la última tarea de la cola: el callback del clic.',
+            { parte: 'C', pila: ['cbC'], api: L, consola: 2, dom: 'listo', flechas: ['pila', 'azul'], bucle: true }),
+  /* 25 */ E("El callback llama a console.log('clic'), que entra en la pila.",
+            { parte: 'C', pila: ['cbC', 'fLC'], api: L, consola: 2, dom: 'listo', flechas: ['pila'] }),
+  /* 26 */ E('Imprime clic. Orden de salida: fin, timeout, clic. Pila y cola vacías; el listener sigue registrado para el próximo clic. ' + FRASE,
+            { api: L, consola: 3, dom: 'listo' })
+];
+ESTADOS.forEach((e, i) => { e.k = i; });
+const TOTAL = ESTADOS.length - 1;
+
+/* ---------- Posiciones (unidades del SVG) ---------- */
+const CAJA_X = { temp: 535, fetch: 715, ev: 895 };       // chip dentro de cada caja
+const primero = {};                                       // primer paso en que aparece cada pieza
+ESTADOS.forEach((e) => {
+  const ids = [].concat(e.pila, e.cola, Object.keys(e.api));
+  ids.forEach((id) => { if (primero[id] === undefined) primero[id] = e.k; });
+});
+
+function posicion(id, est) {
+  let i = est.pila.indexOf(id);
+  if (i >= 0) return { x: 71, y: 258 - i * 32, op: 1 };
+  i = est.cola.indexOf(id);
+  if (i >= 0) return { x: 545 + i * 142, y: 313, op: 1 };
+  if (est.api[id]) return { x: CAJA_X[est.api[id]], y: 180, op: 1 };
+  const c = CHIPS[id];
+  const p = (primero[id] === undefined || est.k < primero[id]) ? c.origen : (c.fin || c.origen);
+  return { x: p.x, y: p.y, op: 0 };
+}
+
+/* ---------- Construcción de las piezas ---------- */
+const NS = 'http://www.w3.org/2000/svg';
+const svg = document.getElementById('escena');
+Object.keys(CHIPS).forEach((id) => {
+  const c = CHIPS[id];
+  const g = document.createElementNS(NS, 'g');
+  g.setAttribute('class', 'chip ' + c.cls);
+  g.id = 'c-' + id;
+  g.appendChild(document.createElementNS(NS, 'rect'));
+  const t = document.createElementNS(NS, 'text');
+  t.setAttribute('x', 66); t.setAttribute('y', 17.5);
+  t.textContent = c.t;
+  g.appendChild(t);
+  svg.appendChild(g);
+});
+
+/* ---------- Pintado ---------- */
+const $ = (s) => document.querySelector(s);
+const $caption = $('#caption');
+const FLECHAS = ['pila', 'dom', 'temp', 'fetch', 'ev', 'tcola', 'fcola', 'ecola', 'rojo', 'azul'];
+const USO = { dom: 'dom', temp: 'temp', fetch: 'fetch', ev: 'ev' };
+let pos = 0;
+let reproduciendo = false;
+let temporizador = null;
+let velocidad = 1;
+let consolaAnterior = 0;
+
+function pintar(k) {
+  const e = ESTADOS[k];
+  pos = k;
+
+  Object.keys(CHIPS).forEach((id) => {
+    const p = posicion(id, e);
+    const g = $('#c-' + id);
+    g.style.transform = 'translate(' + p.x + 'px, ' + p.y + 'px)';
+    g.style.opacity = p.op;
+  });
+
+  const tope = e.pila[e.pila.length - 1];
+  $('#actualTxt').textContent = tope ? CHIPS[tope].largo : '';
+  $('#actual').style.opacity = tope ? 1 : 0;
+
+  FLECHAS.forEach((n) => $('#f-' + n).classList.toggle('on', e.flechas.includes(n)));
+  $('#f-feed').classList.toggle('on', ['dom', 'temp', 'fetch', 'ev'].some((n) => e.flechas.includes(n)));
+  Object.keys(USO).forEach((n) => $('#b-' + n).classList.toggle('uso', e.flechas.includes(n)));
+  $('#p-dom').classList.toggle('uso', e.flechas.includes('dom'));
+  $('#l-rojo').classList.toggle('on', e.flechas.includes('rojo'));
+  $('#l-azul').classList.toggle('on', e.flechas.includes('azul'));
+  $('#bucle').classList.toggle('activo', e.bucle);
+  $('#dedo').classList.toggle('on', e.dedo);
+  $('#domVal').textContent = DOM_TXT[e.dom];
+
+  SALIDAS.forEach((txt, i) => {
+    const t = $('#s' + i);
+    t.textContent = i < e.consola ? txt : '';
+    t.classList.remove('nuevo');
+    if (i === e.consola - 1 && e.consola > consolaAnterior) { void t.getBoundingClientRect(); t.classList.add('nuevo'); }
+  });
+  consolaAnterior = e.consola;
+
+  document.querySelectorAll('#codigo .linea').forEach((l, i) => l.classList.toggle('activa', e.linea === i + 1));
+  ['C', 'T', 'F'].forEach((p) => $('#cb' + p).classList.toggle('activa', e.parte === p));
+
+  $caption.textContent = e.texto;
+  $('#anterior').disabled = k === 0;
+  $('#rebobinar').disabled = k === 0;
+  $('#siguiente').disabled = k === TOTAL;
+  $('#contador').textContent = 'Paso ' + k + ' / ' + TOTAL;
+  $('#ejecutar').textContent = reproduciendo ? '❚❚ Pausa' : '▶ Reproducir';
+}
+
+/* ---------- Reproducción automática ---------- */
+function parar() { clearTimeout(temporizador); reproduciendo = false; }
+function auto() {
+  if (!reproduciendo) return;
+  if (pos >= TOTAL) { parar(); pintar(pos); return; }
+  temporizador = setTimeout(() => { pintar(pos + 1); auto(); }, BASE / velocidad);
+}
+
+$('#siguiente').addEventListener('click', () => { parar(); if (pos < TOTAL) pintar(pos + 1); else pintar(pos); });
+$('#anterior').addEventListener('click', () => { parar(); if (pos > 0) pintar(pos - 1); });
+$('#rebobinar').addEventListener('click', () => { parar(); consolaAnterior = 0; pintar(0); });
+$('#ejecutar').addEventListener('click', () => {
+  if (reproduciendo) { parar(); pintar(pos); return; }
+  if (pos >= TOTAL) { consolaAnterior = 0; pintar(0); }
+  reproduciendo = true;
+  pintar(pos);
+  auto();
+});
+document.querySelectorAll('.speed-btn').forEach((b) => b.addEventListener('click', () => {
+  velocidad = Number(b.dataset.s);
+  document.querySelectorAll('.speed-btn').forEach((x) => x.classList.toggle('active', x === b));
+  if (reproduciendo) { clearTimeout(temporizador); auto(); }
+}));
+document.addEventListener('keydown', (ev) => {
+  if (ev.key === 'ArrowRight' || ev.key === 'PageDown') { ev.preventDefault(); $('#siguiente').click(); }
+  else if (ev.key === 'ArrowLeft' || ev.key === 'PageUp') { ev.preventDefault(); $('#anterior').click(); }
+});
+
+pintar(0);
+requestAnimationFrame(() => requestAnimationFrame(() => document.body.classList.remove('inicial')));
+</script>
+</body>
+</html>
