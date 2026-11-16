@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>fetch en dos fases</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root{--bg:#0b0e12;--panel:#11161d;--panel-2:#161d26;--line:#232b34;--ink:#e5e9ed;--muted:#c9d1d9;--dim:#8a96a3;--accent:#4dd9c0;--accent-2:#f2a154;--violet:#a78bfa;--good:#7cd992;--accent-dim:rgba(77,217,192,.12);}
+*{box-sizing:border-box}
+html,body{background:var(--bg)}
+body{margin:0;color:var(--ink);font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,sans-serif;padding:16px 16px 140px}
+.wrap{max-width:1200px;margin:0 auto}
+h1{text-align:center;font-family:"IBM Plex Mono",monospace;font-size:28px;font-weight:600;margin:6px 0 8px}
+.sub{text-align:center;max-width:820px;margin:0 auto 22px;line-height:1.55;font-size:15px}
+.tabbar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:16px}
+.tab-btn{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--muted);background:var(--panel-2);border:1px solid var(--line);border-radius:20px;padding:7px 15px;cursor:pointer}
+.tab-btn.active{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
+.stage{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+@media (max-width:820px){.stage{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px}
+.lbl{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:8px}
+.code{font-family:"IBM Plex Mono",monospace;font-size:15px;line-height:1.85;overflow-x:auto}
+.ln{display:block;padding:1px 8px;border-left:2px solid transparent;border-radius:4px;color:#cfd6dd;white-space:pre;transition:background .25s}
+.ln.active{background:var(--accent-dim);border-left-color:var(--accent);color:var(--ink)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-family:"IBM Plex Mono",monospace;font-size:13px}
+.kv .k{color:var(--accent-2)}
+.kv .v{color:var(--good);word-break:break-all}
+.win{border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:10px;background:var(--panel-2)}
+.win.cur{border-color:var(--accent)}
+.win h4{margin:0 0 6px;font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--violet)}
+.win.cur h4{color:var(--accent)}
+.empty{color:var(--dim);font-family:"IBM Plex Mono",monospace;font-size:12px}
+.console{font-family:"IBM Plex Mono",monospace;font-size:13px;min-height:70px;max-height:200px;overflow:auto;line-height:1.6;margin-top:6px}
+.console .tag{color:var(--violet)}
+.note{font-family:"IBM Plex Mono",monospace;font-size:15px;color:var(--muted);text-align:center;min-height:44px;line-height:1.5;margin-top:16px;padding:0 10px}
+.timeline{max-width:900px;margin:18px auto 0;height:3px;background:var(--line);border-radius:2px;overflow:hidden}
+.timeline-fill{height:100%;width:0;background:linear-gradient(90deg,var(--accent-2),var(--accent));transition:width .3s linear}
+.verdict{text-align:center;margin:18px auto 0;max-width:760px;font-size:15px;color:var(--muted);line-height:1.6;min-height:28px;opacity:0;transition:opacity .4s}
+.verdict.show{opacity:1}
+.verdict b{color:var(--ink)}
+.controls{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);width:calc(100% - 24px);max-width:1100px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 16px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;z-index:100;box-shadow:0 12px 36px rgba(0,0,0,.5)}
+.ctrl-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.ctrl-btn{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--ink);background:var(--panel-2);border:1px solid var(--line);border-radius:7px;padding:8px 12px;cursor:pointer}
+.ctrl-btn:hover:not(:disabled){border-color:var(--ink)}
+.ctrl-btn:disabled{opacity:.35;cursor:default}
+.ctrl-btn.play{min-width:124px;border-color:var(--accent);color:var(--accent)}
+.speed-group{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.speed-btn{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--muted);background:var(--panel-2);border:none;padding:7px 10px;cursor:pointer;border-right:1px solid var(--line)}
+.speed-btn:last-child{border-right:none}
+.speed-btn.active{background:var(--accent-dim);color:var(--accent)}
+.step-counter{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--muted)}
+@media (prefers-reduced-motion: reduce){*{transition-duration:.001ms !important}}
+</style>
+<style>
+.sub{color:#fff !important}
+.note,#noteBox{color:#fff !important;font-size:16px !important}
+.verdict{color:#fff !important;font-size:16px !important}
+.verdict b{color:#78d38f !important}
+body{padding-bottom:140px !important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>fetch en dos fases</h1>
+  <p class="sub">Primero llega la Response con las cabeceras; después se lee el cuerpo. Y un 404 no entra en el catch.</p>
+  <div class="tabbar" id="tabs"></div>
+  <div class="stage">
+    <div class="panel"><span class="lbl">Código · pestaña activa</span><div class="code" id="code"></div></div>
+    <div class="panel">
+      <span class="lbl" id="rightLbl"></span>
+      <div id="visual"></div>
+      <span class="lbl" style="margin-top:12px">Consola</span>
+      <div class="console" id="console"></div>
+    </div>
+  </div>
+  <div class="note" id="noteBox"></div>
+  <div class="timeline"><div class="timeline-fill" id="fill"></div></div>
+  <div class="verdict" id="verdict"></div>
+</div>
+<div class="controls">
+  <div class="ctrl-row">
+    <button class="ctrl-btn" id="btnRew">⏮ Rebobinar</button>
+    <button class="ctrl-btn" id="btnPrev">◀ Anterior</button>
+    <button class="ctrl-btn play" id="btnPlay">▶ Reproducir</button>
+    <button class="ctrl-btn" id="btnNext">Siguiente ▶</button>
+    <button class="ctrl-btn" id="btnFwd">+10 s ⏭</button>
+  </div>
+  <div class="ctrl-row">
+    <div class="speed-group">
+      <button class="speed-btn" data-s="0.25">0,25×</button>
+      <button class="speed-btn" data-s="0.5">0,5×</button>
+      <button class="speed-btn active" data-s="1">1×</button>
+    </div>
+    <span class="step-counter" id="counter"></span>
+  </div>
+</div>
+<script>
+const DATA = {"rightLabel": "Petición y respuesta", "tabs": [{"name": "GET correcto", "panels": ["Petición", "Response res", "Variables", "Página"], "code": ["async function cargar() {", "  estado.textContent = 'Cargando…';", "  try {", "    const res = await fetch(URL + '/character/1');", "    if (!res.ok) throw new Error('HTTP ' + res.status);", "    const personaje = await res.json();", "    nombre.textContent = personaje.name;", "  } catch (e) {", "    estado.textContent = 'No se pudo cargar: ' + e.message;", "  } finally {", "    spinner.hidden = true;", "  }", "}"], "steps": [{"line": 1, "note": "Antes de pedir nada, avisamos al usuario.", "ops": [{"t": "put", "p": "Página", "k": "#estado", "v": "Cargando…"}, {"t": "put", "p": "Página", "k": "#spinner", "v": "visible"}], "hot": ["Página"]}, {"line": 3, "note": "fetch lanza la petición y devuelve una promesa. await pausa cargar().", "ops": [{"t": "put", "p": "Petición", "k": "método", "v": "GET"}, {"t": "put", "p": "Petición", "k": "URL", "v": "…/api/character/1"}, {"t": "put", "p": "Petición", "k": "estado", "v": "en camino"}], "hot": ["Petición"]}, {"line": 3, "note": "FASE 1: llegan el código de estado y las cabeceras. La promesa se cumple con un objeto Response. El cuerpo aún no se ha leído.", "ops": [{"t": "put", "p": "Petición", "k": "estado", "v": "respuesta recibida"}, {"t": "put", "p": "Response res", "k": "status", "v": "200"}, {"t": "put", "p": "Response res", "k": "ok", "v": "true"}, {"t": "put", "p": "Response res", "k": "Content-Type", "v": "application/json"}, {"t": "put", "p": "Response res", "k": "cuerpo", "v": "sin leer"}], "hot": ["Response res"]}, {"line": 4, "note": "Comprobamos res.ok (true para 200-299). Todo bien: seguimos.", "hot": ["Response res"]}, {"line": 5, "note": "FASE 2: res.json() lee el cuerpo y lo convierte. También es asíncrono: necesita su await.", "ops": [{"t": "put", "p": "Response res", "k": "cuerpo", "v": "leyendo…"}], "hot": ["Response res"]}, {"line": 5, "note": "Ahora sí tenemos el objeto.", "ops": [{"t": "put", "p": "Response res", "k": "cuerpo", "v": "leído"}, {"t": "put", "p": "Variables", "k": "personaje", "v": "{ id: 1, name: \"Rick Sanchez\", status: \"Alive\", … }"}], "hot": ["Variables"]}, {"line": 6, "note": "Pintamos con textContent.", "ops": [{"t": "put", "p": "Página", "k": "#nombre", "v": "Rick Sanchez"}, {"t": "put", "p": "Página", "k": "#estado", "v": ""}], "hot": ["Página"]}, {"line": 10, "note": "finally: se oculta el indicador de carga, haya ido bien o mal.", "ops": [{"t": "put", "p": "Página", "k": "#spinner", "v": "oculto"}], "hot": ["Página"], "verdict": "Dos await: uno para la <b>Response<\/b> y otro para el <b>cuerpo<\/b>. Si olvidas el segundo, tienes una promesa, no los datos."}], "dom": []}, {"name": "404: ok es false", "panels": ["Petición", "Response res", "Página"], "code": ["async function cargar() {", "  try {", "    const res = await fetch(URL + '/character/99999');", "    if (!res.ok) throw new Error('HTTP ' + res.status);", "    const personaje = await res.json();", "    nombre.textContent = personaje.name;", "  } catch (e) {", "    estado.textContent = 'No se pudo cargar: ' + e.message;", "  }", "}"], "steps": [{"line": 2, "note": "Pedimos un personaje que no existe.", "ops": [{"t": "put", "p": "Petición", "k": "método", "v": "GET"}, {"t": "put", "p": "Petición", "k": "URL", "v": "…/api/character/99999"}], "hot": ["Petición"]}, {"line": 2, "note": "El servidor responde con un 404. Para fetch eso es una respuesta: la promesa se CUMPLE.", "ops": [{"t": "put", "p": "Response res", "k": "status", "v": "404"}, {"t": "put", "p": "Response res", "k": "ok", "v": "false"}, {"t": "put", "p": "Response res", "k": "cuerpo", "v": "{\"error\":\"Character not found\"}"}], "hot": ["Response res"]}, {"line": 3, "note": "Por eso comprobamos res.ok nosotros. Es false: lanzamos el error a mano.", "hot": ["Response res"]}, {"line": 6, "note": "El throw lleva el control al catch."}, {"line": 7, "note": "Mensaje claro para el usuario.", "ops": [{"t": "put", "p": "Página", "k": "#estado", "v": "No se pudo cargar: HTTP 404"}], "hot": ["Página"]}, {"line": 4, "note": "Sin la línea 4 habríamos seguido: personaje.name sería undefined y la página lo pintaría sin avisar de nada.", "ops": [{"t": "put", "p": "Página", "k": "(sin res.ok) #nombre", "v": "undefined"}], "hot": ["Página"], "verdict": "fetch solo se rechaza si <b>falla la red<\/b> (o CORS). Los 4xx y 5xx se detectan con <b>res.ok<\/b>."}], "dom": []}, {"name": "POST con JSON", "panels": ["Petición", "Response res", "Variables"], "code": ["const nuevo = { title: 'Valoración', body: 'Muy bueno', userId: 1 };", "const res = await fetch(URL_POSTS, {", "  method: 'POST',", "  headers: { 'Content-Type': 'application/json' },", "  body: JSON.stringify(nuevo),", "});", "if (!res.ok) throw new Error('HTTP ' + res.status);", "const creado = await res.json();"], "steps": [{"line": 0, "note": "El dato que queremos enviar es un objeto de JavaScript.", "ops": [{"t": "put", "p": "Variables", "k": "nuevo", "v": "{ title: \"Valoración\", body: \"Muy bueno\", userId: 1 }"}], "hot": ["Variables"]}, {"line": 2, "note": "El segundo argumento de fetch configura la petición. Sin method, sería GET.", "ops": [{"t": "put", "p": "Petición", "k": "método", "v": "POST"}], "hot": ["Petición"]}, {"line": 3, "note": "La cabecera Content-Type le dice al servidor en qué formato va el cuerpo.", "ops": [{"t": "put", "p": "Petición", "k": "Content-Type", "v": "application/json"}], "hot": ["Petición"]}, {"line": 4, "note": "Por la red solo viaja texto: JSON.stringify convierte el objeto en una cadena.", "ops": [{"t": "put", "p": "Petición", "k": "body", "v": "'{\"title\":\"Valoración\",\"body\":\"Muy bueno\",\"userId\":1}'"}], "hot": ["Petición"]}, {"line": 6, "note": "El servidor responde 201 Created. res.ok es true.", "ops": [{"t": "put", "p": "Response res", "k": "status", "v": "201 Created"}, {"t": "put", "p": "Response res", "k": "ok", "v": "true"}], "hot": ["Response res"]}, {"line": 7, "note": "La respuesta trae el recurso creado, con el id que le ha puesto el servidor.", "ops": [{"t": "put", "p": "Variables", "k": "creado", "v": "{ id: 101, title: \"Valoración\", … }"}], "hot": ["Variables"], "verdict": "Enviar JSON = <b>method<\/b> + <b>Content-Type<\/b> + <b>JSON.stringify<\/b>. Si falta el stringify, el servidor recibe «[object Object]»."}], "dom": []}]};
+let tab = 0, idx = 0, playing = false, speed = 1, timer = null;
+const BASE = 2500;
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const current = () => DATA.tabs[tab];
+
+function model(upto) {
+  const t = current();
+  const m = { panels: {}, logs: [] };
+  t.panels.forEach(p => { m.panels[p] = {}; });
+  for (let k = 0; k <= upto; k++) {
+    const st = t.steps[k];
+    for (const op of (st.ops || [])) {
+      const P = m.panels[op.p] || (m.panels[op.p] = {});
+      if (op.t === 'put') P[op.k] = op.v === undefined ? '' : String(op.v);
+      else if (op.t === 'del') delete P[op.k];
+      else if (op.t === 'clear') { for (const key in P) delete P[key]; }
+    }
+    for (const L of (st.log || [])) m.logs.push(L);
+  }
+  return m;
+}
+
+function render() {
+  const t = current();
+  const st = t.steps[idx];
+  $('code').innerHTML = t.code.map((l, i) =>
+    `<span class="ln${i === st.line ? ' active' : ''}">${esc(l) || ' '}</span>`).join('');
+  const m = model(idx);
+  const hl = st.dom || [];
+  let v = '';
+  if ((t.dom || []).length) {
+    v += `<span class="lbl">${esc(t.domLabel || 'DOM')}</span><div class="code" style="font-size:13px;line-height:1.7;margin-bottom:12px">`;
+    v += t.dom.map(n => `<span class="ln${hl.includes(n.id) ? ' active' : ''}" style="padding-left:${8 + (n.depth || 0) * 18}px">${esc(n.label)}</span>`).join('');
+    v += '</div>';
+  }
+  for (const p of t.panels) {
+    const P = m.panels[p];
+    const keys = Object.keys(P);
+    v += `<div class="win${(st.hot || []).includes(p) ? ' cur' : ''}"><h4>${esc(p)}</h4>`;
+    v += keys.length
+      ? '<div class="kv">' + keys.map(k => `<span class="k">${esc(k)}</span><span class="v">${esc(P[k])}</span>`).join('') + '</div>'
+      : '<div class="empty">vacío</div>';
+    v += '</div>';
+  }
+  $('visual').innerHTML = v;
+  $('console').innerHTML = m.logs.length
+    ? m.logs.map(x => `<div>${esc(x)}</div>`).join('')
+    : '<div class="empty">sin salida</div>';
+  $('noteBox').textContent = st.note || '';
+  const vb = $('verdict');
+  if (st.verdict) { vb.innerHTML = st.verdict; vb.classList.add('show'); }
+  else { vb.classList.remove('show'); vb.innerHTML = ''; }
+  $('fill').style.width = ((idx + 1) / t.steps.length * 100) + '%';
+  $('counter').textContent = `Paso ${idx + 1} / ${t.steps.length}`;
+  $('btnPrev').disabled = idx === 0;
+  $('btnRew').disabled = idx === 0;
+  $('btnNext').disabled = idx === t.steps.length - 1;
+  $('btnFwd').disabled = idx === t.steps.length - 1;
+  $('btnPlay').textContent = playing ? '❚❚ Pausa' : '▶ Reproducir';
+  document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', i === tab));
+}
+
+function schedule() {
+  clearTimeout(timer);
+  timer = setTimeout(() => {
+    if (idx >= current().steps.length - 1) { stop(); return; }
+    idx++; render(); schedule();
+  }, BASE / speed);
+}
+function stop() { playing = false; clearTimeout(timer); timer = null; render(); }
+function play() {
+  if (playing) { stop(); return; }
+  if (idx >= current().steps.length - 1) idx = 0;
+  playing = true; render(); schedule();
+}
+function manual(n) {
+  const last = current().steps.length - 1;
+  idx = Math.max(0, Math.min(last, n));
+  render();
+  if (playing) schedule();
+}
+function buildTabs() {
+  $('tabs').innerHTML = DATA.tabs.map((t, i) => `<button class="tab-btn" data-i="${i}">${esc(t.name)}</button>`).join('');
+  document.querySelectorAll('.tab-btn').forEach(b => b.onclick = () => {
+    stop(); tab = +b.dataset.i; idx = 0; render();
+  });
+}
+$('btnRew').onclick = () => manual(0);
+$('btnPrev').onclick = () => manual(idx - 1);
+$('btnNext').onclick = () => manual(idx + 1);
+$('btnFwd').onclick = () => manual(idx + 4);
+$('btnPlay').onclick = play;
+document.querySelectorAll('.speed-btn').forEach(b => b.onclick = () => {
+  speed = +b.dataset.s;
+  document.querySelectorAll('.speed-btn').forEach(x => x.classList.toggle('active', x === b));
+  if (playing) schedule();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight') manual(idx + 1);
+  if (e.key === 'ArrowLeft') manual(idx - 1);
+});
+if (DATA.tabs.length === 1) $('tabs').style.display = 'none';
+$('rightLbl').textContent = DATA.rightLabel || 'Estado';
+buildTabs();
+render();
+</script>
+</body>
+</html>

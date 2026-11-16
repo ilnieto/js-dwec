@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>XMLHttpRequest paso a paso</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root{--bg:#0b0e12;--panel:#11161d;--panel-2:#161d26;--line:#232b34;--ink:#e5e9ed;--muted:#c9d1d9;--dim:#8a96a3;--accent:#4dd9c0;--accent-2:#f2a154;--violet:#a78bfa;--good:#7cd992;--accent-dim:rgba(77,217,192,.12);}
+*{box-sizing:border-box}
+html,body{background:var(--bg)}
+body{margin:0;color:var(--ink);font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,sans-serif;padding:16px 16px 140px}
+.wrap{max-width:1200px;margin:0 auto}
+h1{text-align:center;font-family:"IBM Plex Mono",monospace;font-size:28px;font-weight:600;margin:6px 0 8px}
+.sub{text-align:center;max-width:820px;margin:0 auto 22px;line-height:1.55;font-size:15px}
+.tabbar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:16px}
+.tab-btn{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--muted);background:var(--panel-2);border:1px solid var(--line);border-radius:20px;padding:7px 15px;cursor:pointer}
+.tab-btn.active{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
+.stage{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+@media (max-width:820px){.stage{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px}
+.lbl{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:8px}
+.code{font-family:"IBM Plex Mono",monospace;font-size:15px;line-height:1.85;overflow-x:auto}
+.ln{display:block;padding:1px 8px;border-left:2px solid transparent;border-radius:4px;color:#cfd6dd;white-space:pre;transition:background .25s}
+.ln.active{background:var(--accent-dim);border-left-color:var(--accent);color:var(--ink)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-family:"IBM Plex Mono",monospace;font-size:13px}
+.kv .k{color:var(--accent-2)}
+.kv .v{color:var(--good);word-break:break-all}
+.win{border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:10px;background:var(--panel-2)}
+.win.cur{border-color:var(--accent)}
+.win h4{margin:0 0 6px;font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--violet)}
+.win.cur h4{color:var(--accent)}
+.empty{color:var(--dim);font-family:"IBM Plex Mono",monospace;font-size:12px}
+.console{font-family:"IBM Plex Mono",monospace;font-size:13px;min-height:70px;max-height:200px;overflow:auto;line-height:1.6;margin-top:6px}
+.console .tag{color:var(--violet)}
+.note{font-family:"IBM Plex Mono",monospace;font-size:15px;color:var(--muted);text-align:center;min-height:44px;line-height:1.5;margin-top:16px;padding:0 10px}
+.timeline{max-width:900px;margin:18px auto 0;height:3px;background:var(--line);border-radius:2px;overflow:hidden}
+.timeline-fill{height:100%;width:0;background:linear-gradient(90deg,var(--accent-2),var(--accent));transition:width .3s linear}
+.verdict{text-align:center;margin:18px auto 0;max-width:760px;font-size:15px;color:var(--muted);line-height:1.6;min-height:28px;opacity:0;transition:opacity .4s}
+.verdict.show{opacity:1}
+.verdict b{color:var(--ink)}
+.controls{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);width:calc(100% - 24px);max-width:1100px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 16px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;z-index:100;box-shadow:0 12px 36px rgba(0,0,0,.5)}
+.ctrl-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.ctrl-btn{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--ink);background:var(--panel-2);border:1px solid var(--line);border-radius:7px;padding:8px 12px;cursor:pointer}
+.ctrl-btn:hover:not(:disabled){border-color:var(--ink)}
+.ctrl-btn:disabled{opacity:.35;cursor:default}
+.ctrl-btn.play{min-width:124px;border-color:var(--accent);color:var(--accent)}
+.speed-group{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.speed-btn{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--muted);background:var(--panel-2);border:none;padding:7px 10px;cursor:pointer;border-right:1px solid var(--line)}
+.speed-btn:last-child{border-right:none}
+.speed-btn.active{background:var(--accent-dim);color:var(--accent)}
+.step-counter{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--muted)}
+@media (prefers-reduced-motion: reduce){*{transition-duration:.001ms !important}}
+</style>
+<style>
+.sub{color:#fff !important}
+.note,#noteBox{color:#fff !important;font-size:16px !important}
+.verdict{color:#fff !important;font-size:16px !important}
+.verdict b{color:#78d38f !important}
+body{padding-bottom:140px !important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>XMLHttpRequest paso a paso</h1>
+  <p class="sub">Los cinco valores de readyState, cuándo hay status y responseText, y qué evento salta en cada tipo de fallo.</p>
+  <div class="tabbar" id="tabs"></div>
+  <div class="stage">
+    <div class="panel"><span class="lbl">Código · pestaña activa</span><div class="code" id="code"></div></div>
+    <div class="panel">
+      <span class="lbl" id="rightLbl"></span>
+      <div id="visual"></div>
+      <span class="lbl" style="margin-top:12px">Consola</span>
+      <div class="console" id="console"></div>
+    </div>
+  </div>
+  <div class="note" id="noteBox"></div>
+  <div class="timeline"><div class="timeline-fill" id="fill"></div></div>
+  <div class="verdict" id="verdict"></div>
+</div>
+<div class="controls">
+  <div class="ctrl-row">
+    <button class="ctrl-btn" id="btnRew">⏮ Rebobinar</button>
+    <button class="ctrl-btn" id="btnPrev">◀ Anterior</button>
+    <button class="ctrl-btn play" id="btnPlay">▶ Reproducir</button>
+    <button class="ctrl-btn" id="btnNext">Siguiente ▶</button>
+    <button class="ctrl-btn" id="btnFwd">+10 s ⏭</button>
+  </div>
+  <div class="ctrl-row">
+    <div class="speed-group">
+      <button class="speed-btn" data-s="0.25">0,25×</button>
+      <button class="speed-btn" data-s="0.5">0,5×</button>
+      <button class="speed-btn active" data-s="1">1×</button>
+    </div>
+    <span class="step-counter" id="counter"></span>
+  </div>
+</div>
+<script>
+const DATA = {"rightLabel": "Petición", "tabs": [{"name": "GET correcto", "panels": ["Objeto xhr", "Página"], "code": ["const xhr = new XMLHttpRequest();", "xhr.open('GET', URL);", "xhr.timeout = 5000;", "xhr.onreadystatechange = () => console.log('readyState', xhr.readyState);", "xhr.onload = () => {", "  if (xhr.status >= 200 && xhr.status < 300) {", "    const dato = JSON.parse(xhr.responseText);", "    chiste.textContent = dato.value;", "  } else {", "    estado.textContent = 'Error HTTP ' + xhr.status;", "  }", "};", "xhr.onerror = () => { estado.textContent = 'Sin conexión'; };", "xhr.ontimeout = () => { estado.textContent = 'Tiempo agotado'; };", "xhr.send();"], "steps": [{"line": 0, "note": "Creamos el objeto. Todavía no sabe a dónde ir.", "ops": [{"t": "put", "p": "Objeto xhr", "k": "readyState", "v": "0 · UNSENT"}, {"t": "put", "p": "Objeto xhr", "k": "status", "v": "0"}, {"t": "put", "p": "Objeto xhr", "k": "responseText", "v": "''"}], "hot": ["Objeto xhr"]}, {"line": 1, "note": "open() configura método y URL. No envía nada.", "ops": [{"t": "put", "p": "Objeto xhr", "k": "readyState", "v": "1 · OPENED"}], "log": ["readyState 1"], "hot": ["Objeto xhr"]}, {"line": 2, "note": "Tiempo máximo de espera: 5 segundos.", "ops": [{"t": "put", "p": "Objeto xhr", "k": "timeout", "v": "5000"}], "hot": ["Objeto xhr"]}, {"line": 11, "note": "Registramos los manejadores ANTES de enviar: onload, onerror y ontimeout.", "hot": ["Objeto xhr"]}, {"line": 14, "note": "send() lanza la petición y devuelve el control al instante. La página no se congela.", "ops": [{"t": "put", "p": "Página", "k": "#estado", "v": "Cargando…"}], "hot": ["Página"]}, {"line": 3, "note": "Llegan las cabeceras de la respuesta. Ya se conoce el status.", "ops": [{"t": "put", "p": "Objeto xhr", "k": "readyState", "v": "2 · HEADERS_RECEIVED"}, {"t": "put", "p": "Objeto xhr", "k": "status", "v": "200"}], "log": ["readyState 2"], "hot": ["Objeto xhr"]}, {"line": 3, "note": "Va llegando el cuerpo. responseText está incompleto: todavía no se puede hacer JSON.parse.", "ops": [{"t": "put", "p": "Objeto xhr", "k": "readyState", "v": "3 · LOADING"}, {"t": "put", "p": "Objeto xhr", "k": "responseText", "v": "{\"id\":\"x1\",\"val"}], "log": ["readyState 3"], "hot": ["Objeto xhr"]}, {"line": 3, "note": "Respuesta completa.", "ops": [{"t": "put", "p": "Objeto xhr", "k": "readyState", "v": "4 · DONE"}, {"t": "put", "p": "Objeto xhr", "k": "responseText", "v": "{\"id\":\"x1\",\"value\":\"Chuck Norris cuenta hasta el infinito. Dos veces.\"}"}], "log": ["readyState 4"], "hot": ["Objeto xhr"]}, {"line": 5, "note": "Salta onload. Lo primero es comprobar el status: 200 está entre 200 y 299.", "hot": ["Objeto xhr"]}, {"line": 6, "note": "responseText es TEXTO. JSON.parse lo convierte en un objeto.", "hot": ["Objeto xhr"]}, {"line": 7, "note": "Pintamos el dato con textContent.", "ops": [{"t": "put", "p": "Página", "k": "#estado", "v": ""}, {"t": "put", "p": "Página", "k": "#chiste", "v": "Chuck Norris cuenta hasta el infinito. Dos veces."}], "hot": ["Página"], "verdict": "Los datos solo son fiables con <b>readyState 4<\/b> (evento load) y un <b>status 2xx<\/b>."}], "dom": []}, {"name": "Error 404", "panels": ["Objeto xhr", "Página"], "code": ["const xhr = new XMLHttpRequest();", "xhr.open('GET', URL);", "xhr.timeout = 5000;", "xhr.onreadystatechange = () => console.log('readyState', xhr.readyState);", "xhr.onload = () => {", "  if (xhr.status >= 200 && xhr.status < 300) {", "    const dato = JSON.parse(xhr.responseText);", "    chiste.textContent = dato.value;", "  } else {", "    estado.textContent = 'Error HTTP ' + xhr.status;", "  }", "};", "xhr.onerror = () => { estado.textContent = 'Sin conexión'; };", "xhr.ontimeout = () => { estado.textContent = 'Tiempo agotado'; };", "xhr.send();"], "steps": [{"line": 1, "note": "Misma petición, pero la URL está mal escrita: /jokes/ramdon.", "ops": [{"t": "put", "p": "Objeto xhr", "k": "readyState", "v": "0 · UNSENT"}, {"t": "put", "p": "Objeto xhr", "k": "status", "v": "0"}, {"t": "put", "p": "Objeto xhr", "k": "responseText", "v": "''"}, {"t": "put", "p": "Objeto xhr", "k": "readyState", "v": "1 · OPENED"}], "hot": ["Objeto xhr"]}, {"line": 14, "note": "Enviamos.", "ops": [{"t": "put", "p": "Página", "k": "#estado", "v": "Cargando…"}], "hot": ["Página"]}, {"line": 3, "note": "El servidor SÍ responde: dice que ese recurso no existe.", "ops": [{"t": "put", "p": "Objeto xhr", "k": "readyState", "v": "4 · DONE"}, {"t": "put", "p": "Objeto xhr", "k": "status", "v": "404"}, {"t": "put", "p": "Objeto xhr", "k": "responseText", "v": "{\"status\":404,\"error\":\"Not Found\"}"}], "log": ["readyState 2", "readyState 3", "readyState 4"], "hot": ["Objeto xhr"]}, {"line": 4, "note": "Hubo respuesta, así que salta onload, NO onerror.", "hot": ["Objeto xhr"]}, {"line": 5, "note": "404 no está entre 200 y 299: la condición es falsa.", "hot": ["Objeto xhr"]}, {"line": 9, "note": "Rama else: mostramos el error con su código.", "ops": [{"t": "put", "p": "Página", "k": "#estado", "v": "Error HTTP 404"}], "hot": ["Página"], "verdict": "Un 404 o un 500 son respuestas válidas para XHR: llegan por <b>onload<\/b>. Sin comprobar <b>status<\/b>, intentarías pintar un error como si fuera un dato."}], "dom": []}, {"name": "Fallo de red", "panels": ["Objeto xhr", "Página"], "code": ["const xhr = new XMLHttpRequest();", "xhr.open('GET', URL);", "xhr.timeout = 5000;", "xhr.onreadystatechange = () => console.log('readyState', xhr.readyState);", "xhr.onload = () => {", "  if (xhr.status >= 200 && xhr.status < 300) {", "    const dato = JSON.parse(xhr.responseText);", "    chiste.textContent = dato.value;", "  } else {", "    estado.textContent = 'Error HTTP ' + xhr.status;", "  }", "};", "xhr.onerror = () => { estado.textContent = 'Sin conexión'; };", "xhr.ontimeout = () => { estado.textContent = 'Tiempo agotado'; };", "xhr.send();"], "steps": [{"line": 1, "note": "Ahora no hay conexión, el dominio no existe o CORS bloquea la respuesta.", "ops": [{"t": "put", "p": "Objeto xhr", "k": "readyState", "v": "0 · UNSENT"}, {"t": "put", "p": "Objeto xhr", "k": "status", "v": "0"}, {"t": "put", "p": "Objeto xhr", "k": "responseText", "v": "''"}, {"t": "put", "p": "Objeto xhr", "k": "readyState", "v": "1 · OPENED"}], "hot": ["Objeto xhr"]}, {"line": 14, "note": "Enviamos.", "ops": [{"t": "put", "p": "Página", "k": "#estado", "v": "Cargando…"}], "hot": ["Página"]}, {"line": 3, "note": "No llega ninguna respuesta. readyState pasa a 4 con status 0.", "ops": [{"t": "put", "p": "Objeto xhr", "k": "readyState", "v": "4 · DONE"}, {"t": "put", "p": "Objeto xhr", "k": "status", "v": "0"}], "log": ["readyState 4"], "hot": ["Objeto xhr"]}, {"line": 12, "note": "Salta onerror. onload no se ejecuta.", "ops": [{"t": "put", "p": "Página", "k": "#estado", "v": "Sin conexión"}], "hot": ["Página"]}, {"line": 13, "note": "Si el servidor existe pero tarda más de 5 s, salta ontimeout en lugar de onerror.", "ops": [{"t": "put", "p": "Página", "k": "#estado", "v": "Tiempo agotado"}], "hot": ["Página"], "verdict": "Tres finales distintos: <b>load<\/b> (hay respuesta, mira el status), <b>error<\/b> (no hay respuesta) y <b>timeout<\/b> (tardó demasiado). Hay que tratar los tres."}], "dom": []}]};
+let tab = 0, idx = 0, playing = false, speed = 1, timer = null;
+const BASE = 2500;
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const current = () => DATA.tabs[tab];
+
+function model(upto) {
+  const t = current();
+  const m = { panels: {}, logs: [] };
+  t.panels.forEach(p => { m.panels[p] = {}; });
+  for (let k = 0; k <= upto; k++) {
+    const st = t.steps[k];
+    for (const op of (st.ops || [])) {
+      const P = m.panels[op.p] || (m.panels[op.p] = {});
+      if (op.t === 'put') P[op.k] = op.v === undefined ? '' : String(op.v);
+      else if (op.t === 'del') delete P[op.k];
+      else if (op.t === 'clear') { for (const key in P) delete P[key]; }
+    }
+    for (const L of (st.log || [])) m.logs.push(L);
+  }
+  return m;
+}
+
+function render() {
+  const t = current();
+  const st = t.steps[idx];
+  $('code').innerHTML = t.code.map((l, i) =>
+    `<span class="ln${i === st.line ? ' active' : ''}">${esc(l) || ' '}</span>`).join('');
+  const m = model(idx);
+  const hl = st.dom || [];
+  let v = '';
+  if ((t.dom || []).length) {
+    v += `<span class="lbl">${esc(t.domLabel || 'DOM')}</span><div class="code" style="font-size:13px;line-height:1.7;margin-bottom:12px">`;
+    v += t.dom.map(n => `<span class="ln${hl.includes(n.id) ? ' active' : ''}" style="padding-left:${8 + (n.depth || 0) * 18}px">${esc(n.label)}</span>`).join('');
+    v += '</div>';
+  }
+  for (const p of t.panels) {
+    const P = m.panels[p];
+    const keys = Object.keys(P);
+    v += `<div class="win${(st.hot || []).includes(p) ? ' cur' : ''}"><h4>${esc(p)}</h4>`;
+    v += keys.length
+      ? '<div class="kv">' + keys.map(k => `<span class="k">${esc(k)}</span><span class="v">${esc(P[k])}</span>`).join('') + '</div>'
+      : '<div class="empty">vacío</div>';
+    v += '</div>';
+  }
+  $('visual').innerHTML = v;
+  $('console').innerHTML = m.logs.length
+    ? m.logs.map(x => `<div>${esc(x)}</div>`).join('')
+    : '<div class="empty">sin salida</div>';
+  $('noteBox').textContent = st.note || '';
+  const vb = $('verdict');
+  if (st.verdict) { vb.innerHTML = st.verdict; vb.classList.add('show'); }
+  else { vb.classList.remove('show'); vb.innerHTML = ''; }
+  $('fill').style.width = ((idx + 1) / t.steps.length * 100) + '%';
+  $('counter').textContent = `Paso ${idx + 1} / ${t.steps.length}`;
+  $('btnPrev').disabled = idx === 0;
+  $('btnRew').disabled = idx === 0;
+  $('btnNext').disabled = idx === t.steps.length - 1;
+  $('btnFwd').disabled = idx === t.steps.length - 1;
+  $('btnPlay').textContent = playing ? '❚❚ Pausa' : '▶ Reproducir';
+  document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', i === tab));
+}
+
+function schedule() {
+  clearTimeout(timer);
+  timer = setTimeout(() => {
+    if (idx >= current().steps.length - 1) { stop(); return; }
+    idx++; render(); schedule();
+  }, BASE / speed);
+}
+function stop() { playing = false; clearTimeout(timer); timer = null; render(); }
+function play() {
+  if (playing) { stop(); return; }
+  if (idx >= current().steps.length - 1) idx = 0;
+  playing = true; render(); schedule();
+}
+function manual(n) {
+  const last = current().steps.length - 1;
+  idx = Math.max(0, Math.min(last, n));
+  render();
+  if (playing) schedule();
+}
+function buildTabs() {
+  $('tabs').innerHTML = DATA.tabs.map((t, i) => `<button class="tab-btn" data-i="${i}">${esc(t.name)}</button>`).join('');
+  document.querySelectorAll('.tab-btn').forEach(b => b.onclick = () => {
+    stop(); tab = +b.dataset.i; idx = 0; render();
+  });
+}
+$('btnRew').onclick = () => manual(0);
+$('btnPrev').onclick = () => manual(idx - 1);
+$('btnNext').onclick = () => manual(idx + 1);
+$('btnFwd').onclick = () => manual(idx + 4);
+$('btnPlay').onclick = play;
+document.querySelectorAll('.speed-btn').forEach(b => b.onclick = () => {
+  speed = +b.dataset.s;
+  document.querySelectorAll('.speed-btn').forEach(x => x.classList.toggle('active', x === b));
+  if (playing) schedule();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight') manual(idx + 1);
+  if (e.key === 'ArrowLeft') manual(idx - 1);
+});
+if (DATA.tabs.length === 1) $('tabs').style.display = 'none';
+$('rightLbl').textContent = DATA.rightLabel || 'Estado';
+buildTabs();
+render();
+</script>
+</body>
+</html>
